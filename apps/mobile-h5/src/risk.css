@@ -1,0 +1,30 @@
+.mobile-login { display: flex; flex-direction: column; justify-content: center; padding: 42px 28px; }
+.mobile-login > p { margin: 16px 0 6px; color: #6f8178; font-size: 13px; }
+.mobile-login h1 { margin: 0 0 34px; font-size: 30px; }
+.login-symbol { width: 56px; height: 56px; display: grid; place-items: center; border-radius: 18px; background: #17392d; color: #d9ff78; font-size: 24px; font-weight: 800; }
+.mobile-login form { display: grid; gap: 17px; background: #fff; padding: 22px; border-radius: 20px; box-shadow: 0 12px 35px #17392d12; }
+.mobile-login label { display: grid; gap: 7px; font-size: 13px; font-weight: 700; }
+.mobile-login input { height: 46px; padding: 0 12px; border: 1px solid #d6dfda; border-radius: 10px; font: inherit; }
+.mobile-login form button { height: 46px; border: 0; border-radius: 10px; background: #245d49; color: #fff; font-weight: 700; }
+header select { max-width: 245px; border: 0; background: transparent; color: #b6cdc3; font: inherit; font-size: 12px; }
+header button { border: 1px solid #ffffff25; border-radius: 8px; background: transparent; color: #c8d9d1; padding: 7px; }
+.mobile-error { color: #b63e36; font-size: 12px; }
+.float-error { position: fixed; left: 50%; bottom: 82px; transform: translateX(-50%); width: min(430px, 90%); padding: 10px; border-radius: 9px; background: #fff0ef; text-align: center; }
+.risk-intro { margin: -48px 4px 18px; background: #fff; border-radius: 18px; padding: 18px; box-shadow: 0 12px 28px #15372815; }
+.risk-intro p { color: #728179; font-size: 12px; line-height: 1.6; margin: 7px 0 0; }
+.mobile-risks { display: grid; gap: 12px; }
+.mobile-risks article { background: #fff; border-radius: 17px; padding: 17px; border: 1px solid #e3e9e6; }
+.mobile-risk-head { display: flex; justify-content: space-between; align-items: center; }
+.mobile-risk-head code { color: #76867e; font-size: 11px; }
+.mobile-risk-badge { padding: 5px 8px; border-radius: 7px; font-size: 11px; font-weight: 700; }
+.mobile-risk-badge.red { background: #fae0df; color: #a12c2c; }.mobile-risk-badge.orange { background: #ffe9d5; color: #a45619; }.mobile-risk-badge.yellow { background: #fff2bf; color: #7c6407; }.mobile-risk-badge.blue { background: #dfedf8; color: #276698; }
+.mobile-risks h3 { margin: 13px 0 6px; font-size: 17px; }
+.mobile-risks > article > p { margin: 0; color: #607169; font-size: 13px; line-height: 1.55; }
+.mobile-risks dl { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0 0; padding-top: 14px; border-top: 1px solid #edf1ef; }
+.mobile-risks dl div { display: grid; gap: 3px; }.mobile-risks dt { font-size: 10px; color: #8b9892; }.mobile-risks dd { margin: 0; font-size: 12px; color: #34473e; }
+.measure-list { margin-top: 14px; padding: 13px; border-radius: 11px; background: #f4f7f5; }
+.measure-list > b { font-size: 12px; }
+.measure-list p { display: grid; grid-template-columns: 62px 1fr; gap: 7px; margin: 9px 0 0; color: #52645b; font-size: 11px; line-height: 1.5; }
+.measure-list p span { color: #2c6a51; font-weight: 700; }
+.ack-button { width: 100%; margin-top: 12px; padding: 11px; border: 0; border-radius: 10px; background: #245d49; color: #fff; font-weight: 700; }
+.ack-button.done { background: #e5f1e9; color: #32704f; }

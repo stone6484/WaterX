@@ -1,0 +1,23 @@
+{
+  "name": "@safety/admin-web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@safety/api-client": "workspace:*",
+    "@types/qrcode": "^1.5.6",
+    "qrcode": "^1.5.4",
+    "vue": "3.5.17"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "6.0.0",
+    "typescript": "5.8.3",
+    "vite": "7.0.5",
+    "vue-tsc": "3.0.1"
+  }
+}
