@@ -71,8 +71,6 @@ body {
 
 .brand-panel .eyebrow { margin-bottom:9px; color:#6f98ad; font-size:9px; letter-spacing:.16em; }
 .brand-panel h1 { max-width:none; color:#153e57; font-size:clamp(27px,3vw,42px); font-weight:650; letter-spacing:.04em; }
-.brand-stats { gap:8px; margin-top:23px; }
-.brand-stats span { padding:5px 10px; border-color:rgba(66,126,156,.16); background:rgba(255,255,255,.38); color:#66889a; font-size:9px; }
 
 .login-card {
   align-self:center;
@@ -301,7 +299,6 @@ th, td { padding: 11px 14px; font-size: 12px; }
   .login-shell { grid-template-columns:1fr; gap:26px; align-content:center; padding:42px 8vw 25vh; }
   .brand-panel { display:flex; align-items:center; text-align:center; }
   .brand-logo-wrap { width:150px; margin-bottom:18px; }
-  .brand-stats { margin-top:14px; }
   .login-card { width:min(350px,100%); margin:auto; }
   .app-shell { grid-template-columns: 76px 1fr; }
   .topbar-brand span { font-size:13px; }
