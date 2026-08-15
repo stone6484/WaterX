@@ -545,7 +545,6 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
       <div class="brand-logo-wrap"><img src="/waterx-logo-transparent.png" alt="WaterX" /></div>
       <p class="eyebrow">WaterX · Digital Water Operations</p>
       <h1>智慧水务运营平台</h1>
-      <div class="brand-stats"><span>多厂协同</span><span>数据驱动</span><span>闭环运营</span></div>
     </section>
     <form class="login-card" @submit.prevent="login">
       <div><p class="eyebrow">欢迎使用</p><h2>登录管理端</h2><p class="muted">请输入由管理员分配的账号</p></div>
