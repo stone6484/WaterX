@@ -1,0 +1,16 @@
+.idea/
+.vscode/
+.DS_Store
+node_modules/
+**/node_modules/
+.artifacts/real-data-kit/node_modules
+dist/
+**/dist/
+target/
+.env
+.cds.env
+cds-compose.yml
+*.log
+*.tsbuildinfo
+data/
+.tools/

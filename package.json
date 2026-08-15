@@ -1,0 +1,11 @@
+{
+  "name": "municipal-wastewater-safety-platform",
+  "private": true,
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "dev:admin": "pnpm --filter @safety/admin-web dev",
+    "dev:h5": "pnpm --filter @safety/mobile-h5 dev",
+    "build:web": "pnpm -r --filter './apps/**' build",
+    "typecheck": "pnpm -r --filter './apps/**' typecheck"
+  }
+}
