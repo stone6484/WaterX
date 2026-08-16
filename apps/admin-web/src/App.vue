@@ -78,7 +78,7 @@ const loading = ref(false)
 const error = ref('')
 const username = ref('platform_admin')
 const password = ref('')
-const active = ref<'platform' | 'processAnalysis' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'metricConfig' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education'>('platform')
+const active = ref<'platform' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education'>('platform')
 const dashboardTaskTab = ref<'pending'|'processed'|'cc'|'started'>('pending')
 const dashboardTasks = {
   pending: [{title:'审核一期生化线冬季工况调整',module:'生产运行',time:'今天 14:30',status:'待审核'},{title:'确认重点部位安全检查整改结果',module:'安全管理',time:'今天 17:00',status:'待处理'},{title:'复核二期进水 COD 异常数据',module:'化验管理',time:'明天 09:00',status:'待复核'}],
@@ -87,12 +87,19 @@ const dashboardTasks = {
   started: [{title:'发起夏季高负荷工况评审',module:'生产运行',time:'08-12 15:10',status:'审批中'},{title:'发起季度应急物资盘点',module:'安全管理',time:'08-10 09:15',status:'执行中'}]
 }
 const expandedModules = ref<Record<string, boolean>>({ production: false, equipment: false, laboratory: false, safety: false, energy: false, business: false, basic: false })
+const sidebarCollapsed = ref(false)
 function toggleModule(module: string) {
+  if (sidebarCollapsed.value) {
+    sidebarCollapsed.value = false
+    expandedModules.value[module] = true
+    return
+  }
   expandedModules.value[module] = !expandedModules.value[module]
 }
 
 type DiagnosisLevel = 'normal' | 'warning' | 'alarm'
 type DiagnosisMetric = {
+  code?: string
   category: string
   name: string
   unit: string
@@ -176,56 +183,216 @@ const diagnosisMetrics: DiagnosisMetric[] = [
   { category: '污泥性状', name: 'T', unit: '℃', design: '—', target: '≥12', actual: '13.6', deviation: null, level: 'normal', meaning: '生化池水温' },
   { category: '污泥性状', name: '生物相', unit: '定性', design: '—', target: '良好', actual: '良好', deviation: null, level: 'normal', meaning: '活性污泥微型生物种类与状态' }
 ]
-const showMetricConfig = ref(false)
+const expertResultMetrics: DiagnosisMetric[] = [
+  { category: '污泥性状', name: '填料区游离污泥MLSS', unit: 'mg/L', design: '—', target: '5500～7500', actual: '6670', deviation: null, level: 'normal', meaning: 'MBBR填料区游离污泥悬浮固体浓度' },
+  { category: '污泥性状', name: '填料区游离污泥MLVSS', unit: 'mg/L', design: '—', target: '3000～4500', actual: '3670', deviation: null, level: 'normal', meaning: 'MBBR填料区游离污泥挥发性悬浮固体浓度' },
+  { category: '污泥性状', name: '填料折合总污泥浓度', unit: 'mg/L', design: '—', target: '≥7000', actual: '8460', deviation: null, level: 'normal', meaning: '生物膜折合污泥浓度与游离污泥浓度之和' },
+  { category: '沿程分析', name: '缺氧段 COD 去除量', unit: 'mg/L', design: '—', target: '≥10', actual: '14', deviation: 40.0, level: 'normal', meaning: '缺氧段进出水 COD 差值，反映反硝化碳源利用情况' },
+  { category: '沿程分析', name: '缺氧段 TN 去除量', unit: 'mg/L', design: '—', target: '≥2.0', actual: '2.1', deviation: 5.0, level: 'normal', meaning: '缺氧段进出水 TN 差值' },
+  { category: '沿程分析', name: '好氧段 NH₃-N 去除量', unit: 'mg/L', design: '—', target: '≥6.0', actual: '6.92', deviation: 15.3, level: 'normal', meaning: '好氧段氨氮削减量，反映硝化过程效果' },
+  { category: '沿程分析', name: '反硝化速率', unit: 'mgNO₃-N/(gMLVSS·h)', design: '—', target: '1.5～3.5', actual: '2.4', deviation: null, level: 'normal', meaning: '按缺氧段沿程氮平衡与活性污泥量计算' },
+  { category: '沿程分析', name: '硝化速率', unit: 'mgNH₃-N/(gMLVSS·h)', design: '—', target: '1.5～3.5', actual: '2.8', deviation: null, level: 'normal', meaning: '按好氧段沿程氨氮削减与活性污泥量计算' },
+  { category: '沿程分析', name: '生化除磷率', unit: '%', design: '—', target: '≥45', actual: '54.4', deviation: 20.9, level: 'normal', meaning: '由生化池进出水 TP 沿程数据计算' },
+  { category: '沿程分析', name: '厌氧释磷比例', unit: '%', design: '—', target: '≥105', actual: '104.0', deviation: -1.0, level: 'normal', meaning: '厌氧段末端与进水正磷酸盐比值' }
+]
+const alongCourseStations = ['总进水','生化进水','缺氧进水','缺氧出水','厌氧末端','好氧一段','好氧二段','好氧末端','二沉出水','总出水']
+const alongCourseSeries = [
+  { name:'COD', unit:'mg/L', values:['172','155','80','66','44','37','34','27','23','20'], trend:'持续下降' },
+  { name:'TP', unit:'mg/L', values:['3.99','3.20','2.15','2.04','2.25','2.02','2.03','1.82','1.31','0.22'], trend:'好氧吸磷明显' },
+  { name:'TN', unit:'mg/L', values:['33.3','31.7','11.5','12.5','12.1','12.4','12.1','11.8','11.7','11.6'], trend:'缺氧段完成主要削减' },
+  { name:'NH₃-N', unit:'mg/L', values:['31.5','30.6','8.46','8.32','10.2','7.26','3.40','3.28','1.45','1.41'], trend:'好氧段硝化正常' },
+  { name:'NO₃-N', unit:'mg/L', values:['0.49','0.36','2.72','3.96','1.70','4.73','8.55','8.40','10.2','10.1'], trend:'随硝化过程上升' },
+  { name:'DO', unit:'mg/L', values:['0.23','0.18','0.16','0.13','0.10','0.22','1.02','0.52','—','—'], trend:'好氧末端偏低' },
+  { name:'MLSS', unit:'mg/L', values:['—','—','7110','—','6998','—','6815','—','—','—'], trend:'沿程浓度稳定' },
+  { name:'碱度', unit:'mg/L', values:['178','—','163','—','150','—','—','132','—','135'], trend:'硝化过程持续消耗' }
+]
 const showNewMetricForm = ref(false)
-const hiddenMetricKeys = ref<string[]>(JSON.parse(localStorage.getItem('waterx-hidden-diagnosis-metrics') || '[]'))
 const customMetrics = reactive<DiagnosisMetric[]>(JSON.parse(localStorage.getItem('waterx-custom-diagnosis-metrics') || '[]'))
 const customProcessMetrics = reactive<DiagnosisMetric[]>(JSON.parse(localStorage.getItem('waterx-custom-process-metrics') || '[]'))
-const resultCategories = ['进水水质','进水特征','出水水质','处理效能','污泥性状']
-const processCategories = ['水量与停留时间','曝气控制','内回流控制','外回流控制','排泥控制','加药控制','搅拌控制']
-const newMetricForm = reactive({ category: '进水水质', name: '', unit: 'mg/L', meaning: '', dataType: 'DECIMAL', valueSource: 'MANUAL', formula: '' })
-const formulaReference = ref('')
-const allDiagnosisMetrics = computed(() => [...diagnosisMetrics, ...customMetrics])
-const visibleDiagnosisMetrics = computed(() => allDiagnosisMetrics.value.filter(metric => !hiddenMetricKeys.value.includes(metricKey(metric))))
-function metricKey(metric: Pick<DiagnosisMetric, 'category' | 'name'>) { return `${metric.category}::${metric.name}` }
-function isMetricVisible(metric: DiagnosisMetric) { return !hiddenMetricKeys.value.includes(metricKey(metric)) }
-function setMetricVisible(metric: DiagnosisMetric, visible: boolean) {
-  const key = metricKey(metric)
-  hiddenMetricKeys.value = visible ? hiddenMetricKeys.value.filter(item => item !== key) : [...new Set([...hiddenMetricKeys.value, key])]
-  localStorage.setItem('waterx-hidden-diagnosis-metrics', JSON.stringify(hiddenMetricKeys.value))
+const resultCategories = ['进水水质','进水特征','出水水质','处理效能','污泥性状','沿程分析']
+const processCategories = ['水量控制','曝气控制','回流控制','排泥控制','加药控制','搅拌控制']
+const metricCategoryPrefixes: Record<string,string> = {
+  '进水水质':'INQ', '进水特征':'INC', '出水水质':'EFQ', '处理效能':'EFF', '污泥性状':'SLD',
+  '水量控制':'FLW', '曝气控制':'AIR', '回流控制':'RFL',
+  '排泥控制':'WSL', '加药控制':'CHE', '搅拌控制':'MIX', '沿程分析':'PRF'
 }
+const newMetricForm = reactive({ category: '进水水质', name: '', unit: 'mg/L', meaning: '', dataType: 'DECIMAL', valueSource: 'MANUAL', required: false, fillSpec: '' })
+const allDiagnosisMetrics = computed(() => [...diagnosisMetrics, ...expertResultMetrics, ...customMetrics])
+function metricKey(metric: Pick<DiagnosisMetric, 'category' | 'name'>) { return `${metric.category}::${metric.name}` }
+const calculatedMetricFormulas: Record<string,string> = {
+  '进水特征::VFA/COD':'[INQ-016] ÷ [INQ-001]',
+  '进水特征::SCOD/COD':'[INQ-017] ÷ [INQ-001]',
+  '进水特征::BOD₅/COD':'[INQ-002] ÷ [INQ-001]',
+  '进水特征::SS/COD':'[INQ-003] ÷ [INQ-001]',
+  '进水特征::COD/TN':'[INQ-001] ÷ [INQ-005]',
+  '进水特征::BOD₅/TN':'[INQ-002] ÷ [INQ-005]',
+  '进水特征::碱度/NH₃-N':'[INQ-010] ÷ [INQ-004]',
+  '进水特征::NH₃-N/TN':'[INQ-004] ÷ [INQ-005]',
+  '进水特征::COD/TP':'[INQ-001] ÷ [INQ-006]',
+  '进水特征::BOD₅/TP':'[INQ-002] ÷ [INQ-006]',
+  '进水特征::PO₄-P/TP':'[INQ-015] ÷ [INQ-006]',
+  '处理效能::COD去除率':'([INQ-001] − [EFQ-001]) ÷ [INQ-001] × 100',
+  '处理效能::BOD₅去除率':'([INQ-002] − [EFQ-002]) ÷ [INQ-002] × 100',
+  '处理效能::SS去除率':'([INQ-003] − [EFQ-003]) ÷ [INQ-003] × 100',
+  '处理效能::NH₃-N去除率':'([INQ-004] − [EFQ-004]) ÷ [INQ-004] × 100',
+  '处理效能::TN去除率':'([INQ-005] − [EFQ-005]) ÷ [INQ-005] × 100',
+  '处理效能::TP去除率':'([INQ-006] − [EFQ-006]) ÷ [INQ-006] × 100',
+  '处理效能::理论脱氮率':'MODEL_DENITRIFICATION()',
+  '处理效能::实际脱氮率':'[EFF-005]',
+  '处理效能::总氮放弃率':'CALC_TN_BYPASS()',
+  '处理效能::碳源消耗比':'CALC_CARBON_CONSUMPTION()',
+  '沿程分析::缺氧段 COD 去除量':'PROFILE_DELTA(COD,ANOXIC)',
+  '沿程分析::缺氧段 TN 去除量':'PROFILE_DELTA(TN,ANOXIC)',
+  '沿程分析::好氧段 NH₃-N 去除量':'PROFILE_DELTA(NH3,AEROBIC)',
+  '沿程分析::反硝化速率':'PROFILE_DENITRIFICATION_RATE()',
+  '沿程分析::硝化速率':'PROFILE_NITRIFICATION_RATE()',
+  '沿程分析::生化除磷率':'PROFILE_TP_REMOVAL_RATE()',
+  '沿程分析::厌氧释磷比例':'PROFILE_ANAEROBIC_RELEASE_RATE()',
+  '污泥性状::MLVSS/MLSS':'[SLD-002] ÷ [SLD-001]',
+  '污泥性状::SVI':'[SLD-004] × 10000 ÷ [SLD-001]',
+  '污泥性状::SRT':'CALC_SRT()',
+  '污泥性状::SRT-理论计算':'MODEL_SRT()',
+  '污泥性状::SRT-固体量法':'CALC_SRT_SOLIDS()',
+  '污泥性状::SRT-排泥流量法':'CALC_SRT_WASTE_FLOW()',
+  '污泥性状::BOD₅/MLSS':'[INQ-002] ÷ [SLD-001]',
+  '污泥性状::COD/MLSS':'[INQ-001] ÷ [SLD-001]',
+  '污泥性状::BOD/MLVSS':'[INQ-002] ÷ [SLD-002]',
+  '污泥性状::NH₃/MLVSS':'[INQ-004] ÷ [SLD-002]',
+  '污泥性状::TN/MLVSS':'[INQ-005] ÷ [SLD-002]',
+  '污泥性状::NO₃-N/MLSS':'[INQ-007] ÷ [SLD-001]',
+  '水量控制::水量负荷率':'[FLW-001] ÷ DESIGN_FLOW() × 100',
+  '水量控制::厌氧段HRT':'ANAEROBIC_VOLUME() ÷ [FLW-001]',
+  '水量控制::缺氧段HRT':'ANOXIC_VOLUME() ÷ [FLW-001]',
+  '水量控制::好氧段HRT':'AEROBIC_VOLUME() ÷ [FLW-001]',
+  '水量控制::总HRT':'TOTAL_VOLUME() ÷ [FLW-001]',
+  '曝气控制::单位水量曝气量':'[AIR-003] ÷ [FLW-001]',
+  '曝气控制::当前气水比':'[AIR-011] × 1440 ÷ [FLW-001]',
+  '曝气控制::当前曝气电单耗':'BLOWER_POWER() ÷ [FLW-001]',
+  '曝气控制::曝气电单耗基线偏离度':'[AIR-013] ÷ [AIR-014] × 100',
+  '曝气控制::膜片堵塞率':'(CURRENT_PRESSURE() − NEW_PRESSURE()) ÷ 7 × 100',
+  '回流控制::内回流比':'INTERNAL_RECYCLE_FLOW() ÷ [FLW-001] × 100',
+  '回流控制::外回流比':'EXTERNAL_RECYCLE_FLOW() ÷ [FLW-001] × 100',
+  '排泥控制::估算SRT':'CALC_SRT_WASTE_FLOW()',
+  '加药控制::吨水药耗':'([CHE-001] + [CHE-002]) ÷ [FLW-001]',
+  '加药控制::碳源折合COD投加量':'CARBON_DOSE() × PURITY() × COD_EQUIVALENT()',
+  '加药控制::理论碳源投加量':'CARBON_BALANCE_TARGET()',
+  '加药控制::理论出水碱度':'INFLUENT_ALKALINITY() − NITRIFICATION_ALK() + DENITRIFICATION_ALK()',
+  '加药控制::需补充碱度':'80 − THEORETICAL_EFFLUENT_ALKALINITY()',
+  '搅拌控制::平均运行率':'[MIX-003] ÷ 24 × 100',
+  '曝气控制::填料投加容积比':'CARRIER_VOLUME() ÷ MBBR_VOLUME() × 100',
+  '曝气控制::曝气流化气水比':'FLUIDIZATION_AIR() × 1440 ÷ [FLW-001]',
+  '曝气控制::MBBR系统电单耗':'MBBR_DAILY_POWER() ÷ [FLW-001]',
+  '污泥性状::填料折合总污泥浓度':'BIOFILM_EQUIVALENT_MLSS() + FREE_MLSS()',
+  '曝气控制::填料表面硝化负荷':'MBBR_NH3_LOAD() ÷ CARRIER_SURFACE()'
+}
+function defaultFormulaFor(metric: Pick<DiagnosisMetric,'category'|'name'>) { return calculatedMetricFormulas[metricKey(metric)] || '' }
+type MetricModuleKey = 'design' | 'condition' | 'entry' | 'diagnosis'
+const moduleMetricLabels: Record<MetricModuleKey,string> = { design:'工艺设计标准', condition:'工况矩阵', entry:'运行数据填报', diagnosis:'工艺诊断分析' }
+const moduleMetricDefaultScopes: Record<string,MetricModuleKey[]> = {
+  '沿程分析::缺氧段 COD 去除量':['diagnosis'], '沿程分析::缺氧段 TN 去除量':['diagnosis'], '沿程分析::好氧段 NH₃-N 去除量':['diagnosis'],
+  '沿程分析::反硝化速率':['diagnosis'], '沿程分析::硝化速率':['diagnosis'], '沿程分析::生化除磷率':['diagnosis'], '沿程分析::厌氧释磷比例':['diagnosis'],
+  '水量控制::设计处理水量':['design'], '水量控制::生化池设计组数':['design'], '水量控制::二沉池设计组数':['design'],
+  '水量控制::厌氧段有效池容':['design'], '水量控制::缺氧段有效池容':['design'], '水量控制::好氧段有效池容':['design'],
+  '水量控制::二沉池有效池容':['design'], '水量控制::设计最低水温':['design'],
+  '曝气控制::曝气器类型':['design'], '曝气控制::曝气膜片尺寸':['design'], '曝气控制::曝气膜片材质':['design'], '曝气控制::曝气器总安装数量':['design'],
+  '曝气控制::曝气器浸没水深':['design'], '曝气控制::风机额定风量':['design'], '曝气控制::风机额定出口升压':['design'],
+  '曝气控制::实际运行风量':['condition','entry','diagnosis'], '曝气控制::当前气水比':['condition','diagnosis'],
+  '曝气控制::当前曝气电单耗':['condition','diagnosis'], '曝气控制::曝气电单耗基线':['condition','diagnosis'],
+  '曝气控制::曝气电单耗基线偏离度':['condition','diagnosis'], '曝气控制::当前风机出口升压':['condition','entry','diagnosis'],
+  '曝气控制::膜片堵塞率':['condition','diagnosis'],
+  '加药控制::碳源名称':['condition','entry','diagnosis'], '加药控制::碳源溶液纯度':['condition','entry','diagnosis'],
+  '加药控制::碳源投加单耗':['condition','entry','diagnosis'], '加药控制::混凝剂名称':['condition','entry','diagnosis'],
+  '加药控制::混凝剂浓度':['condition','entry','diagnosis'], '加药控制::混凝剂投加单耗':['condition','entry','diagnosis'],
+  '加药控制::碳源折合COD投加量':['condition','diagnosis'], '加药控制::理论碳源投加量':['condition','diagnosis'],
+  '加药控制::理论出水碱度':['condition','diagnosis'], '加药控制::需补充碱度':['condition','diagnosis'],
+  '曝气控制::MBBR填料区池容':['design','diagnosis'], '曝气控制::填料比表面积':['design','diagnosis'], '曝气控制::投加填料总体积':['design','diagnosis'],
+  '曝气控制::填料投加位置':['design','diagnosis'], '曝气控制::单个填料干重':['design','diagnosis'], '曝气控制::单个填料体积':['design','diagnosis'],
+  '曝气控制::曝气流化风量':['condition','entry','diagnosis'], '曝气控制::填料区溶解氧':['condition','entry','diagnosis'],
+  '污泥性状::填料区游离污泥MLSS':['condition','entry','diagnosis'], '污泥性状::填料区游离污泥MLVSS':['condition','entry','diagnosis'],
+  '曝气控制::填料投加容积比':['condition','diagnosis'], '曝气控制::曝气流化气水比':['condition','diagnosis'],
+  '曝气控制::MBBR系统电单耗':['condition','diagnosis'], '污泥性状::填料折合总污泥浓度':['condition','diagnosis'],
+  '曝气控制::填料表面硝化负荷':['condition','diagnosis']
+}
+const activeModuleMetricManager = ref<MetricModuleKey|null>(null)
+const activeMetricBoard = ref('')
+const metricDraftSnapshot = ref<{settings:string;overrides:string;custom:string;customProcess:string}|null>(null)
+const metricCreationTargetModule = ref<MetricModuleKey|null>(null)
+const moduleMetricSearch = ref('')
+const moduleMetricOverrides = reactive<Record<MetricModuleKey,Record<string,boolean>>>(JSON.parse(localStorage.getItem('waterx-module-metric-overrides') || 'null') || { design:{}, condition:{}, entry:{}, diagnosis:{} })
+function moduleMetricDefaultEnabled(metric: Pick<DiagnosisMetric,'category'|'name'>, module: MetricModuleKey) {
+  const scoped = moduleMetricDefaultScopes[metricKey(metric)]
+  if (scoped) return scoped.includes(module)
+  return module === 'entry' ? !defaultFormulaFor(metric) : true
+}
+function isMetricEnabledInModule(metric: Pick<DiagnosisMetric,'category'|'name'>, module: MetricModuleKey|null) {
+  if (!module) return false
+  if (settingFor(metric).hidden) return false
+  const key = metricKey(metric)
+  return Object.prototype.hasOwnProperty.call(moduleMetricOverrides[module],key) ? moduleMetricOverrides[module][key] : moduleMetricDefaultEnabled(metric,module)
+}
+function setMetricEnabledInModule(metric: Pick<DiagnosisMetric,'category'|'name'>, module: MetricModuleKey|null, enabled: boolean) { if (module) moduleMetricOverrides[module][metricKey(metric)] = enabled }
+function openModuleMetricManager(module: MetricModuleKey, board = '') {
+  metricDraftSnapshot.value={settings:JSON.stringify(metricSettings),overrides:JSON.stringify(moduleMetricOverrides),custom:JSON.stringify(customMetrics),customProcess:JSON.stringify(customProcessMetrics)}
+  activeModuleMetricManager.value=module; activeMetricBoard.value=board; moduleMetricSearch.value=''; if(board)newMetricForm.category=board
+}
+function closeModuleMetricManager() {
+  const snapshot=metricDraftSnapshot.value
+  if(snapshot) {
+    Object.keys(metricSettings).forEach(key=>delete metricSettings[key]); Object.assign(metricSettings,JSON.parse(snapshot.settings))
+    const savedOverrides=JSON.parse(snapshot.overrides); (Object.keys(moduleMetricOverrides) as MetricModuleKey[]).forEach(module=>moduleMetricOverrides[module]=savedOverrides[module]||{})
+    customMetrics.splice(0,customMetrics.length,...JSON.parse(snapshot.custom)); customProcessMetrics.splice(0,customProcessMetrics.length,...JSON.parse(snapshot.customProcess))
+    localStorage.setItem('waterx-custom-diagnosis-metrics',snapshot.custom); localStorage.setItem('waterx-custom-process-metrics',snapshot.customProcess)
+  }
+  metricDraftSnapshot.value=null; activeModuleMetricManager.value=null; activeMetricBoard.value=''; showNewMetricForm.value=false
+}
+function saveModuleMetricSettings() { localStorage.setItem('waterx-module-metric-overrides', JSON.stringify(moduleMetricOverrides)); saveMetricSettings(); metricDraftSnapshot.value=null; activeModuleMetricManager.value=null; activeMetricBoard.value=''; showNewMetricForm.value=false }
+function startMetricCreationFromModule() { metricCreationTargetModule.value=activeModuleMetricManager.value; showNewMetricForm.value=true }
+function cancelModuleMetricCreation() { metricCreationTargetModule.value=null; showNewMetricForm.value=false }
+const visibleDiagnosisMetrics = computed(() => allDiagnosisMetrics.value.filter(metric => isMetricEnabledInModule(metric,'diagnosis')))
 function addCustomMetric() {
-  const metric: DiagnosisMetric = { category:newMetricForm.category, name:newMetricForm.name, unit:newMetricForm.unit, meaning:newMetricForm.meaning, design:'—', target:'—', actual:'—', deviation:null, level:'normal' }
+  const metric: DiagnosisMetric = { code:nextMetricCode(newMetricForm.category), category:newMetricForm.category, name:newMetricForm.name, unit:newMetricForm.unit, meaning:newMetricForm.meaning, design:'—', target:'—', actual:'—', deviation:null, level:'normal' }
   if (processCategories.includes(newMetricForm.category)) { customProcessMetrics.push(metric); localStorage.setItem('waterx-custom-process-metrics', JSON.stringify(customProcessMetrics)) }
   else { customMetrics.push(metric); localStorage.setItem('waterx-custom-diagnosis-metrics', JSON.stringify(customMetrics)) }
-  metricSettings[metricKey(newMetricForm)] = { designEnabled: true, conditionEnabled: true, entryEnabled: newMetricForm.valueSource==='MANUAL', diagnosisEnabled: true, mode: 'CENTER', healthyPct: 10, warningPct: 50, dataType:newMetricForm.dataType, valueSource:newMetricForm.valueSource, formula:newMetricForm.formula }
+  metricSettings[metricKey(newMetricForm)] = { mode: 'CENTER', healthyPct: 10, warningPct: 50, dataType:newMetricForm.dataType, valueSource:newMetricForm.valueSource, required:newMetricForm.required, fillSpec:newMetricForm.fillSpec, hidden:false, displayName:'', displayUnit:'' }
+  ;(['design','condition','entry','diagnosis'] as MetricModuleKey[]).forEach(module => { moduleMetricOverrides[module][metricKey(metric)] = module===metricCreationTargetModule.value })
   localStorage.setItem('waterx-custom-diagnosis-metrics', JSON.stringify(customMetrics))
   saveMetricSettings()
-  Object.assign(newMetricForm, { category: '进水水质', name: '', unit: 'mg/L', meaning: '', dataType: 'DECIMAL', valueSource: 'MANUAL', formula: '' })
+  localStorage.setItem('waterx-module-metric-overrides', JSON.stringify(moduleMetricOverrides))
+  Object.assign(newMetricForm, { category: activeMetricBoard.value || '进水水质', name: '', unit: 'mg/L', meaning: '', dataType: 'DECIMAL', valueSource: 'MANUAL', required:false, fillSpec:'' })
+  metricCreationTargetModule.value=null
   showNewMetricForm.value = false
 }
-function appendFormulaToken(token: string) { newMetricForm.formula += `${newMetricForm.formula ? ' ' : ''}${token}` }
-function appendFormulaReference() { if (!formulaReference.value) return; appendFormulaToken(`[${formulaReference.value}]`); formulaReference.value='' }
 type DeviationMode = 'UPPER' | 'LOWER' | 'CENTER'
-type MetricSetting = { designEnabled: boolean; conditionEnabled: boolean; entryEnabled: boolean; diagnosisEnabled: boolean; mode: DeviationMode; healthyPct: number; warningPct: number; dataType: string; valueSource: string; formula: string }
+type MetricSetting = { mode: DeviationMode; healthyPct: number; warningPct: number; dataType: string; valueSource: string; required: boolean; fillSpec: string; hidden: boolean; displayName: string; displayUnit: string }
 const savedMetricSettings = JSON.parse(localStorage.getItem('waterx-metric-settings') || '{}') as Record<string, MetricSetting>
 const metricSettings = reactive<Record<string, MetricSetting>>(savedMetricSettings)
 function settingFor(metric: Pick<DiagnosisMetric, 'category'|'name'> & Partial<Pick<DiagnosisMetric,'unit'>>) {
   const key = metricKey(metric)
-  const inferredType = metric.unit==='%' ? 'PERCENT' : metric.unit==='定性' ? 'TEXT' : 'DECIMAL'
-  const defaults: MetricSetting = { designEnabled: true, conditionEnabled: true, entryEnabled: true, diagnosisEnabled: true, mode: 'CENTER', healthyPct: 10, warningPct: 50, dataType:inferredType, valueSource:'MANUAL', formula:'' }
+  const inferredType = metric.unit==='%' ? 'PERCENT' : ['定性','文本'].includes(metric.unit||'') ? 'TEXT' : ['台','组','个','次/d'].includes(metric.unit||'') ? 'INTEGER' : 'DECIMAL'
+  const defaults: MetricSetting = { mode: 'CENTER', healthyPct: 10, warningPct: 50, dataType:inferredType, valueSource:'MANUAL', required:false, fillSpec:'', hidden:false, displayName:'', displayUnit:'' }
   if (!metricSettings[key]) metricSettings[key] = defaults
-  else Object.assign(metricSettings[key], { ...defaults, ...metricSettings[key] })
+  else {
+    const saved = metricSettings[key]
+    Object.assign(saved, { ...defaults, ...saved })
+    if (saved.valueSource==='CALCULATED') saved.valueSource='MANUAL'
+    if (['定性','文本'].includes(metric.unit||'')) saved.dataType='TEXT'
+    if (['台','组','个','次/d'].includes(metric.unit||'') && saved.dataType==='DECIMAL') saved.dataType='INTEGER'
+  }
   return metricSettings[key]
 }
+function metricDisplayName(metric: Pick<DiagnosisMetric,'category'|'name'> & Partial<Pick<DiagnosisMetric,'unit'>>) { return settingFor(metric).displayName || metric.name }
+function metricDisplayUnit(metric: Pick<DiagnosisMetric,'category'|'name'> & Partial<Pick<DiagnosisMetric,'unit'>>) { return settingFor(metric).displayUnit || metric.unit || '—' }
 function saveMetricSettings() {
   localStorage.setItem('waterx-metric-settings', JSON.stringify(metricSettings))
-  hiddenMetricKeys.value = allDiagnosisMetrics.value.filter(metric => !settingFor(metric).diagnosisEnabled).map(metricKey)
-  localStorage.setItem('waterx-hidden-diagnosis-metrics', JSON.stringify(hiddenMetricKeys.value))
 }
 const designEditMode = ref(false)
 const designValues = reactive<Record<string,string>>(Object.fromEntries(diagnosisMetrics.map(metric => [metricKey(metric), metric.design])))
-const designMetrics = computed(() => allManagedMetrics.value.filter(metric => settingFor(metric).designEnabled))
+function isDerivedMetric(metric: Pick<DiagnosisMetric,'category'|'name'>) {
+  return Boolean(defaultFormulaFor(metric)) || metric.category==='进水特征' || metric.category==='处理效能' || metric.category==='沿程分析' || /(去除率|负荷率|消耗比|放弃率|理论|折合|气水比|回流比|偏离度|HRT|SVI|MLVSS\/MLSS)/.test(metric.name)
+}
+const designMetrics = computed(() => allManagedMetrics.value.filter(metric => isMetricEnabledInModule(metric,'design') && !isDerivedMetric(metric) && metric.design!=='—'))
+function designValueFor(metric: DiagnosisMetric) { const value=designValues[metricKey(metric)]; return value && value!=='—' ? value : metric.design }
+function beginDesignEdit() { designMetrics.value.forEach(metric=>{if(!designValues[metricKey(metric)]||designValues[metricKey(metric)]==='—')designValues[metricKey(metric)]=metric.design}); designEditMode.value=true }
 function saveDesignValues() { localStorage.setItem('waterx-process-design-values', JSON.stringify(designValues)); designEditMode.value = false }
 Object.assign(designValues, JSON.parse(localStorage.getItem('waterx-process-design-values') || '{}'))
 
@@ -239,7 +406,7 @@ const selectedCondition = computed(() => conditionPlans.find(item => item.id ===
 const conditionEditMode = ref(false)
 const showConditionForm = ref(false)
 const conditionForm = reactive({ name: '', effectiveDate: new Date().toISOString().slice(0,10), description: '' })
-const conditionMetrics = computed(() => allManagedMetrics.value.filter(metric => settingFor(metric).conditionEnabled))
+const conditionMetrics = computed(() => allManagedMetrics.value.filter(metric => isMetricEnabledInModule(metric,'condition') && !isDerivedMetric(metric) && metric.target!=='—'))
 function createCondition() {
   const plan: ConditionPlan = { id: `condition-${Date.now()}`, ...conditionForm, targets: Object.fromEntries(conditionMetrics.value.map(metric => [metricKey(metric), metric.target])) }
   conditionPlans.push(plan); selectedConditionId.value = plan.id; showConditionForm.value = false; conditionEditMode.value = true
@@ -250,48 +417,172 @@ function deleteCondition(id: string) { if (!window.confirm('确定删除该工�
 
 const entryDate = ref(new Date().toISOString().slice(0,10))
 const entryValues = reactive<Record<string,string>>(Object.fromEntries(diagnosisMetrics.map(metric => [metricKey(metric), metric.actual])))
-const entryMetrics = computed(() => allManagedMetrics.value.filter(metric => settingFor(metric).entryEnabled && settingFor(metric).valueSource!=='CALCULATED'))
+const entryMetrics = computed(() => allManagedMetrics.value.filter(metric => !isDerivedMetric(metric) && isMetricEnabledInModule(metric,'entry')))
+const entryCategoryOrder = [...resultCategories,...processCategories]
+const entryGroups = computed(() => entryCategoryOrder.map(category => ({ category, metrics:entryMetrics.value.filter(metric=>metric.category===category) })).filter(group=>group.metrics.length))
+const activeEntryCategory = ref('进水水质')
+const activeEntryGroup = computed(() => entryGroups.value.find(group=>group.category===activeEntryCategory.value) || entryGroups.value[0])
+const calculatedEntryMetricCount = computed(() => allManagedMetrics.value.filter(metric=>Boolean(defaultFormulaFor(metric))).length)
+function filledEntryCount(metrics: DiagnosisMetric[]) { return metrics.filter(metric=>String(entryValues[metricKey(metric)]||'').trim()).length }
 const entrySavedAt = ref('尚未保存')
 const entryRevision = ref(0)
-function saveOperationEntry() { localStorage.setItem(`waterx-operation-entry-${diagnosisLine.value}-${entryDate.value}`, JSON.stringify(entryValues)); entrySavedAt.value = new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}); entryRevision.value++ }
-function loadOperationEntry() { Object.assign(entryValues, Object.fromEntries(entryMetrics.value.map(metric => [metricKey(metric), metric.actual])), JSON.parse(localStorage.getItem(`waterx-operation-entry-${diagnosisLine.value}-${entryDate.value}`) || '{}')) }
+type OperationEntryRecord = {
+  id: string
+  siteId: string
+  siteName: string
+  siteCode: string
+  line: string
+  entryDate: string
+  scenario: string
+  values: Record<string,string>
+  status: 'DRAFT' | 'COMPLETED' | 'LOCKED'
+  updatedBy: string
+  updatedAt: string
+}
+const operationEntryStorageKey = 'waterx-operation-entry-records'
+const operationEntryView = ref<'list'|'form'>('list')
+const operationEntryRecords = reactive<OperationEntryRecord[]>([])
+const selectedOperationEntryIds = ref<string[]>([])
+const editingOperationEntryId = ref('')
+const entryConditionId = ref(selectedConditionId.value)
+const entryCondition = computed(() => conditionPlans.find(item=>item.id===entryConditionId.value) || conditionPlans[0])
+const operationEntryFilters = reactive({ keyword:'', line:'', dateFrom:'', dateTo:'', status:'', codMin:'', codMax:'' })
+const filteredOperationEntryRecords = computed(() => operationEntryRecords.filter(record => {
+  const keyword = operationEntryFilters.keyword.trim().toLowerCase()
+  if (keyword && ![record.siteName,record.siteCode,record.line,record.entryDate,record.scenario,record.updatedBy].some(value=>value.toLowerCase().includes(keyword))) return false
+  if (operationEntryFilters.line && record.line!==operationEntryFilters.line) return false
+  if (operationEntryFilters.dateFrom && record.entryDate<operationEntryFilters.dateFrom) return false
+  if (operationEntryFilters.dateTo && record.entryDate>operationEntryFilters.dateTo) return false
+  if (operationEntryFilters.status && record.status!==operationEntryFilters.status) return false
+  const codMetric = allManagedMetrics.value.find(metric=>metricCode(metric)==='INQ-001')
+  const cod = codMetric ? numericValue(record.values[metricKey(codMetric)]) : null
+  if (operationEntryFilters.codMin && (cod===null || cod<Number(operationEntryFilters.codMin))) return false
+  if (operationEntryFilters.codMax && (cod===null || cod>Number(operationEntryFilters.codMax))) return false
+  return true
+}).sort((a,b)=>b.entryDate.localeCompare(a.entryDate)))
+const allFilteredOperationEntriesSelected = computed(() => filteredOperationEntryRecords.value.length>0 && filteredOperationEntryRecords.value.every(record=>selectedOperationEntryIds.value.includes(record.id)))
+function persistOperationEntryRecords() { localStorage.setItem(operationEntryStorageKey,JSON.stringify(operationEntryRecords)) }
+function replaceEntryValues(values: Record<string,string>) {
+  Object.keys(entryValues).forEach(key=>delete entryValues[key])
+  entryMetrics.value.forEach(metric=>{ entryValues[metricKey(metric)] = values[metricKey(metric)] || '' })
+}
+function newOperationEntry() {
+  editingOperationEntryId.value=''; entryDate.value=new Date().toISOString().slice(0,10); diagnosisLine.value='一期生化线'; entryConditionId.value=conditionPlans[0]?.id||''
+  replaceEntryValues({}); entrySavedAt.value='尚未保存'; activeEntryCategory.value=entryGroups.value[0]?.category||'进水水质'; operationEntryView.value='form'
+}
+function editOperationEntry(record?: OperationEntryRecord) {
+  if(!record && selectedOperationEntryIds.value.length!==1){window.alert('请选择一条日报记录进行编辑');return}
+  const target = record || operationEntryRecords.find(item=>selectedOperationEntryIds.value.includes(item.id))
+  if (!target) { window.alert('请先选择一条日报记录'); return }
+  if(target.status==='LOCKED'){window.alert('该日报已锁定，请先解锁后再编辑');return}
+  editingOperationEntryId.value=target.id; entryDate.value=target.entryDate; diagnosisLine.value=target.line
+  entryConditionId.value=conditionPlans.find(plan=>plan.name===target.scenario)?.id || conditionPlans[0]?.id || ''
+  replaceEntryValues(target.values); entrySavedAt.value=target.updatedAt; activeEntryCategory.value=entryGroups.value[0]?.category||'进水水质'; operationEntryView.value='form'
+}
+function saveOperationEntry() {
+  const sourceValues=Object.fromEntries(entryMetrics.value.map(metric=>[metricKey(metric),entryValues[metricKey(metric)]||'']))
+  const existingForDay = operationEntryRecords.find(record=>record.line===diagnosisLine.value && record.entryDate===entryDate.value && record.id!==editingOperationEntryId.value)
+  if (existingForDay && !window.confirm('该工艺线在所选日期已有日报，是否覆盖原记录？')) return
+  const filled = Object.values(sourceValues).filter(value=>String(value).trim()).length
+  const now = new Date().toLocaleString('zh-CN',{hour12:false})
+  const record: OperationEntryRecord = {
+    id: editingOperationEntryId.value || existingForDay?.id || `entry-${Date.now()}`,
+    siteId:selectedSite.value, siteName:currentSite.value?.name||'第一污水处理厂（示例）', siteCode:currentSite.value?.code||'PS001',
+    line:diagnosisLine.value, entryDate:entryDate.value, scenario:entryCondition.value?.name||'未指定工况', values:sourceValues,
+    status:filled===entryMetrics.value.length?'COMPLETED':'DRAFT', updatedBy:'平台管理员', updatedAt:now
+  }
+  const index=operationEntryRecords.findIndex(item=>item.id===record.id)
+  if(index>=0) operationEntryRecords.splice(index,1,record); else operationEntryRecords.push(record)
+  persistOperationEntryRecords()
+  localStorage.setItem(`waterx-operation-entry-${diagnosisLine.value}-${entryDate.value}`, JSON.stringify(sourceValues))
+  entrySavedAt.value=now; entryRevision.value++; selectedOperationEntryIds.value=[record.id]; operationEntryView.value='list'
+}
+function loadOperationEntry() {
+  const record=operationEntryRecords.find(item=>item.line===diagnosisLine.value&&item.entryDate===entryDate.value)
+  replaceEntryValues(record?.values || JSON.parse(localStorage.getItem(`waterx-operation-entry-${diagnosisLine.value}-${entryDate.value}`) || '{}'))
+  editingOperationEntryId.value=record?.id||''; entrySavedAt.value=record?.updatedAt||'尚未保存'
+}
+function deleteOperationEntries(ids=selectedOperationEntryIds.value) {
+  if(!ids.length){window.alert('请先选择要删除的日报记录');return}
+  if(operationEntryRecords.some(record=>ids.includes(record.id)&&record.status==='LOCKED')){window.alert('所选日报中包含已锁定记录，请先解锁');return}
+  if(!window.confirm(`确定删除已选择的 ${ids.length} 条日报吗？`))return
+  ids.forEach(id=>{const index=operationEntryRecords.findIndex(item=>item.id===id);if(index>=0)operationEntryRecords.splice(index,1)})
+  selectedOperationEntryIds.value=[];persistOperationEntryRecords()
+}
+function toggleLockOperationEntries(){
+  if(!selectedOperationEntryIds.value.length){window.alert('请先选择要锁定或解锁的日报记录');return}
+  const records=operationEntryRecords.filter(record=>selectedOperationEntryIds.value.includes(record.id))
+  const unlock=records.every(record=>record.status==='LOCKED')
+  records.forEach(record=>{record.status=unlock?(Object.values(record.values).filter(Boolean).length===entryMetrics.value.length?'COMPLETED':'DRAFT'):'LOCKED'})
+  persistOperationEntryRecords()
+}
+function toggleAllOperationEntries(checked:boolean){selectedOperationEntryIds.value=checked?filteredOperationEntryRecords.value.map(record=>record.id):[]}
+function resetOperationEntryFilters(){Object.assign(operationEntryFilters,{keyword:'',line:'',dateFrom:'',dateTo:'',status:'',codMin:'',codMax:''})}
+function recordMetricValue(record:OperationEntryRecord,code:string){const metric=allManagedMetrics.value.find(item=>metricCode(item)===code);return metric?(record.values[metricKey(metric)]||'—'):'—'}
+function statusText(status:OperationEntryRecord['status']){return status==='COMPLETED'?'已完成':status==='LOCKED'?'已锁定':'草稿'}
 function numericValue(value: string | undefined) { const match = value?.replace(/,/g,'').match(/-?\d+(\.\d+)?/); return match ? Number(match[0]) : null }
+function evaluateMetricStatus(metric:DiagnosisMetric,target:string,actual:string){
+  const actualNumber=numericValue(actual), rule=settingFor(metric)
+  if(actualNumber===null)return {deviation:metric.deviation,level:metric.level}
+  const range=target.replace(/\s/g,'').match(/(-?\d+(?:\.\d+)?)\s*[～~-]\s*(-?\d+(?:\.\d+)?)/)
+  let deviation: number|null = null
+  if(range){const low=Number(range[1]!),high=Number(range[2]!);deviation=actualNumber<low?(actualNumber-low)/low*100:actualNumber>high?(actualNumber-high)/high*100:0}
+  else {const bound=numericValue(target);if(bound===null||bound===0)return {deviation:metric.deviation,level:metric.level};deviation=(actualNumber-bound)/bound*100;if(target.includes('≥')&&actualNumber>=bound)deviation=0;if(target.includes('≤')&&actualNumber<=bound)deviation=0}
+  const distance=rule.mode==='UPPER'?Math.max(0,deviation):rule.mode==='LOWER'?Math.max(0,-deviation):Math.abs(deviation)
+  const level:DiagnosisLevel=distance<=rule.healthyPct?'normal':distance<=rule.warningPct?'warning':'alarm'
+  return {deviation,level}
+}
 const analysisRows = computed<DiagnosisMetric[]>(() => {
   entryRevision.value
   const plan = conditionPlans.find(item => item.name === diagnosisScenario.value) || conditionPlans[0]
   const savedActuals = JSON.parse(localStorage.getItem(`waterx-operation-entry-${diagnosisLine.value}-${diagnosisDate.value}`) || '{}') as Record<string,string>
   return visibleDiagnosisMetrics.value.map(metric => {
     const key = metricKey(metric)
-    const design = designValues[key] || metric.design
+    const design = designValueFor(metric)
     const target = plan?.targets[key] || metric.target
     const actual = savedActuals[key] || metric.actual
-    const targetNumber = numericValue(target), actualNumber = numericValue(actual)
-    const deviation = targetNumber !== null && targetNumber !== 0 && actualNumber !== null ? ((actualNumber-targetNumber)/targetNumber)*100 : metric.deviation
-    const rule = settingFor(metric)
-    let level: DiagnosisLevel = 'normal'
-    if (deviation !== null) {
-      const distance = rule.mode === 'UPPER' ? Math.max(0,deviation) : rule.mode === 'LOWER' ? Math.max(0,-deviation) : Math.abs(deviation)
-      level = distance <= rule.healthyPct ? 'normal' : distance <= rule.warningPct ? 'warning' : 'alarm'
-    }
+    const {deviation,level}=evaluateMetricStatus(metric,target,actual)
     return { ...metric, design, target, actual, deviation, level }
   })
 })
 const expandedDiagnosisCategories = ref<Record<string,boolean>>({ '污泥性状': true })
 const analysisGroups = computed(() => resultCategories.map(category => ({ category, metrics:analysisRows.value.filter(metric=>metric.category===category) })).filter(group=>group.metrics.length))
 function toggleDiagnosisCategory(category: string) { expandedDiagnosisCategories.value[category] = !expandedDiagnosisCategories.value[category] }
-type ControlIndicator = { name: string; unit: string; target: string; actual: string; deviation: number | null; level: DiagnosisLevel }
+type ControlIndicator = { code?: string; name: string; unit: string; design?: string; target: string; actual: string; deviation: number | null; level: DiagnosisLevel; meaning?: string }
 type ControlGroup = { key: string; title: string; level: DiagnosisLevel; indicators: ControlIndicator[] }
 const expandedControlGroups = ref<Record<string, boolean>>({})
-const controlGroups: ControlGroup[] = [
+const rawControlGroups: ControlGroup[] = [
   { key: 'water', title: '水量与停留时间', level: 'normal', indicators: [
+    { name: '设计处理水量', unit: '万m³/d', design: '7.00', target: '7.00', actual: '7.00', deviation: 0, level: 'normal', meaning: '设计文件确定的工艺线处理规模' },
+    { name: '生化池设计组数', unit: '组', design: '2', target: '2', actual: '2', deviation: 0, level: 'normal' },
+    { name: '二沉池设计组数', unit: '组', design: '4', target: '4', actual: '4', deviation: 0, level: 'normal' },
+    { name: '厌氧段有效池容', unit: '万m³', design: '0.71', target: '0.71', actual: '0.71', deviation: 0, level: 'normal' },
+    { name: '缺氧段有效池容', unit: '万m³', design: '0.85', target: '0.85', actual: '0.85', deviation: 0, level: 'normal' },
+    { name: '好氧段有效池容', unit: '万m³', design: '1.75', target: '1.75', actual: '1.75', deviation: 0, level: 'normal' },
+    { name: '二沉池有效池容', unit: '万m³', design: '1.37', target: '1.37', actual: '1.37', deviation: 0, level: 'normal' },
+    { name: '设计最低水温', unit: '℃', design: '12', target: '≥12', actual: '13.6', deviation: null, level: 'normal' },
     { name: '日进水量', unit: '万m³/d', target: '7.00', actual: '6.82', deviation: -2.6, level: 'normal' }, { name: '水量负荷率', unit: '%', target: '93.3', actual: '90.9', deviation: -2.6, level: 'normal' },
     { name: '厌氧段HRT', unit: 'h', target: '1.6', actual: '1.7', deviation: 6.3, level: 'normal' }, { name: '缺氧段HRT', unit: 'h', target: '3.2', actual: '3.4', deviation: 6.3, level: 'normal' },
     { name: '好氧段HRT', unit: 'h', target: '7.5', actual: '7.8', deviation: 4.0, level: 'normal' }, { name: '总HRT', unit: 'h', target: '15.0', actual: '15.6', deviation: 4.0, level: 'normal' }
   ] },
   { key: 'air', title: '曝气控制', level: 'warning', indicators: [
+    { name: '曝气器类型', unit: '文本', design: '盘式微孔', target: '盘式微孔', actual: '盘式微孔', deviation: null, level: 'normal' },
+    { name: '曝气膜片尺寸', unit: 'mm', design: 'φ300', target: 'φ300', actual: 'φ300', deviation: null, level: 'normal' },
+    { name: '曝气膜片材质', unit: '文本', design: '三元乙丙橡胶', target: '三元乙丙橡胶', actual: '三元乙丙橡胶', deviation: null, level: 'normal' },
+    { name: '曝气器总安装数量', unit: '个', design: '16955', target: '16955', actual: '16955', deviation: 0, level: 'normal' },
+    { name: '曝气器浸没水深', unit: 'm', design: '5.8', target: '5.8', actual: '5.8', deviation: 0, level: 'normal' },
+    { name: '风机额定风量', unit: 'Nm³/min', design: '250', target: '≤250', actual: '90', deviation: null, level: 'normal' },
+    { name: '风机额定出口升压', unit: 'kPa', design: '70', target: '≤70', actual: '68', deviation: null, level: 'normal' },
     { name: '好氧段DO', unit: 'mg/L', target: '1.5～2.5', actual: '1.35', deviation: -10.0, level: 'warning' }, { name: '运行风机', unit: '台', target: '2', actual: '2', deviation: 0, level: 'normal' },
     { name: '日曝气量', unit: '万Nm³', target: '16.5', actual: '15.8', deviation: -4.2, level: 'normal' }, { name: '主管压力', unit: 'kPa', target: '65', actual: '61', deviation: -6.2, level: 'normal' },
-    { name: '风机运行时长', unit: 'h', target: '48', actual: '46', deviation: -4.2, level: 'normal' }, { name: '单位水量曝气量', unit: 'Nm³/m³', target: '2.36', actual: '2.32', deviation: -1.7, level: 'normal' }
+    { name: '风机运行时长', unit: 'h', target: '48', actual: '46', deviation: -4.2, level: 'normal' }, { name: '单位水量曝气量', unit: 'Nm³/m³', target: '2.36', actual: '2.32', deviation: -1.7, level: 'normal' },
+    { name: '实际运行风量', unit: 'Nm³/min', target: '85～100', actual: '90', deviation: null, level: 'normal' },
+    { name: '当前气水比', unit: '—', target: '5～7', actual: '6.4', deviation: null, level: 'normal' },
+    { name: '当前曝气电单耗', unit: 'kWh/m³', target: '≤0.080', actual: '0.076', deviation: null, level: 'normal' },
+    { name: '曝气电单耗基线', unit: 'kWh/m³', target: '≤0.075', actual: '0.072', deviation: null, level: 'normal' },
+    { name: '曝气电单耗基线偏离度', unit: '%', target: '≤10', actual: '5.6', deviation: null, level: 'normal' },
+    { name: '当前风机出口升压', unit: 'kPa', target: '≤70', actual: '68', deviation: null, level: 'normal' },
+    { name: '膜片堵塞率', unit: '%', target: '≤20', actual: '14.3', deviation: null, level: 'normal' }
   ] },
   { key: 'inner', title: '内回流控制', level: 'warning', indicators: [
     { name: '内回流量', unit: '万m³/d', target: '12.60', actual: '9.75', deviation: -22.6, level: 'warning' }, { name: '内回流比', unit: '%', target: '180', actual: '143', deviation: -20.6, level: 'warning' },
@@ -307,17 +598,127 @@ const controlGroups: ControlGroup[] = [
   ] },
   { key: 'chemical', title: '加药控制', level: 'normal', indicators: [
     { name: '碳源投加量', unit: 't/d', target: '3.0～3.5', actual: '3.2', deviation: null, level: 'normal' }, { name: '除磷药剂量', unit: 't/d', target: '1.0～1.2', actual: '1.1', deviation: null, level: 'normal' },
-    { name: '吨水药耗', unit: 'kg/m³', target: '0.060', actual: '0.063', deviation: 5.0, level: 'normal' }, { name: '投加泵运行', unit: '台', target: '2', actual: '2', deviation: 0, level: 'normal' }
+    { name: '吨水药耗', unit: 'kg/m³', target: '0.060', actual: '0.063', deviation: 5.0, level: 'normal' }, { name: '投加泵运行', unit: '台', target: '2', actual: '2', deviation: 0, level: 'normal' },
+    { name: '碳源名称', unit: '文本', target: '乙酸钠', actual: '乙酸钠', deviation: null, level: 'normal' },
+    { name: '碳源溶液纯度', unit: '%', target: '≥20', actual: '20', deviation: 0, level: 'normal' },
+    { name: '碳源投加单耗', unit: 'mg/L', target: '按碳氮平衡', actual: '18.5', deviation: null, level: 'normal' },
+    { name: '混凝剂名称', unit: '文本', target: 'PAC', actual: 'PAC', deviation: null, level: 'normal' },
+    { name: '混凝剂浓度', unit: '%', target: '10', actual: '10', deviation: 0, level: 'normal' },
+    { name: '混凝剂投加单耗', unit: 'mg/L', target: '≤20', actual: '18', deviation: null, level: 'normal' },
+    { name: '碳源折合COD投加量', unit: 'mg/L', target: '按工况核算', actual: '32.0', deviation: null, level: 'normal' },
+    { name: '理论碳源投加量', unit: 't/d', target: '按工况核算', actual: '2.9', deviation: null, level: 'normal' },
+    { name: '理论出水碱度', unit: 'mg/L', target: '≥80', actual: '92', deviation: null, level: 'normal' },
+    { name: '需补充碱度', unit: 'mg/L', target: '0', actual: '0', deviation: 0, level: 'normal' }
   ] },
   { key: 'mix', title: '搅拌控制', level: 'normal', indicators: [
     { name: '运行搅拌器', unit: '台', target: '6', actual: '6', deviation: 0, level: 'normal' }, { name: '平均运行率', unit: '%', target: '80～90', actual: '83', deviation: null, level: 'normal' },
     { name: '日运行时长', unit: 'h', target: '20', actual: '19.9', deviation: -0.5, level: 'normal' }, { name: '异常设备', unit: '台', target: '0', actual: '0', deviation: 0, level: 'normal' }
+  ] },
+  { key: 'mbbr', title: 'MBBR填料运行', level: 'normal', indicators: [
+    { name: 'MBBR填料区池容', unit: 'm³', design: '17604', target: '17604', actual: '17604', deviation: 0, level: 'normal' },
+    { name: '填料比表面积', unit: 'm²/m³', design: '500', target: '500', actual: '500', deviation: 0, level: 'normal' },
+    { name: '投加填料总体积', unit: 'm³', design: '5423', target: '5423', actual: '5423', deviation: 0, level: 'normal' },
+    { name: '填料投加位置', unit: '文本', design: '好氧段前/中/后部', target: '按设计', actual: '好氧段中部', deviation: null, level: 'normal' },
+    { name: '单个填料干重', unit: 'g', design: '0.831', target: '0.831', actual: '0.831', deviation: 0, level: 'normal' },
+    { name: '单个填料体积', unit: 'cm³', design: '4.906', target: '4.906', actual: '4.906', deviation: 0, level: 'normal' },
+    { name: '曝气流化风量', unit: 'm³/min', target: '550～650', actual: '600', deviation: null, level: 'normal' },
+    { name: '填料区溶解氧', unit: 'mg/L', target: '1.0～2.0', actual: '1.3', deviation: null, level: 'normal' },
+    { name: '填料区游离污泥MLSS', unit: 'mg/L', target: '5500～7500', actual: '6670', deviation: null, level: 'normal' },
+    { name: '填料区游离污泥MLVSS', unit: 'mg/L', target: '3000～4500', actual: '3670', deviation: null, level: 'normal' },
+    { name: '填料投加容积比', unit: '%', target: '25～35', actual: '30.8', deviation: null, level: 'normal' },
+    { name: '曝气流化气水比', unit: '—', target: '4～6', actual: '4.3', deviation: null, level: 'normal' },
+    { name: 'MBBR系统电单耗', unit: 'kWh/m³', target: '≤0.15', actual: '0.121', deviation: null, level: 'normal' },
+    { name: '填料折合总污泥浓度', unit: 'mg/L', target: '≥7000', actual: '8460', deviation: null, level: 'normal' },
+    { name: '填料表面硝化负荷', unit: 'gNH₃-N/(m²·d)', target: '按设计校核', actual: '0.43', deviation: null, level: 'normal' }
   ] }
 ]
-const builtInProcessMetrics = computed<DiagnosisMetric[]>(() => controlGroups.flatMap(group => group.indicators.map(indicator => ({ category:group.title, name:indicator.name, unit:indicator.unit, design:'—', target:indicator.target, actual:indicator.actual, deviation:indicator.deviation, level:indicator.level, meaning:`${group.title}过程控制指标` }))))
+const mbbrProcessNames = ['MBBR填料区池容','填料比表面积','投加填料总体积','填料投加位置','单个填料干重','单个填料体积','曝气流化风量','填料区溶解氧','填料投加容积比','曝气流化气水比','MBBR系统电单耗','填料表面硝化负荷']
+const rawGroup = (key: string) => rawControlGroups.find(group=>group.key===key)!
+const controlGroups: ControlGroup[] = [
+  { ...rawGroup('water'), title:'水量控制' },
+  { ...rawGroup('air'), indicators:[...rawGroup('air').indicators,...rawGroup('mbbr').indicators.filter(item=>mbbrProcessNames.includes(item.name))] },
+  { key:'recycle', title:'回流控制', level:'warning', indicators:[
+    ...rawGroup('inner').indicators.map(item=>({...item,name:item.name==='运行泵'?'内回流运行泵':item.name==='平均频率'?'内回流平均频率':item.name})),
+    ...rawGroup('outer').indicators.map(item=>({...item,name:item.name==='运行泵'?'外回流运行泵':item.name}))
+  ] },
+  rawGroup('sludge'), rawGroup('chemical'), rawGroup('mix')
+].map(group=>({...group,level:group.indicators.some(item=>item.level==='alarm')?'alarm':group.indicators.some(item=>item.level==='warning')?'warning':'normal'} as ControlGroup))
+const builtInProcessMetrics = computed<DiagnosisMetric[]>(() => controlGroups.flatMap(group => group.indicators.map(indicator => ({ category:group.title, name:indicator.name, unit:indicator.unit, design:indicator.design||'—', target:indicator.target, actual:indicator.actual, deviation:indicator.deviation, level:indicator.level, meaning:indicator.meaning||`${group.title}过程控制指标` }))))
 const allManagedMetrics = computed(() => [...allDiagnosisMetrics.value, ...builtInProcessMetrics.value, ...customProcessMetrics])
-const displayControlGroups = computed<ControlGroup[]>(() => controlGroups.map(group => ({ ...group, indicators:[...group.indicators, ...customProcessMetrics.filter(metric=>metric.category===group.title).map(metric=>({name:metric.name,unit:metric.unit,target:metric.target,actual:metric.actual,deviation:metric.deviation,level:metric.level}))].filter(indicator=>settingFor({category:group.title,name:indicator.name}).diagnosisEnabled) })))
-function toggleControlGroup(key: string) { expandedControlGroups.value[key] = !expandedControlGroups.value[key] }
+const moduleConfigMetrics = computed(() => {
+  const module = activeModuleMetricManager.value
+  if (!module) return []
+  const keyword = moduleMetricSearch.value.trim().toLowerCase()
+  return allManagedMetrics.value
+    .filter(metric => module!=='entry' || !defaultFormulaFor(metric))
+    .filter(metric => !activeMetricBoard.value || metric.category===activeMetricBoard.value)
+    .filter(metric => !keyword || `${metric.category} ${metric.name} ${metric.meaning}`.toLowerCase().includes(keyword))
+})
+function metricCode(metric: Pick<DiagnosisMetric,'category'|'name'> & Partial<Pick<DiagnosisMetric,'code'>>) {
+  if (metric.code) return metric.code
+  const prefix = metricCategoryPrefixes[metric.category] || 'GEN'
+  const siblings = allManagedMetrics.value.filter(item => item.category===metric.category)
+  const index = siblings.findIndex(item => metricKey(item)===metricKey(metric))
+  return `${prefix}-${String(Math.max(1,index+1)).padStart(3,'0')}`
+}
+function nextMetricCode(category: string) {
+  const prefix = metricCategoryPrefixes[category] || 'GEN'
+  const numbers = allManagedMetrics.value.filter(item=>item.category===category).map(item=>Number(metricCode(item).split('-').at(-1))).filter(Number.isFinite)
+  return `${prefix}-${String((numbers.length ? Math.max(...numbers) : 0)+1).padStart(3,'0')}`
+}
+const newMetricCodePreview = computed(() => nextMetricCode(newMetricForm.category))
+const displayControlGroups = computed<ControlGroup[]>(() => controlGroups.map(group => ({ ...group, indicators:[...group.indicators, ...customProcessMetrics.filter(metric=>metric.category===group.title).map(metric=>({code:metric.code,name:metric.name,unit:metric.unit,target:metric.target,actual:metric.actual,deviation:metric.deviation,level:metric.level}))].filter(indicator=>isMetricEnabledInModule({category:group.title,name:indicator.name},'diagnosis')) })))
+const activeResultCategory = ref('进水水质')
+const activeAnalysisGroup = computed(()=>analysisGroups.value.find(group=>group.category===activeResultCategory.value)||analysisGroups.value[0])
+const activeControlGroupKey = ref('water')
+const activeControlGroup = computed(()=>displayControlGroups.value.find(group=>group.key===activeControlGroupKey.value)||displayControlGroups.value[0])
+function statusCounts(items: Array<{level:DiagnosisLevel}>) { return { normal:items.filter(item=>item.level==='normal').length, warning:items.filter(item=>item.level==='warning').length, alarm:items.filter(item=>item.level==='alarm').length } }
+type ProcessAnalysisReport = { id:string; siteName:string; line:string; reportDate:string; scenario:string; status:'DRAFT'|'LOCKED'; values:Record<string,string>; updatedBy:string; updatedAt:string }
+const processReportStorageKey='waterx-process-analysis-reports'
+const processReports=reactive<ProcessAnalysisReport[]>(JSON.parse(localStorage.getItem(processReportStorageKey)||'[]'))
+const processReportView=ref<'list'|'form'>('list')
+const selectedProcessReportIds=ref<string[]>([])
+const editingProcessReportId=ref('')
+const processReportDate=ref(new Date().toISOString().slice(0,10))
+const processReportFilters=reactive({keyword:'',dateFrom:'',dateTo:'',status:''})
+const processReportGroups=computed(()=>[
+  ...analysisGroups.value.map(group=>({category:group.category,metrics:group.metrics.map(metric=>({name:metricDisplayName(metric),value:metric.actual}))})),
+  ...displayControlGroups.value.map(group=>({category:group.title,metrics:group.indicators.map(metric=>({name:metricDisplayName({category:group.title,...metric}),value:metric.actual}))}))
+])
+const filteredProcessReports=computed(()=>processReports.filter(record=>{
+  const keyword=processReportFilters.keyword.trim().toLowerCase()
+  if(keyword && !`${record.siteName} ${record.line} ${record.scenario} ${record.updatedBy}`.toLowerCase().includes(keyword))return false
+  if(processReportFilters.dateFrom&&record.reportDate<processReportFilters.dateFrom)return false
+  if(processReportFilters.dateTo&&record.reportDate>processReportFilters.dateTo)return false
+  if(processReportFilters.status&&record.status!==processReportFilters.status)return false
+  return true
+}).sort((a,b)=>b.reportDate.localeCompare(a.reportDate)))
+function persistProcessReports(){localStorage.setItem(processReportStorageKey,JSON.stringify(processReports))}
+function newProcessReport(){editingProcessReportId.value='';processReportDate.value=diagnosisDate.value;processReportView.value='form'}
+function editProcessReport(record?:ProcessAnalysisReport){
+  const target=record||processReports.find(item=>selectedProcessReportIds.value.includes(item.id))
+  if(!target){window.alert('请选择一条工艺分析日报');return}if(target.status==='LOCKED'){window.alert('该日报已锁定，请先解锁');return}
+  editingProcessReportId.value=target.id;processReportDate.value=target.reportDate;diagnosisLine.value=target.line;diagnosisScenario.value=target.scenario;processReportView.value='form'
+}
+function saveProcessReport(){
+  const values:Record<string,string>={};processReportGroups.value.forEach(group=>group.metrics.forEach(metric=>values[`${group.category}::${metric.name}`]=metric.value))
+  const now=new Date().toLocaleString('zh-CN',{hour12:false});const existing=processReports.find(item=>item.id===editingProcessReportId.value)
+  const record:ProcessAnalysisReport={id:existing?.id||`process-report-${Date.now()}`,siteName:currentSite.value?.name||'第一污水处理厂（示例）',line:diagnosisLine.value,reportDate:processReportDate.value,scenario:diagnosisScenario.value,status:existing?.status||'DRAFT',values,updatedBy:'平台管理员',updatedAt:now}
+  const index=processReports.findIndex(item=>item.id===record.id);if(index>=0)processReports.splice(index,1,record);else processReports.push(record)
+  selectedProcessReportIds.value=[record.id];persistProcessReports();processReportView.value='list'
+}
+function deleteProcessReports(){if(!selectedProcessReportIds.value.length){window.alert('请先选择日报');return}if(processReports.some(item=>selectedProcessReportIds.value.includes(item.id)&&item.status==='LOCKED')){window.alert('已锁定日报不能删除');return}if(!window.confirm('确定删除所选工艺分析日报吗？'))return;selectedProcessReportIds.value.forEach(id=>{const index=processReports.findIndex(item=>item.id===id);if(index>=0)processReports.splice(index,1)});selectedProcessReportIds.value=[];persistProcessReports()}
+function toggleProcessReportLock(){if(!selectedProcessReportIds.value.length){window.alert('请先选择日报');return}processReports.filter(item=>selectedProcessReportIds.value.includes(item.id)).forEach(item=>item.status=item.status==='LOCKED'?'DRAFT':'LOCKED');persistProcessReports()}
+function processReportValue(record:ProcessAnalysisReport,category:string,name:string){return record.values[`${category}::${name}`]||'—'}
+function deleteMetricFromBoard(metric: DiagnosisMetric) {
+  const customCollection = processCategories.includes(metric.category) ? customProcessMetrics : customMetrics
+  const index = customCollection.findIndex(item=>metricKey(item)===metricKey(metric))
+  if(index>=0) {
+    customCollection.splice(index,1)
+    localStorage.setItem(processCategories.includes(metric.category)?'waterx-custom-process-metrics':'waterx-custom-diagnosis-metrics',JSON.stringify(customCollection))
+  } else settingFor(metric).hidden=true
+  setMetricEnabledInModule(metric,activeModuleMetricManager.value,false)
+}
 function refreshDiagnosis() {
   diagnosisUpdatedAt.value = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
 }
@@ -327,6 +728,126 @@ function deviationWidth(value: number | null) {
 }
 
 const currentSite = computed(() => sites.value.find(s => s.id === selectedSite.value))
+function ensureOperationEntryRecords() {
+  const stored = JSON.parse(localStorage.getItem(operationEntryStorageKey) || 'null') as OperationEntryRecord[] | null
+  if (stored?.length) { operationEntryRecords.splice(0,operationEntryRecords.length,...stored); return }
+  const baseDate = new Date()
+  const seeded = Array.from({length:7},(_,index)=>{
+    const date = new Date(baseDate); date.setDate(baseDate.getDate()-index)
+    const values = Object.fromEntries(entryMetrics.value.map((metric,metricIndex)=>{
+      const raw=metric.actual||''; const number=numericValue(raw)
+      return [metricKey(metric),number===null?raw:String(Number((number*(1+(index-3)*0.006+(metricIndex%3)*0.002)).toFixed(3)))]
+    }))
+    return {
+      id:`demo-entry-${date.toISOString().slice(0,10)}`,siteId:selectedSite.value,siteName:'第一污水处理厂（示例）',siteCode:'PS001',
+      line:index===5?'二期生化线':'一期生化线',entryDate:date.toISOString().slice(0,10),scenario:index<3?'夏季工况':'冬季工况',values,
+      status:(index===0?'DRAFT':index===6?'LOCKED':'COMPLETED') as OperationEntryRecord['status'],updatedBy:index%2?'运行部经理':'值班运行员',updatedAt:`${date.toISOString().slice(0,10)} ${index%2?'17:35':'08:20'}`
+    }
+  })
+  operationEntryRecords.push(...seeded); persistOperationEntryRecords()
+}
+ensureOperationEntryRecords()
+
+type LabRecordType = 'COD'|'NH3'|'SS'|'FC'
+type LabSampleRow = { source:string; name:string; volume:string; dilution:string; start:string; end:string; absorbance:string; containerNo:string; tareFirst:string; tareSecond:string; loadedFirst:string; loadedSecond:string; medium:string; plateNo:string; colonyCount:string }
+type LabOriginalRecord = {
+  id:string; type:LabRecordType; locked:boolean; recordNo:string; roomTemperature:string; humidity:string; sampleDate:string; testDate:string; analyst:string; reviewer:string; notes:string
+  c1:string; standardVolume:string; standardStart1:string; standardEnd1:string; standardStart2:string; standardEnd2:string; blankStart:string; blankEnd:string
+  instrumentModel:string; wavelength:string; referenceSolution:string; standardSolution:string; curveSlope:string; curveIntercept:string; a0:string
+  dryingTemperature:string; cultureTemperature:string; cultureTime:string; defaultMedium:string
+  samples:LabSampleRow[]; updatedAt:string
+}
+const labRecordStorageKey='waterx-lab-original-records'
+const labRecordView=ref<'folders'|'list'|'form'>('folders')
+const labRecordType=ref<LabRecordType>('COD')
+const labRecordSelectedId=ref('')
+const labRecordFilters=reactive({keyword:'',dateFrom:'',dateTo:'',locked:''})
+const labFolders=[{type:'COD' as const,name:'COD原始记录',method:'容量法 · HJ 828—2017',icon:'COD'},{type:'NH3' as const,name:'氨氮检测记录',method:'分光光度法 · HJ 535—2009',icon:'NH₃-N'},{type:'SS' as const,name:'SS原始记录',method:'重量法 · GB 11901—89',icon:'SS'},{type:'FC' as const,name:'粪大肠菌群记录',method:'滤膜法 · HJ 347.1—2018',icon:'FC'}]
+function emptyLabSample(type:LabRecordType):LabSampleRow{
+  const base={source:'第一污水处理厂（示例）',name:'进水口',volume:'10',dilution:'1',start:'',end:'',absorbance:'',containerNo:'1',tareFirst:'',tareSecond:'',loadedFirst:'',loadedSecond:'',medium:'MFC',plateNo:'1',colonyCount:''}
+  if(type==='COD')return{...base,start:'0.00',end:'21.10'}
+  if(type==='NH3')return{...base,name:'出水口',volume:'2.00',absorbance:'0.203'}
+  if(type==='SS')return{...base,volume:'100.0',tareFirst:'0.0678',tareSecond:'0.0677',loadedFirst:'0.0741',loadedSecond:'0.0740'}
+  return{...base,volume:'20.00',colonyCount:'1'}
+}
+function createLabRecordModel(type:LabRecordType,date=new Date().toISOString().slice(0,10)):LabOriginalRecord{
+  return {id:`lab-${Date.now()}-${Math.random().toString(36).slice(2,6)}`,type,locked:false,recordNo:`${type}-${date.replaceAll('-','')}-01`,roomTemperature:'23',humidity:'48',sampleDate:date,testDate:date,analyst:'运行工01',reviewer:'',notes:'',
+    c1:'0.2500',standardVolume:'5.00',standardStart1:'0.00',standardEnd1:'25.10',standardStart2:'0.00',standardEnd2:'24.90',blankStart:'0.00',blankEnd:'24.50',
+    instrumentModel:'TU1900',wavelength:'420',referenceSolution:'去离子水',standardSolution:'氯化铵标准溶液10μg氨氮/mL',curveSlope:'0.006530',curveIntercept:'0.003170',a0:'0.020',dryingTemperature:'103～105',cultureTemperature:'44.5',cultureTime:'24±2',defaultMedium:'m-FC',samples:[emptyLabSample(type)],updatedAt:new Date().toLocaleString('zh-CN',{hour12:false})}
+}
+const labOriginalRecords=reactive<LabOriginalRecord[]>([])
+const storedLabRecords=JSON.parse(localStorage.getItem(labRecordStorageKey)||'null') as LabOriginalRecord[]|null
+if(storedLabRecords?.length)labOriginalRecords.push(...storedLabRecords);else{
+  const cod=createLabRecordModel('COD','2026-08-15');cod.id='lab-demo-cod-1';cod.recordNo='COD-20260815-01';cod.updatedAt='2026-08-15 16:30'
+  const ammonia=createLabRecordModel('NH3','2026-08-15');ammonia.id='lab-demo-nh3-1';ammonia.recordNo='NH3-20260815-01';ammonia.updatedAt='2026-08-15 17:10'
+  labOriginalRecords.push(cod,ammonia);localStorage.setItem(labRecordStorageKey,JSON.stringify(labOriginalRecords))
+}
+if(!labOriginalRecords.some(record=>record.type==='SS')){const ss=createLabRecordModel('SS','2026-08-15');ss.id='lab-demo-ss-1';ss.recordNo='SS-20260815-01';ss.updatedAt='2026-08-15 17:25';labOriginalRecords.push(ss)}
+if(!labOriginalRecords.some(record=>record.type==='FC')){const fc=createLabRecordModel('FC','2026-08-15');fc.id='lab-demo-fc-1';fc.recordNo='FC-20260815-01';fc.updatedAt='2026-08-15 18:05';labOriginalRecords.push(fc)}
+localStorage.setItem(labRecordStorageKey,JSON.stringify(labOriginalRecords))
+const labRecordForm=ref<LabOriginalRecord>(createLabRecordModel('COD'))
+const filteredLabRecords=computed(()=>labOriginalRecords.filter(record=>record.type===labRecordType.value).filter(record=>{
+  const keyword=labRecordFilters.keyword.trim().toLowerCase();if(keyword&&![record.recordNo,record.analyst,record.reviewer,...record.samples.flatMap(row=>[row.source,row.name])].some(value=>value.toLowerCase().includes(keyword)))return false
+  if(labRecordFilters.dateFrom&&record.testDate<labRecordFilters.dateFrom)return false;if(labRecordFilters.dateTo&&record.testDate>labRecordFilters.dateTo)return false
+  if(labRecordFilters.locked==='locked'&&!record.locked)return false;if(labRecordFilters.locked==='unlocked'&&record.locked)return false;return true
+}).sort((a,b)=>b.testDate.localeCompare(a.testDate)))
+const selectedLabRecord=computed(()=>labOriginalRecords.find(record=>record.id===labRecordSelectedId.value)||filteredLabRecords.value[0])
+function labNumber(value:string){const number=Number(value);return Number.isFinite(number)?number:0}
+function volumeUsed(row:{start:string;end:string}){return Math.max(0,labNumber(row.end)-labNumber(row.start))}
+function codStandardAverage(record:LabOriginalRecord){return (volumeUsed({start:record.standardStart1,end:record.standardEnd1})+volumeUsed({start:record.standardStart2,end:record.standardEnd2}))/2}
+function codC2(record:LabOriginalRecord){const average=codStandardAverage(record);return average?labNumber(record.c1)*labNumber(record.standardVolume)/average:0}
+function codResult(record:LabOriginalRecord,row:LabSampleRow){const volume=labNumber(row.volume);return volume?codC2(record)*(volumeUsed({start:record.blankStart,end:record.blankEnd})-volumeUsed(row))*labNumber(row.dilution)*8000/volume:0}
+function ammoniaMass(record:LabOriginalRecord,row:LabSampleRow){const slope=labNumber(record.curveSlope);return slope?(labNumber(row.absorbance)-labNumber(record.curveIntercept))/slope:0}
+function ammoniaResult(record:LabOriginalRecord,row:LabSampleRow){const volume=labNumber(row.volume);return volume?ammoniaMass(record,row)*labNumber(row.dilution)/volume:0}
+function stableWeight(first:string,second:string){return labNumber(second||first)}
+function ssNetWeight(row:LabSampleRow){return stableWeight(row.loadedFirst,row.loadedSecond)-stableWeight(row.tareFirst,row.tareSecond)}
+function ssResult(row:LabSampleRow){const volume=labNumber(row.volume);return volume?ssNetWeight(row)*1000000/volume:0}
+function fecalColiformResult(row:LabSampleRow){const volume=labNumber(row.volume);return volume?labNumber(row.colonyCount)*1000*labNumber(row.dilution)/volume:0}
+function labResult(record:LabOriginalRecord,row:LabSampleRow){if(record.type==='COD')return codResult(record,row);if(record.type==='NH3')return ammoniaResult(record,row);if(record.type==='SS')return ssResult(row);return fecalColiformResult(row)}
+function formatTwoDigitScientific(value:number){if(value<100)return String(Math.round(value));const exponent=Math.floor(Math.log10(value));const mantissa=Number((value/10**exponent).toPrecision(2));return `${mantissa}×10^${exponent}`}
+function formatLabResult(record:LabOriginalRecord,row:LabSampleRow){const value=labResult(record,row);if(record.type==='NH3')return value.toFixed(3);if(record.type==='FC')return formatTwoDigitScientific(value);return value<100?String(Math.round(value)):String(Number(value.toPrecision(3)))}
+function labRecordTitle(type:LabRecordType){return type==='COD'?'COD 容量法原始记录':type==='NH3'?'氨氮（分光光度法）检测记录':type==='SS'?'SS 重量法原始记录':'粪大肠菌群（滤膜法）检测记录'}
+function labTypeShort(type:LabRecordType){return type==='COD'?'CODcr':type==='NH3'?'NH₃-N':type==='SS'?'SS':'粪大肠菌群'}
+function labListParameter(record:LabOriginalRecord,index:1|2){if(record.type==='COD')return index===1?`C2 ${codC2(record).toFixed(6)}`:`V标均 ${codStandardAverage(record).toFixed(2)}`;if(record.type==='NH3')return index===1?`仪器 ${record.instrumentModel}`:`波长 ${record.wavelength} nm`;if(record.type==='SS')return index===1?`干燥 ${record.dryingTemperature}℃`:`样品 ${record.samples.length} 个`;return index===1?`培养 ${record.cultureTemperature}℃`:`${record.cultureTime} h`}
+function persistLabRecords(){localStorage.setItem(labRecordStorageKey,JSON.stringify(labOriginalRecords))}
+function openLabFolder(type:LabRecordType){labRecordType.value=type;labRecordSelectedId.value='';labRecordView.value='list'}
+function newLabRecord(){labRecordForm.value=createLabRecordModel(labRecordType.value);labRecordView.value='form'}
+function editLabRecord(record=selectedLabRecord.value){if(!record)return;if(record.locked){window.alert('该原始记录已锁定，请先解锁');return}labRecordForm.value=JSON.parse(JSON.stringify(record));labRecordView.value='form'}
+function saveLabRecord(){const form=labRecordForm.value;const sameDay=labOriginalRecords.find(record=>record.type===form.type&&record.testDate===form.testDate&&record.id!==form.id);if(sameDay){if(!window.confirm('该检测项目在所选日期已有原始记录，是否覆盖原记录？'))return;form.id=sameDay.id}form.updatedAt=new Date().toLocaleString('zh-CN',{hour12:false});const index=labOriginalRecords.findIndex(record=>record.id===form.id);if(index>=0)labOriginalRecords.splice(index,1,JSON.parse(JSON.stringify(form)));else labOriginalRecords.push(JSON.parse(JSON.stringify(form)));persistLabRecords();labRecordSelectedId.value=form.id;labRecordView.value='list'}
+function deleteLabRecord(){const record=selectedLabRecord.value;if(!record)return;if(record.locked){window.alert('该原始记录已锁定，请先解锁');return}if(!window.confirm(`确定删除原始记录 ${record.recordNo} 吗？`))return;const index=labOriginalRecords.findIndex(item=>item.id===record.id);if(index>=0)labOriginalRecords.splice(index,1);labRecordSelectedId.value='';persistLabRecords()}
+function toggleLabRecordLock(){const record=selectedLabRecord.value;if(!record)return;record.locked=!record.locked;persistLabRecords()}
+function resetLabRecordFilters(){Object.assign(labRecordFilters,{keyword:'',dateFrom:'',dateTo:'',locked:''})}
+function addLabSampleRow(){labRecordForm.value.samples.push(emptyLabSample(labRecordForm.value.type))}
+function deleteLabSampleRow(index:number){if(labRecordForm.value.samples.length===1){window.alert('至少保留一行样品记录');return}labRecordForm.value.samples.splice(index,1)}
+function exportLabRecord(record=selectedLabRecord.value){
+  if(!record)return;const rows=record.samples.map(row=>`<tr><td>${row.source}</td><td>${row.name}</td><td>${row.volume}</td><td>${row.dilution}</td><td>${record.type==='COD'?volumeUsed(row).toFixed(2):record.type==='NH3'?row.absorbance:record.type==='SS'?ssNetWeight(row).toFixed(4):row.colonyCount}</td><td>${formatLabResult(record,row)}</td></tr>`).join('')
+  const html=`<html><meta charset="utf-8"><body><table border="1"><tr><th colspan="6">${labRecordTitle(record.type)}</th></tr><tr><td>原始记录编号</td><td>${record.recordNo}</td><td>室温</td><td>${record.roomTemperature}℃</td><td>湿度</td><td>${record.humidity}%</td></tr><tr><th>样品来源</th><th>样品名称</th><th>取样体积(mL)</th><th>稀释倍数</th><th>${record.type==='COD'?'V耗(mL)':record.type==='NH3'?'A−A0':record.type==='SS'?'W2−W1(g)':'菌落数(个)'}</th><th>检测结果(${record.type==='FC'?'个/L':'mg/L'})</th></tr>${rows}<tr><td>检测日期</td><td>${record.testDate}</td><td>检测人</td><td>${record.analyst}</td><td>复核人</td><td>${record.reviewer}</td></tr></table></body></html>`
+  const url=URL.createObjectURL(new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'}));const anchor=document.createElement('a');anchor.href=url;anchor.download=`${record.recordNo}.xls`;anchor.click();URL.revokeObjectURL(url)
+}
+function printLabRecord(){window.print()}
+
+type LabDailyReport={date:string;projectName:string;reportNo:string;reporter:string;reviewer:string;values:Record<string,string>;updatedAt:string}
+const labReportStorageKey='waterx-lab-daily-reports'
+const labReportView=ref<'folders'|'daily'>('folders')
+const labDailyReports=reactive<LabDailyReport[]>(JSON.parse(localStorage.getItem(labReportStorageKey)||'[]'))
+const labReportMetricKeys=['sewage.ph','sewage.cod','sewage.bod5','sewage.ss','sewage.nh3','sewage.tp','sewage.tn','sewage.no3','sewage.fc','sewage.chloride','sewage.totalSolids','sewage.dissolvedSolids','bio.do','bio.sv','bio.mlss','bio.svi','bio.mlvss','bio.ratio','return.sv','return.mlss','return.svi','return.mlvss','sludge.moistureBefore','sludge.moistureAfter','sludge.phBefore','sludge.phAfter','sludge.organicBefore','sludge.organicAfter','sludge.fcBefore','sludge.fcAfter']
+function createDailyReport(date:string):LabDailyReport{return{date,projectName:'第一污水处理厂（示例）',reportNo:`LAB-D-${date.replaceAll('-','')}`,reporter:'运行工01',reviewer:'',values:Object.fromEntries(labReportMetricKeys.flatMap(key=>key.startsWith('bio.')||key.startsWith('return.')?['A','B','C','D'].map(pool=>[`${key}.${pool}`,'']):[[`${key}.in`,''],[`${key}.out`,'']])),updatedAt:'尚未保存'}}
+const latestLabTestDate=[...labOriginalRecords].sort((a,b)=>b.testDate.localeCompare(a.testDate))[0]?.testDate||new Date().toISOString().slice(0,10)
+const labDailyReport=ref<LabDailyReport>(createDailyReport(latestLabTestDate))
+function loadLabDailyReport(date=labDailyReport.value.date){const saved=labDailyReports.find(report=>report.date===date);labDailyReport.value=saved?JSON.parse(JSON.stringify(saved)):createDailyReport(date)}
+function persistLabDailyReports(){localStorage.setItem(labReportStorageKey,JSON.stringify(labDailyReports))}
+function saveLabDailyReport(){const report=JSON.parse(JSON.stringify(labDailyReport.value)) as LabDailyReport;report.updatedAt=new Date().toLocaleString('zh-CN',{hour12:false});const index=labDailyReports.findIndex(item=>item.date===report.date);if(index>=0)labDailyReports.splice(index,1,report);else labDailyReports.push(report);labDailyReport.value=JSON.parse(JSON.stringify(report));persistLabDailyReports()}
+function refreshLabDailyReport(notify=true){
+  const report=labDailyReport.value;const records=labOriginalRecords.filter(record=>record.testDate===report.date)
+  const metricByType:Record<LabRecordType,string>={COD:'cod',NH3:'nh3',SS:'ss',FC:'fc'}
+  records.forEach(record=>record.samples.forEach(row=>{const side=row.name.includes('出')?'out':'in';report.values[`sewage.${metricByType[record.type]}.${side}`]=formatLabResult(record,row)}))
+  report.updatedAt=new Date().toLocaleString('zh-CN',{hour12:false});if(notify)window.alert(`已从 ${records.length} 张同日期原始记录更新日报数据`)
+}
+function openLabDailyReport(){labReportView.value='daily';loadLabDailyReport(latestLabTestDate);refreshLabDailyReport(false)}
+function changeLabReportDate(){loadLabDailyReport(labDailyReport.value.date);refreshLabDailyReport(false)}
+function reportValue(key:string,side:string){return labDailyReport.value.values[`${key}.${side}`]||''}
+function exportLabDailyReport(){const report=labDailyReport.value;const rows=Object.entries(report.values).map(([key,value])=>`<tr><td>${key}</td><td>${value}</td></tr>`).join('');const html=`<html><meta charset="utf-8"><body><table border="1"><tr><th colspan="2">化验日报表</th></tr><tr><td>项目名称</td><td>${report.projectName}</td></tr><tr><td>统计报表编号</td><td>${report.reportNo}</td></tr><tr><td>日期</td><td>${report.date}</td></tr>${rows}<tr><td>填报人</td><td>${report.reporter}</td></tr><tr><td>审核人</td><td>${report.reviewer}</td></tr></table></body></html>`;const url=URL.createObjectURL(new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'}));const anchor=document.createElement('a');anchor.href=url;anchor.download=`化验日报-${report.date}.xls`;anchor.click();URL.revokeObjectURL(url)}
+function printLabDailyReport(){window.print()}
 const departmentCount = computed(() => units.value.filter(u => u.unitType === 'DEPARTMENT').length)
 const teamCount = computed(() => units.value.filter(u => u.unitType === 'TEAM').length)
 const areaRows = computed(() => {
@@ -555,30 +1076,31 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
     </form>
   </main>
 
-  <div v-else class="app-shell">
+  <div v-else class="app-shell" :class="{sidebarCollapsed}">
     <header class="global-topbar">
       <div class="topbar-brand"><div class="topbar-logo-art" aria-label="WaterX"><img class="logo-water" src="/waterx-logo-transparent.png" alt="" /><img class="logo-x" src="/waterx-logo-transparent.png" alt="" /></div><span>智慧水务运营平台</span></div>
       <div class="topbar-actions"><div class="topbar-project"><small>当前项目</small><select v-model="selectedSite" @change="changeSite"><option v-for="site in sites" :key="site.id" :value="site.id">{{site.name}}</option></select></div><span class="topbar-divider"></span><div class="topbar-user"><span class="avatar">管</span><div><b>平台管理员</b><small>系统管理</small></div></div><button @click="logout">退出登录</button></div>
     </header>
     <aside>
+      <button class="sidebar-toggle" :title="sidebarCollapsed?'展开导航':'收起导航'" :aria-label="sidebarCollapsed?'展开导航':'收起导航'" @click="sidebarCollapsed=!sidebarCollapsed"><span>{{sidebarCollapsed?'›':'‹'}}</span><b>收起导航</b></button>
       <nav class="module-nav">
         <button class="module-nav-home" :class="{selected:active==='platform'}" @click="active='platform'"><span class="nav-icon">⌂</span><span>首页</span></button>
 
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('production')"><span class="nav-icon">◉</span><span>生产运行</span><i :class="{open:expandedModules.production}">›</i></button>
-          <div v-show="expandedModules.production" class="nav-children"><button :class="{selected:active==='processDesign'}" @click="active='processDesign'">工艺设计标准</button><button :class="{selected:active==='conditionMatrix'}" @click="active='conditionMatrix'">工况矩阵管理</button><button :class="{selected:active==='operationEntry'}" @click="active='operationEntry';loadOperationEntry()">运行数据填报</button><button :class="{selected:active==='processAnalysis'}" @click="active='processAnalysis'">工艺诊断分析</button><button disabled>工艺调整记录 <small>规划中</small></button></div>
+          <button class="nav-group-title" @click="toggleModule('production')"><span class="nav-icon">≋</span><span>生产运行</span><i :class="{open:expandedModules.production}">›</i></button>
+          <div v-show="expandedModules.production" class="nav-children"><button :class="{selected:active==='processDesign'}" @click="active='processDesign'">工艺设计标准</button><button :class="{selected:active==='conditionMatrix'}" @click="active='conditionMatrix'">工况矩阵管理</button><button :class="{selected:active==='operationEntry'}" @click="active='operationEntry';loadOperationEntry()">运行数据填报</button><button :class="{selected:active==='processAnalysis'}" @click="active='processAnalysis'">工艺诊断分析</button><button :class="{selected:active==='processReport'}" @click="active='processReport';processReportView='list'">工艺分析日报</button><button disabled>工艺调整记录 <small>规划中</small></button></div>
         </section>
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('equipment')"><span class="nav-icon">◇</span><span>设备管理</span><i :class="{open:expandedModules.equipment}">›</i></button>
+          <button class="nav-group-title" @click="toggleModule('equipment')"><span class="nav-icon">⚙</span><span>设备管理</span><i :class="{open:expandedModules.equipment}">›</i></button>
           <div v-show="expandedModules.equipment" class="nav-children"><button disabled>设备台账 <small>规划中</small></button><button disabled>维护保养 <small>规划中</small></button></div>
         </section>
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('laboratory')"><span class="nav-icon">⌁</span><span>化验管理</span><i :class="{open:expandedModules.laboratory}">›</i></button>
-          <div v-show="expandedModules.laboratory" class="nav-children"><button disabled>化验任务 <small>规划中</small></button><button disabled>水质分析 <small>规划中</small></button></div>
+          <button class="nav-group-title" @click="toggleModule('laboratory')"><span class="nav-icon">⚗</span><span>化验管理</span><i :class="{open:expandedModules.laboratory}">›</i></button>
+          <div v-show="expandedModules.laboratory" class="nav-children"><button :class="{selected:active==='labRecords'}" @click="active='labRecords';labRecordView='folders'">原始记录管理</button><button :class="{selected:active==='labReports'}" @click="active='labReports';labReportView='folders'">化验报表管理</button><button disabled>化验任务 <small>规划中</small></button><button disabled>水质分析 <small>规划中</small></button></div>
         </section>
 
         <section class="nav-group safety-group" :class="{expanded:expandedModules.safety}">
-          <button class="nav-group-title" @click="toggleModule('safety')"><span class="nav-icon">△</span><span>安全管理</span><i :class="{open:expandedModules.safety}">›</i></button>
+          <button class="nav-group-title" @click="toggleModule('safety')"><span class="nav-icon">⛑</span><span>安全管理</span><i :class="{open:expandedModules.safety}">›</i></button>
           <div v-show="expandedModules.safety" class="nav-children">
             <button :class="{selected:active==='overview'}" @click="active='overview'">安全态势</button>
             <button :class="{selected:active==='org'}" @click="active='org'">组织架构</button>
@@ -597,22 +1119,22 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
         </section>
 
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('energy')"><span class="nav-icon">↯</span><span>节能降耗</span><i :class="{open:expandedModules.energy}">›</i></button>
+          <button class="nav-group-title" @click="toggleModule('energy')"><span class="nav-icon">♻</span><span>节能降耗</span><i :class="{open:expandedModules.energy}">›</i></button>
           <div v-show="expandedModules.energy" class="nav-children"><button disabled>能耗计量 <small>规划中</small></button><button disabled>能效分析 <small>规划中</small></button></div>
         </section>
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('business')"><span class="nav-icon">▥</span><span>经营管理</span><i :class="{open:expandedModules.business}">›</i></button>
+          <button class="nav-group-title" @click="toggleModule('business')"><span class="nav-icon">¥</span><span>经营管理</span><i :class="{open:expandedModules.business}">›</i></button>
           <div v-show="expandedModules.business" class="nav-children"><button disabled>成本预算 <small>规划中</small></button><button disabled>经营分析 <small>规划中</small></button></div>
         </section>
         <section class="nav-group">
           <button class="nav-group-title" @click="toggleModule('basic')"><span class="nav-icon">▦</span><span>基础信息</span><i :class="{open:expandedModules.basic}">›</i></button>
-          <div v-show="expandedModules.basic" class="nav-children"><button :class="{selected:active==='metricConfig'}" @click="active='metricConfig'">指标配置</button><button disabled>工艺线档案 <small>规划中</small></button><button disabled>数据字典 <small>规划中</small></button></div>
+          <div v-show="expandedModules.basic" class="nav-children"><button disabled>工艺线档案 <small>规划中</small></button><button disabled>数据字典 <small>规划中</small></button></div>
         </section>
       </nav>
     </aside>
     <section class="workspace">
       <article>
-        <div v-if="!['platform','processAnalysis','processDesign','conditionMatrix','operationEntry','metricConfig'].includes(active)" class="page-title"><div><p class="eyebrow">{{currentSite?.code}}</p><h1>{{active==='overview' ? '安全态势总览' : active==='org' ? '组织架构' : active==='employee' ? '人员档案' : active==='area' ? '厂区区域管理' : active==='risk' ? '风险分级管控' : active==='inspection' ? '安全检查任务' : active==='hazard'?'隐患排查治理':active==='permit'?'危险作业审批':active==='training'?'安全培训与人员资质':active==='asset'?'设备设施与应急物资':active==='health'?'职业健康管理':active==='investment'?'安全投入管理':'安全承诺与访客告知' }}</h1></div><span class="date-chip">{{ new Date().toLocaleDateString('zh-CN') }}</span></div>
+        <div v-if="!['platform','processAnalysis','processReport','processDesign','conditionMatrix','operationEntry','labRecords','labReports'].includes(active)" class="page-title"><div><p class="eyebrow">{{currentSite?.code}}</p><h1>{{active==='overview' ? '安全态势总览' : active==='org' ? '组织架构' : active==='employee' ? '人员档案' : active==='area' ? '厂区区域管理' : active==='risk' ? '风险分级管控' : active==='inspection' ? '安全检查任务' : active==='hazard'?'隐患排查治理':active==='permit'?'危险作业审批':active==='training'?'安全培训与人员资质':active==='asset'?'设备设施与应急物资':active==='health'?'职业健康管理':active==='investment'?'安全投入管理':'安全承诺与访客告知' }}</h1></div><span class="date-chip">{{ new Date().toLocaleDateString('zh-CN') }}</span></div>
         <p v-if="error" class="error banner">{{error}}</p>
         <template v-if="active==='platform'">
           <section class="dashboard-toolbar"><span>今日运营概览</span><div><button>今日</button><button>本月</button><button>自定义</button></div></section>
@@ -633,64 +1155,197 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
 
           <div class="diagnosis-layout">
             <section class="diagnosis-results">
-              <div class="diagnosis-section-head"><div><p class="eyebrow">结果指标</p><h2>水质、效能与污泥状态</h2></div><button @click="active='metricConfig'">配置指标</button></div>
-              <div class="result-accordion">
-                <section v-for="group in analysisGroups" :key="group.category" class="result-group">
-                  <button class="result-group-title" @click="toggleDiagnosisCategory(group.category)"><span class="diagnosis-dot" :class="group.metrics.some(item=>item.level==='alarm')?'alarm':group.metrics.some(item=>item.level==='warning')?'warning':'normal'"></span><b>{{group.category}}</b><small>{{group.metrics.length}} 项指标</small><i :class="{open:expandedDiagnosisCategories[group.category]}">›</i></button>
-                  <div v-show="expandedDiagnosisCategories[group.category]" class="diagnosis-table-wrap grouped">
-                    <table class="diagnosis-table grouped-table">
-                      <thead><tr><th>序号</th><th>指标</th><th>单位</th><th>设计值</th><th>目标值</th><th>实际值</th><th>偏差与状态</th><th>指标意义</th></tr></thead>
-                      <tbody><tr v-for="(metric,index) in group.metrics" :key="`${metric.category}-${metric.name}`" :class="`diagnosis-row-${metric.level}`">
-                        <td>{{index+1}}</td><td><b>{{metric.name}}</b></td><td>{{metric.unit}}</td><td>{{metric.design}}</td><td>{{metric.target}}</td><td><strong>{{metric.actual}}</strong></td>
+              <nav class="diagnosis-board-tabs" aria-label="结果指标分类">
+                <div v-for="group in analysisGroups" :key="group.category" :class="['diagnosis-board-tab',{selected:activeAnalysisGroup?.category===group.category}]">
+                  <button type="button" @click="activeResultCategory=group.category"><b>{{group.category}}</b><span class="tab-status-counts"><i class="normal" :class="{empty:statusCounts(group.metrics).normal===0}">{{statusCounts(group.metrics).normal}}</i><i class="warning" :class="{empty:statusCounts(group.metrics).warning===0}">{{statusCounts(group.metrics).warning}}</i><i class="alarm" :class="{empty:statusCounts(group.metrics).alarm===0}">{{statusCounts(group.metrics).alarm}}</i></span></button>
+                  <button type="button" class="board-gear" title="配置指标" :aria-label="`配置${group.category}指标`" @click="openModuleMetricManager('diagnosis',group.category)">⚙</button>
+                </div>
+              </nav>
+              <div v-if="activeAnalysisGroup" class="diagnosis-table-wrap grouped diagnosis-tab-panel">
+                    <div v-if="activeAnalysisGroup.category==='沿程分析'" class="along-course-analysis">
+                      <header><div><b>生化系统沿程采样矩阵</b><span>{{diagnosisDate}} · {{diagnosisLine}} · 数据随分析日期更新</span></div><em>10 个采样点</em></header>
+                      <div class="along-course-table-wrap"><table class="along-course-table"><thead><tr><th>指标</th><th v-for="station in alongCourseStations" :key="station">{{station}}</th><th>过程判断</th></tr></thead><tbody><tr v-for="series in alongCourseSeries" :key="series.name"><th><b>{{series.name}}</b><small>{{series.unit}}</small></th><td v-for="(value,index) in series.values" :key="`${series.name}-${index}`"><span :class="{missing:value==='—'}">{{value}}</span></td><td><em>{{series.trend}}</em></td></tr></tbody></table></div>
+                      <div class="along-derived-grid"><article v-for="metric in activeAnalysisGroup.metrics" :key="metric.name"><span>{{metricDisplayName(metric)}}</span><strong>{{metric.actual}} <small>{{metricDisplayUnit(metric)}}</small></strong><em :class="metric.level">{{metric.level==='normal'?'正常':metric.level==='warning'?'预警':'告警'}}</em></article></div>
+                      <div class="along-course-summary"><span><b>反硝化段</b>TN 由 31.7 降至 11.5 mg/L，碳源利用充分</span><span><b>硝化段</b>NH₃-N 由 10.2 降至 3.28 mg/L</span><span><b>溶解氧</b>好氧末端 0.52 mg/L，建议结合曝气策略关注</span></div>
+                    </div>
+                    <table v-else class="diagnosis-table grouped-table">
+                      <thead><tr><th>指标</th><th>单位</th><th>设计值</th><th>目标值</th><th>实际值</th><th>偏差与状态</th><th>指标意义</th></tr></thead>
+                      <tbody><tr v-for="metric in activeAnalysisGroup.metrics" :key="`${metric.category}-${metric.name}`" :class="`diagnosis-row-${metric.level}`">
+                        <td><b>{{metricDisplayName(metric)}}</b></td><td>{{metricDisplayUnit(metric)}}</td><td>{{metric.design}}</td><td>{{metric.target}}</td><td><strong>{{metric.actual}}</strong></td>
                         <td><div class="deviation-cell"><div><span :class="`diagnosis-dot ${metric.level}`"></span><b v-if="metric.deviation!==null" :class="metric.level">{{metric.deviation>0?'+':''}}{{metric.deviation.toFixed(1)}}%</b><b v-else>—</b><em>{{metric.level==='normal'?'正常':metric.level==='warning'?'预警':'告警'}}</em></div><span class="deviation-track"><i :class="metric.level" :style="{width:deviationWidth(metric.deviation)}"></i></span></div></td>
                         <td><small>{{metric.meaning}}</small></td>
                       </tr></tbody>
                     </table>
-                  </div>
-                </section>
               </div>
               <div class="diagnosis-legend"><span><i class="normal"></i>正常：处于合理范围或优于目标</span><span><i class="warning"></i>预警：偏离工况目标，需要关注</span><span><i class="alarm"></i>告警：明显异常，建议核查处置</span></div>
             </section>
 
             <section class="process-controls">
-              <div class="diagnosis-section-head"><div><p class="eyebrow">过程控制</p><h2>关键运行控制</h2></div><button @click="active='metricConfig'">配置指标</button></div>
-              <div class="control-accordion">
-                <section v-for="group in displayControlGroups" :key="group.key" class="control-group" :class="group.level">
-                  <button class="control-group-title" @click="toggleControlGroup(group.key)"><span class="diagnosis-dot" :class="group.level"></span><b>{{group.title}}</b><small>{{group.indicators.length}} 项指标</small><i :class="{open:expandedControlGroups[group.key]}">›</i></button>
-                  <div v-show="expandedControlGroups[group.key]" class="control-indicator-list">
-                    <div class="control-indicator-head"><span>指标</span><span>单位</span><span>目标值</span><span>实际值</span><span>偏差</span></div>
-                    <div v-for="indicator in group.indicators" :key="indicator.name" class="control-indicator-row">
-                      <b>{{indicator.name}}</b><span>{{indicator.unit}}</span><span>{{indicator.target}}</span><strong>{{indicator.actual}}</strong><em :class="indicator.level">{{indicator.deviation===null?'范围内':`${indicator.deviation>0?'+':''}${indicator.deviation.toFixed(1)}%`}}</em>
-                    </div>
-                  </div>
-                </section>
+              <nav class="diagnosis-board-tabs control-board-tabs" aria-label="过程控制分类">
+                <div v-for="group in displayControlGroups" :key="group.key" :class="['diagnosis-board-tab',{selected:activeControlGroup?.key===group.key}]">
+                  <button type="button" @click="activeControlGroupKey=group.key"><b>{{group.title}}</b><span class="tab-status-counts"><i class="normal" :class="{empty:statusCounts(group.indicators).normal===0}">{{statusCounts(group.indicators).normal}}</i><i class="warning" :class="{empty:statusCounts(group.indicators).warning===0}">{{statusCounts(group.indicators).warning}}</i><i class="alarm" :class="{empty:statusCounts(group.indicators).alarm===0}">{{statusCounts(group.indicators).alarm}}</i></span></button>
+                  <button type="button" class="board-gear" title="配置指标" :aria-label="`配置${group.title}指标`" @click="openModuleMetricManager('diagnosis',group.title)">⚙</button>
+                </div>
+              </nav>
+              <div v-if="activeControlGroup" class="control-indicator-list diagnosis-tab-panel">
+                <div class="control-indicator-head"><span>指标</span><span>单位</span><span>设计值</span><span>目标值</span><span>实际值</span><span>偏差</span></div>
+                <div v-for="indicator in activeControlGroup.indicators" :key="indicator.name" class="control-indicator-row">
+                  <b>{{metricDisplayName({category:activeControlGroup.title,...indicator})}}</b><span>{{metricDisplayUnit({category:activeControlGroup.title,...indicator})}}</span><span>{{indicator.design||''}}</span><span>{{indicator.target}}</span><strong>{{indicator.actual}}</strong><em :class="indicator.level">{{indicator.deviation===null?'范围内':`${indicator.deviation>0?'+':''}${indicator.deviation.toFixed(1)}%`}}</em>
+                </div>
               </div>
             </section>
           </div>
         </template>
+        <template v-else-if="active==='processReport'">
+          <template v-if="processReportView==='list'">
+            <section class="entry-list-toolbar"><div class="entry-list-actions"><button class="primary" @click="newProcessReport">＋ 新建</button><button @click="editProcessReport()">编辑</button><button @click="toggleProcessReportLock">锁定 / 解锁</button><button class="danger-lite" @click="deleteProcessReports">删除</button><button @click="Object.assign(processReportFilters,{keyword:'',dateFrom:'',dateTo:'',status:''})">刷新</button></div><span>共 {{filteredProcessReports.length}} 张工艺分析日报</span></section>
+            <section class="entry-filter-panel"><label>关键词<input v-model="processReportFilters.keyword" placeholder="水厂、工艺线、工况" /></label><label>开始日期<input v-model="processReportFilters.dateFrom" type="date" /></label><label>结束日期<input v-model="processReportFilters.dateTo" type="date" /></label><label>状态<select v-model="processReportFilters.status"><option value="">全部</option><option value="DRAFT">未锁定</option><option value="LOCKED">已锁定</option></select></label><button class="primary entry-query-button">查询</button></section>
+            <section class="process-data-panel process-report-list"><div class="process-table-wrap"><table class="process-config-table"><thead><tr><th>选择</th><th>状态</th><th>水厂名称</th><th>工艺线</th><th>日报日期</th><th>工况</th><th>进水COD</th><th>出水COD</th><th>MLSS</th><th>填报人</th><th>更新时间</th><th>操作</th></tr></thead><tbody><tr v-for="record in filteredProcessReports" :key="record.id"><td><input v-model="selectedProcessReportIds" type="checkbox" :value="record.id" /></td><td><span :class="['entry-record-status',record.status.toLowerCase()]">{{record.status==='LOCKED'?'已锁定':'未锁定'}}</span></td><td><b>{{record.siteName}}</b></td><td>{{record.line}}</td><td><strong>{{record.reportDate}}</strong></td><td>{{record.scenario}}</td><td>{{processReportValue(record,'进水水质','COD')}}</td><td>{{processReportValue(record,'出水水质','COD')}}</td><td>{{processReportValue(record,'污泥性状','MLSS')}}</td><td>{{record.updatedBy}}</td><td>{{record.updatedAt}}</td><td class="entry-row-actions"><button @click="editProcessReport(record)">编辑</button></td></tr><tr v-if="!filteredProcessReports.length"><td colspan="12" class="entry-empty-row">暂无工艺分析日报，可点击“新建”生成</td></tr></tbody></table></div></section>
+          </template>
+          <template v-else>
+            <section class="process-page-toolbar"><div><button @click="processReportView='list'">← 返回台账</button><label>水厂<select :value="selectedSite"><option :value="selectedSite">{{currentSite?.name}}</option></select></label><label>工艺线<select v-model="diagnosisLine"><option>一期生化线</option><option>二期生化线</option></select></label><label>日报日期<input v-model="processReportDate" type="date" /></label><label>工况<select v-model="diagnosisScenario"><option v-for="plan in conditionPlans" :key="plan.id">{{plan.name}}</option></select></label></div><div><button class="primary" @click="saveProcessReport">保存日报</button></div></section>
+            <section class="process-report-sheet"><header><h2>工艺分析日报</h2><p>{{currentSite?.name}} · {{diagnosisLine}} · {{processReportDate}} · {{diagnosisScenario}}</p></header><div class="process-report-table-wrap"><table><thead><tr><template v-for="group in processReportGroups" :key="group.category"><th :colspan="group.metrics.length">{{group.category}}</th></template></tr><tr><template v-for="group in processReportGroups" :key="group.category"><th v-for="metric in group.metrics" :key="metric.name">{{metric.name}}</th></template></tr></thead><tbody><tr><template v-for="group in processReportGroups" :key="group.category"><td v-for="metric in group.metrics" :key="metric.name">{{metric.value}}</td></template></tr></tbody></table></div></section>
+          </template>
+        </template>
         <template v-else-if="active==='processDesign'">
-          <section class="process-page-toolbar"><div><label>水厂<select :value="selectedSite"><option :value="selectedSite">{{currentSite?.name}}</option></select></label><label>工艺线<select v-model="diagnosisLine"><option>一期生化线</option><option>二期生化线</option></select></label></div><div><span>共 {{designMetrics.length}} 项设计指标</span><button v-if="!designEditMode" @click="designEditMode=true">编辑设计值</button><button v-else class="primary" @click="saveDesignValues">保存设计值</button></div></section>
-          <section class="process-data-panel"><div class="process-explain"><b>设计基准</b><span>记录水厂及工艺线建设、改扩建设计文件中的固定基准值，供诊断分析引用。</span></div><div class="process-table-wrap"><table class="process-config-table"><thead><tr><th>指标分类</th><th>指标名称</th><th>单位</th><th>设计值</th><th>指标意义</th><th>状态</th></tr></thead><tbody><tr v-for="metric in designMetrics" :key="metricKey(metric)"><td><span class="category-chip">{{metric.category}}</span></td><td><b>{{metric.name}}</b></td><td>{{metric.unit}}</td><td><input v-if="designEditMode" v-model="designValues[metricKey(metric)]" /><strong v-else>{{designValues[metricKey(metric)]||'—'}}</strong></td><td>{{metric.meaning}}</td><td><span class="process-status">已启用</span></td></tr></tbody></table></div></section>
+          <section class="process-page-toolbar"><div><label>水厂<select :value="selectedSite"><option :value="selectedSite">{{currentSite?.name}}</option></select></label><label>工艺线<select v-model="diagnosisLine"><option>一期生化线</option><option>二期生化线</option></select></label></div><div><span>共 {{designMetrics.length}} 项设计指标</span><button class="page-gear-button" title="配置指标" aria-label="配置工艺设计标准指标" @click="openModuleMetricManager('design')">⚙</button><button v-if="!designEditMode" @click="beginDesignEdit">编辑设计值</button><button v-else class="primary" @click="saveDesignValues">保存设计值</button></div></section>
+          <section class="process-data-panel"><div class="process-explain"><b>设计基准</b><span>记录水厂及工艺线建设、改扩建设计文件中的固定基准值，供诊断分析引用。</span></div><div class="process-table-wrap"><table class="process-config-table"><thead><tr><th>指标分类</th><th>指标名称</th><th>单位</th><th>设计值</th><th>指标意义</th><th>状态</th></tr></thead><tbody><tr v-for="metric in designMetrics" :key="metricKey(metric)"><td><span class="category-chip">{{metric.category}}</span></td><td><b>{{metricDisplayName(metric)}}</b></td><td>{{metricDisplayUnit(metric)}}</td><td><input v-if="designEditMode" v-model="designValues[metricKey(metric)]" /><strong v-else>{{designValueFor(metric)}}</strong></td><td>{{metric.meaning}}</td><td><span class="process-status">已启用</span></td></tr></tbody></table></div></section>
         </template>
         <template v-else-if="active==='conditionMatrix'">
           <section class="condition-layout">
             <aside class="condition-list"><header><div><b>工况管理</b><small>{{conditionPlans.length}} 套</small></div><button @click="showConditionForm=true">＋ 新增</button></header><button v-for="plan in conditionPlans" :key="plan.id" :class="{selected:selectedConditionId===plan.id}" @click="selectedConditionId=plan.id;conditionEditMode=false"><span><b>{{plan.name}}</b><small>{{plan.effectiveDate}} 起</small></span><i>›</i></button></aside>
-            <section v-if="selectedCondition" class="condition-detail"><div class="condition-meta"><label>工况名称<input v-model="selectedCondition.name" :disabled="!conditionEditMode" /></label><label>实施日期<input v-model="selectedCondition.effectiveDate" type="date" :disabled="!conditionEditMode" /></label><label>说明<input v-model="selectedCondition.description" :disabled="!conditionEditMode" /></label><div class="condition-actions"><button class="danger-lite" @click="deleteCondition(selectedCondition.id)">删除</button><button v-if="!conditionEditMode" @click="conditionEditMode=true">修改</button><button v-else class="primary" @click="saveConditions">保存</button></div></div><div class="process-table-wrap"><table class="process-config-table"><thead><tr><th>指标分类</th><th>指标名称</th><th>单位</th><th>设计值</th><th>目标值</th><th>状态</th></tr></thead><tbody><tr v-for="metric in conditionMetrics" :key="metricKey(metric)"><td><span class="category-chip">{{metric.category}}</span></td><td><b>{{metric.name}}</b></td><td>{{metric.unit}}</td><td>{{designValues[metricKey(metric)]||metric.design}}</td><td><input v-if="conditionEditMode" v-model="selectedCondition.targets[metricKey(metric)]" /><strong v-else>{{selectedCondition.targets[metricKey(metric)]||'—'}}</strong></td><td><span class="process-status">已启用</span></td></tr></tbody></table></div></section>
+            <section v-if="selectedCondition" class="condition-detail"><div class="condition-meta"><label>工况名称<input v-model="selectedCondition.name" :disabled="!conditionEditMode" /></label><label>实施日期<input v-model="selectedCondition.effectiveDate" type="date" :disabled="!conditionEditMode" /></label><label>说明<input v-model="selectedCondition.description" :disabled="!conditionEditMode" /></label><div class="condition-actions"><button class="page-gear-button" title="配置指标" aria-label="配置工况指标" @click="openModuleMetricManager('condition')">⚙</button><button class="danger-lite" @click="deleteCondition(selectedCondition.id)">删除</button><button v-if="!conditionEditMode" @click="conditionEditMode=true">修改</button><button v-else class="primary" @click="saveConditions">保存</button></div></div><div class="process-table-wrap"><table class="process-config-table"><thead><tr><th>指标分类</th><th>指标名称</th><th>单位</th><th>设计值</th><th>目标值</th><th>状态</th></tr></thead><tbody><tr v-for="metric in conditionMetrics" :key="metricKey(metric)"><td><span class="category-chip">{{metric.category}}</span></td><td><b>{{metricDisplayName(metric)}}</b></td><td>{{metricDisplayUnit(metric)}}</td><td>{{designValueFor(metric)}}</td><td><input v-if="conditionEditMode" v-model="selectedCondition.targets[metricKey(metric)]" /><strong v-else>{{selectedCondition.targets[metricKey(metric)]||metric.target||'—'}}</strong></td><td><span class="process-status">已启用</span></td></tr></tbody></table></div></section>
           </section>
           <div v-if="showConditionForm" class="inline-popover"><form @submit.prevent="createCondition"><header><b>新增工况</b><button type="button" @click="showConditionForm=false">×</button></header><label>工况名称<input v-model="conditionForm.name" required placeholder="例如：雨季高负荷工况" /></label><label>实施日期<input v-model="conditionForm.effectiveDate" type="date" required /></label><label>工况说明<textarea v-model="conditionForm.description" rows="3"></textarea></label><footer><button type="button" @click="showConditionForm=false">取消</button><button class="primary">创建工况</button></footer></form></div>
         </template>
         <template v-else-if="active==='operationEntry'">
-          <section class="process-page-toolbar"><div><label>水厂<select :value="selectedSite"><option :value="selectedSite">{{currentSite?.name}}</option></select></label><label>工艺线<select v-model="diagnosisLine" @change="loadOperationEntry"><option>一期生化线</option><option>二期生化线</option></select></label><label>填报日期<input v-model="entryDate" type="date" @change="loadOperationEntry" /></label></div><div><span>上次保存：{{entrySavedAt}}</span><button class="primary" @click="saveOperationEntry">保存填报</button></div></section>
-          <section class="process-data-panel"><div class="process-explain"><b>每日实际数据</b><span>按水厂、工艺线和日期填报实际值；保存后作为工艺诊断分析的实际值来源。</span></div><div class="process-table-wrap"><table class="process-config-table entry-table"><thead><tr><th>指标分类</th><th>指标名称</th><th>单位</th><th>设计值</th><th>当前工况目标值</th><th>实际值</th><th>数据状态</th></tr></thead><tbody><tr v-for="metric in entryMetrics" :key="metricKey(metric)"><td><span class="category-chip">{{metric.category}}</span></td><td><b>{{metric.name}}</b></td><td>{{metric.unit}}</td><td>{{designValues[metricKey(metric)]||metric.design}}</td><td>{{selectedCondition?.targets[metricKey(metric)]||metric.target}}</td><td><input v-model="entryValues[metricKey(metric)]" placeholder="请输入" /></td><td><span :class="['entry-state',{empty:!entryValues[metricKey(metric)]}]">{{entryValues[metricKey(metric)]?'已填写':'待填写'}}</span></td></tr></tbody></table></div></section>
+          <template v-if="operationEntryView==='list'">
+            <section class="entry-list-toolbar">
+              <div class="entry-list-actions"><button class="primary" @click="newOperationEntry">＋ 新增日报</button><button @click="editOperationEntry()">编辑</button><button class="danger-lite" @click="deleteOperationEntries()">删除</button><button @click="toggleLockOperationEntries">锁定 / 解锁</button><button @click="resetOperationEntryFilters">刷新</button><button class="page-gear-button" title="配置填报指标" aria-label="配置填报指标" @click="openModuleMetricManager('entry')">⚙</button></div>
+              <span>共 {{filteredOperationEntryRecords.length}} 条日报 · 已选择 {{selectedOperationEntryIds.length}} 条</span>
+            </section>
+            <section class="entry-filter-panel">
+              <label>关键词<input v-model="operationEntryFilters.keyword" placeholder="水厂、编号、填报人" /></label>
+              <label>工艺线<select v-model="operationEntryFilters.line"><option value="">全部</option><option>一期生化线</option><option>二期生化线</option></select></label>
+              <label>开始日期<input v-model="operationEntryFilters.dateFrom" type="date" /></label>
+              <label>结束日期<input v-model="operationEntryFilters.dateTo" type="date" /></label>
+              <label>填报状态<select v-model="operationEntryFilters.status"><option value="">全部</option><option value="DRAFT">草稿</option><option value="COMPLETED">已完成</option><option value="LOCKED">已锁定</option></select></label>
+              <div class="entry-range-filter"><span>进水 COD</span><input v-model="operationEntryFilters.codMin" type="number" placeholder="最小值" /><i>—</i><input v-model="operationEntryFilters.codMax" type="number" placeholder="最大值" /></div>
+              <button class="primary entry-query-button">查询</button><button class="entry-reset-button" @click="resetOperationEntryFilters">清空</button>
+            </section>
+            <section class="process-data-panel entry-list-panel">
+              <div class="process-table-wrap"><table class="process-config-table daily-entry-table"><thead><tr><th class="entry-select-cell"><input type="checkbox" :checked="allFilteredOperationEntriesSelected" @change="toggleAllOperationEntries(($event.target as HTMLInputElement).checked)" /></th><th>状态</th><th>水厂名称</th><th>水厂编号</th><th>工艺条线</th><th>填报日期</th><th>工况</th><th>进水 COD</th><th>进水 BOD₅</th><th>进水 SS</th><th>进水 NH₃-N</th><th>进水 TN</th><th>进水 TP</th><th>填报进度</th><th>填报人</th><th>更新时间</th><th>操作</th></tr></thead><tbody>
+                <tr v-for="record in filteredOperationEntryRecords" :key="record.id" :class="{selected:selectedOperationEntryIds.includes(record.id)}"><td class="entry-select-cell"><input v-model="selectedOperationEntryIds" type="checkbox" :value="record.id" /></td><td><span :class="['entry-record-status',record.status.toLowerCase()]">{{statusText(record.status)}}</span></td><td><b>{{record.siteName}}</b></td><td><code>{{record.siteCode}}</code></td><td>{{record.line}}</td><td><strong>{{record.entryDate}}</strong></td><td>{{record.scenario}}</td><td>{{recordMetricValue(record,'INQ-001')}}</td><td>{{recordMetricValue(record,'INQ-002')}}</td><td>{{recordMetricValue(record,'INQ-003')}}</td><td>{{recordMetricValue(record,'INQ-004')}}</td><td>{{recordMetricValue(record,'INQ-005')}}</td><td>{{recordMetricValue(record,'INQ-006')}}</td><td>{{Object.values(record.values).filter(Boolean).length}} / {{entryMetrics.length}}</td><td>{{record.updatedBy}}</td><td>{{record.updatedAt}}</td><td class="entry-row-actions"><button @click="editOperationEntry(record)">编辑</button><button @click="deleteOperationEntries([record.id])">删除</button></td></tr>
+                <tr v-if="!filteredOperationEntryRecords.length"><td colspan="17" class="entry-empty-row">未查询到符合条件的日报</td></tr>
+              </tbody></table></div>
+            </section>
+          </template>
+          <template v-else>
+            <section class="process-page-toolbar entry-form-toolbar"><div><button @click="operationEntryView='list'">← 返回列表</button><label>水厂<select :value="selectedSite"><option :value="selectedSite">{{currentSite?.name||'第一污水处理厂（示例）'}}</option></select></label><label>工艺线<select v-model="diagnosisLine" @change="loadOperationEntry"><option>一期生化线</option><option>二期生化线</option></select></label><label>填报日期<input v-model="entryDate" type="date" @change="loadOperationEntry" /></label><label>工况<select v-model="entryConditionId"><option v-for="plan in conditionPlans" :key="plan.id" :value="plan.id">{{plan.name}}</option></select></label></div><div><span>需填 {{entryMetrics.length}} 项 · 自动计算 {{calculatedEntryMetricCount}} 项　上次保存：{{entrySavedAt}}</span><button class="primary" @click="saveOperationEntry">保存日报</button></div></section>
+            <section class="process-data-panel entry-panel">
+              <div class="process-explain"><b>每日原始数据填报</b><span>仅填写现场采集或人工记录的第一手数据；比值、去除率及其他公式指标由系统自动计算。</span></div>
+              <nav class="entry-category-tabs" aria-label="指标分类页签"><button v-for="group in entryGroups" :key="group.category" type="button" :class="{selected:activeEntryGroup?.category===group.category}" @click="activeEntryCategory=group.category"><span>{{group.category}}</span><small>{{filledEntryCount(group.metrics)}} / {{group.metrics.length}}</small></button></nav>
+              <div v-if="activeEntryGroup" class="entry-group-summary"><b>{{activeEntryGroup.category}}</b><span>共 {{activeEntryGroup.metrics.length}} 项原始数据，已填写 {{filledEntryCount(activeEntryGroup.metrics)}} 项</span><button class="page-gear-button" title="配置指标" :aria-label="`配置${activeEntryGroup.category}填报指标`" @click="openModuleMetricManager('entry',activeEntryGroup.category)">⚙</button></div>
+              <div v-if="activeEntryGroup" class="process-table-wrap"><table class="process-config-table entry-table"><thead><tr><th>指标名称</th><th>单位</th><th>设计值</th><th>当前工况目标值</th><th>实际值</th><th>数据状态</th></tr></thead><tbody><tr v-for="metric in activeEntryGroup.metrics" :key="metricKey(metric)"><td><b>{{metricDisplayName(metric)}}</b></td><td>{{metricDisplayUnit(metric)}}</td><td>{{designValueFor(metric)}}</td><td>{{entryCondition?.targets[metricKey(metric)]||metric.target}}</td><td><input v-model="entryValues[metricKey(metric)]" :placeholder="settingFor(metric).fillSpec||'请输入'" :required="settingFor(metric).required" /></td><td><span :class="['entry-state',{empty:!entryValues[metricKey(metric)]}]">{{entryValues[metricKey(metric)]?'已填写':'待填写'}}</span></td></tr></tbody></table></div>
+            </section>
+          </template>
         </template>
-        <template v-else-if="active==='metricConfig'">
-          <form v-if="showNewMetricForm" class="new-metric-form standalone formula-form" @submit.prevent="addCustomMetric">
-            <div class="metric-basic-row"><label>指标分类<select v-model="newMetricForm.category"><optgroup label="结果指标"><option v-for="category in resultCategories" :key="category">{{category}}</option></optgroup><optgroup label="过程控制"><option v-for="category in processCategories" :key="category">{{category}}</option></optgroup></select></label><label>指标名称<input v-model="newMetricForm.name" required placeholder="例如：吨水电耗" /></label><label>单位<input v-model="newMetricForm.unit" required placeholder="kWh/m³" /></label><label>指标意义<input v-model="newMetricForm.meaning" placeholder="指标用途或定义" /></label></div>
-            <div class="metric-source-row"><label>字段类型<select v-model="newMetricForm.dataType"><option value="DECIMAL">小数</option><option value="INTEGER">整数</option><option value="PERCENT">百分比</option><option value="TEXT">文本</option><option value="BOOLEAN">是/否</option></select></label><label>取值方式<select v-model="newMetricForm.valueSource"><option value="MANUAL">手动填报</option><option value="CALCULATED">公式计算</option><option value="AUTO">系统采集</option></select></label><span v-if="newMetricForm.dataType==='TEXT'">文本字段不参与数值偏差计算</span></div>
-            <section v-if="newMetricForm.valueSource==='CALCULATED'" class="formula-editor"><header><b>计算公式</b><small>引用指标后使用运算符或函数组合公式</small></header><div class="formula-tools"><select v-model="formulaReference"><option value="">选择引用指标</option><option v-for="metric in allManagedMetrics" :key="metricKey(metric)" :value="metricKey(metric)">{{metric.category}} · {{metric.name}}</option></select><button type="button" @click="appendFormulaReference">引用</button><button v-for="token in ['+','−','×','÷','(',')']" :key="token" type="button" @click="appendFormulaToken(token)">{{token}}</button><button v-for="fn in ['SUM()','AVG()','MIN()','MAX()','ROUND()']" :key="fn" type="button" @click="appendFormulaToken(fn)">{{fn}}</button></div><textarea v-model="newMetricForm.formula" rows="3" required placeholder="示例：[能源管理::总用电量] ÷ [水量与停留时间::日处理水量]"></textarea><p>支持四则运算、括号及 SUM、AVG、MIN、MAX、ROUND 常用函数。后续可接入正式公式解析与校验引擎。</p></section>
-            <div class="new-metric-actions"><button type="button" @click="showNewMetricForm=false">取消</button><button class="primary">添加指标</button></div>
-          </form>
-          <section class="metric-manager-panel"><div class="metric-manager-toolbar"><div></div><div class="metric-manager-actions"><button @click="showNewMetricForm=!showNewMetricForm">＋ 新增指标</button><button class="primary" @click="saveMetricSettings">保存配置</button></div></div><div class="metric-manager-table-wrap"><table class="metric-manager-table unified"><thead><tr><th>分类 / 指标</th><th>单位</th><th>字段类型</th><th>取值方式</th><th>设计标准</th><th>工况矩阵</th><th>数据填报</th><th>诊断分析</th><th>偏差方式</th><th>绿色范围</th><th>橙色预警</th><th>公式</th></tr></thead><tbody><tr v-for="metric in allManagedMetrics" :key="metricKey(metric)"><td><small>{{metric.category}}</small><b>{{metric.name}}</b></td><td>{{metric.unit}}</td><td><select v-model="settingFor(metric).dataType"><option value="DECIMAL">小数</option><option value="INTEGER">整数</option><option value="PERCENT">百分比</option><option value="TEXT">文本</option><option value="BOOLEAN">是/否</option></select></td><td><select v-model="settingFor(metric).valueSource"><option value="MANUAL">手动填报</option><option value="CALCULATED">公式计算</option><option value="AUTO">系统采集</option></select></td><td><input v-model="settingFor(metric).designEnabled" type="checkbox" /></td><td><input v-model="settingFor(metric).conditionEnabled" type="checkbox" /></td><td><input v-model="settingFor(metric).entryEnabled" type="checkbox" :disabled="settingFor(metric).valueSource==='CALCULATED'" /></td><td><input v-model="settingFor(metric).diagnosisEnabled" type="checkbox" /></td><td><select v-model="settingFor(metric).mode" :disabled="settingFor(metric).dataType==='TEXT'"><option value="UPPER">上限管理</option><option value="LOWER">下限管理</option><option value="CENTER">中间值管理</option></select></td><td><label>± <input v-model.number="settingFor(metric).healthyPct" type="number" min="0" :disabled="settingFor(metric).dataType==='TEXT'" />%</label></td><td><label>至 <input v-model.number="settingFor(metric).warningPct" type="number" min="0" :disabled="settingFor(metric).dataType==='TEXT'" />%</label></td><td><code v-if="settingFor(metric).valueSource==='CALCULATED'" :title="settingFor(metric).formula">{{settingFor(metric).formula||'待配置'}}</code><span v-else>—</span></td></tr></tbody></table></div><footer><span><i class="diagnosis-dot normal"></i>绿色：健康范围　<i class="diagnosis-dot warning"></i>橙色：预警范围　<i class="diagnosis-dot alarm"></i>红色：超过预警阈值</span></footer></section>
+        <template v-else-if="active==='labRecords'">
+          <template v-if="labRecordView==='folders'">
+            <section class="lab-simple-toolbar"><div><button @click="labRecordView='folders'">刷新</button></div><span>选择检测项目，进入每日原始记录台账</span></section>
+            <section class="lab-folder-grid"><button v-for="folder in labFolders" :key="folder.type" @click="openLabFolder(folder.type)"><i>{{folder.icon}}</i><b>{{folder.name}}</b><small>{{folder.method}}</small><em>{{labOriginalRecords.filter(record=>record.type===folder.type).length}} 张记录</em></button><button class="lab-folder-planned" disabled><i>＋</i><b>其他检测项目</b><small>后续按同一模板扩展</small><em>规划中</em></button></section>
+          </template>
+          <template v-else-if="labRecordView==='list'">
+            <section class="lab-simple-toolbar"><div><button @click="labRecordView='folders'">← 返回项目</button><button class="primary" @click="newLabRecord">＋ 新建</button><button @click="editLabRecord()">编辑</button><button class="danger-lite" @click="deleteLabRecord">删除</button><button @click="toggleLabRecordLock">{{selectedLabRecord?.locked?'解锁':'锁定'}}</button><button @click="resetLabRecordFilters">刷新</button><button @click="exportLabRecord()">导出 Excel</button></div><b>{{labRecordTitle(labRecordType)}}</b></section>
+            <section class="lab-record-filters"><label>关键词<input v-model="labRecordFilters.keyword" placeholder="编号、样品或检测人" /></label><label>开始日期<input v-model="labRecordFilters.dateFrom" type="date" /></label><label>结束日期<input v-model="labRecordFilters.dateTo" type="date" /></label><label>锁定状态<select v-model="labRecordFilters.locked"><option value="">全部</option><option value="unlocked">未锁定</option><option value="locked">已锁定</option></select></label><button class="primary">查询</button><button @click="resetLabRecordFilters">清空</button></section>
+            <section class="lab-record-list-panel"><div class="process-table-wrap"><table class="process-config-table lab-record-list"><thead><tr><th>选择</th><th>锁定</th><th>检测项目</th><th>室温</th><th>湿度</th><th>原始记录编号</th><th>关键参数一</th><th>关键参数二</th><th>取样日期</th><th>检测日期</th><th>检测人</th><th>复核人</th><th>更新时间</th></tr></thead><tbody><tr v-for="record in filteredLabRecords" :key="record.id" :class="{selected:selectedLabRecord?.id===record.id}" @click="labRecordSelectedId=record.id"><td><input type="radio" :checked="selectedLabRecord?.id===record.id" /></td><td>{{record.locked?'🔒':'—'}}</td><td><b>{{labTypeShort(record.type)}}</b></td><td>{{record.roomTemperature}} ℃</td><td>{{record.humidity}}%</td><td><code>{{record.recordNo}}</code></td><td>{{labListParameter(record,1)}}</td><td>{{labListParameter(record,2)}}</td><td>{{record.sampleDate}}</td><td>{{record.testDate}}</td><td>{{record.analyst}}</td><td>{{record.reviewer||'—'}}</td><td>{{record.updatedAt}}</td></tr><tr v-if="!filteredLabRecords.length"><td colspan="13" class="entry-empty-row">未查询到原始记录</td></tr></tbody></table></div></section>
+            <section v-if="selectedLabRecord" class="lab-detail-panel"><header><b>样品明细</b><span>{{selectedLabRecord.recordNo}} · {{selectedLabRecord.samples.length}} 个样品</span></header><div class="process-table-wrap">
+              <table v-if="selectedLabRecord.type==='COD'" class="process-config-table lab-sample-detail"><thead><tr><th>样品来源</th><th>样品名称</th><th>取样体积 V/mL</th><th>稀释倍数 n</th><th>V始</th><th>V终</th><th>V耗</th><th>检测结果 mg/L</th></tr></thead><tbody><tr v-for="(row,index) in selectedLabRecord.samples" :key="index"><td>{{row.source}}</td><td>{{row.name}}</td><td>{{row.volume}}</td><td>{{row.dilution}}</td><td>{{row.start}}</td><td>{{row.end}}</td><td>{{volumeUsed(row).toFixed(2)}}</td><td><strong>{{formatLabResult(selectedLabRecord,row)}}</strong></td></tr></tbody></table>
+              <table v-else-if="selectedLabRecord.type==='NH3'" class="process-config-table lab-sample-detail"><thead><tr><th>样品来源</th><th>样品名称</th><th>取样体积 V/mL</th><th>稀释倍数 n</th><th>吸光度差 A−A0</th><th>实测值 μg</th><th>检测结果 mg/L</th></tr></thead><tbody><tr v-for="(row,index) in selectedLabRecord.samples" :key="index"><td>{{row.source}}</td><td>{{row.name}}</td><td>{{row.volume}}</td><td>{{row.dilution}}</td><td>{{row.absorbance}}</td><td>{{ammoniaMass(selectedLabRecord,row).toFixed(4)}}</td><td><strong>{{formatLabResult(selectedLabRecord,row)}}</strong></td></tr></tbody></table>
+              <table v-else-if="selectedLabRecord.type==='SS'" class="process-config-table lab-sample-detail"><thead><tr><th>样品来源</th><th>样品名称</th><th>取样体积 V/mL</th><th>容器编号</th><th>W1最终值/g</th><th>W2最终值/g</th><th>W2−W1/g</th><th>检测结果 mg/L</th></tr></thead><tbody><tr v-for="(row,index) in selectedLabRecord.samples" :key="index"><td>{{row.source}}</td><td>{{row.name}}</td><td>{{row.volume}}</td><td>{{row.containerNo}}</td><td>{{stableWeight(row.tareFirst,row.tareSecond).toFixed(4)}}</td><td>{{stableWeight(row.loadedFirst,row.loadedSecond).toFixed(4)}}</td><td>{{ssNetWeight(row).toFixed(4)}}</td><td><strong>{{formatLabResult(selectedLabRecord,row)}}</strong></td></tr></tbody></table>
+              <table v-else class="process-config-table lab-sample-detail"><thead><tr><th>样品来源</th><th>样品名称</th><th>稀释后取样体积 V/mL</th><th>稀释倍数 n</th><th>培养基</th><th>皿号</th><th>菌落数/个</th><th>监测结果 个/L</th></tr></thead><tbody><tr v-for="(row,index) in selectedLabRecord.samples" :key="index"><td>{{row.source}}</td><td>{{row.name}}</td><td>{{row.volume}}</td><td>{{row.dilution}}</td><td>{{row.medium}}</td><td>{{row.plateNo}}</td><td>{{row.colonyCount}}</td><td><strong>{{formatLabResult(selectedLabRecord,row)}}</strong></td></tr></tbody></table>
+            </div></section>
+          </template>
+          <template v-else>
+            <section class="lab-form-toolbar"><button @click="labRecordView='list'">← 返回台账</button><button class="primary" @click="saveLabRecord">保存</button><button @click="labRecordForm=createLabRecordModel(labRecordType)">新建</button><button @click="labRecordForm.locked=!labRecordForm.locked">{{labRecordForm.locked?'解锁':'锁定'}}</button><button @click="printLabRecord">打印 / 预览</button><button @click="exportLabRecord(labRecordForm)">导出 Excel</button><span></span><button @click="addLabSampleRow">＋ 插入行</button></section>
+            <section class="lab-paper-wrap">
+              <article class="lab-paper" :class="labRecordForm.type.toLowerCase()">
+                <h1>{{labRecordTitle(labRecordForm.type)}}</h1>
+                <div class="lab-paper-meta"><label>检测项目<input :value="labTypeShort(labRecordForm.type)" readonly /></label><label>室温（℃）<input v-model="labRecordForm.roomTemperature" /></label><label>湿度（%）<input v-model="labRecordForm.humidity" /></label><label>原始记录编号<input v-model="labRecordForm.recordNo" /></label></div>
+                <template v-if="labRecordForm.type==='COD'">
+                  <table class="lab-paper-table cod-main"><thead><tr><th rowspan="2">样品来源</th><th rowspan="2">样品名称</th><th rowspan="2">取样体积<br>V（mL）</th><th rowspan="2">稀释倍数（n）</th><th colspan="3">硫酸亚铁铵标准溶液滴定数（mL）</th><th rowspan="2">检测结果（mg/L）</th><th rowspan="2">操作</th></tr><tr><th>V始</th><th>V终</th><th>V耗</th></tr></thead><tbody><tr class="lab-blank-row"><td>—</td><td>空白样</td><td>10</td><td>1</td><td><input v-model="labRecordForm.blankStart" /></td><td><input v-model="labRecordForm.blankEnd" /></td><td>{{volumeUsed({start:labRecordForm.blankStart,end:labRecordForm.blankEnd}).toFixed(2)}}</td><td>—</td><td>—</td></tr><tr v-for="(row,index) in labRecordForm.samples" :key="index"><td><input v-model="row.source" /></td><td><input v-model="row.name" /></td><td><input v-model="row.volume" /></td><td><input v-model="row.dilution" /></td><td><input v-model="row.start" /></td><td><input v-model="row.end" /></td><td class="calculated">{{volumeUsed(row).toFixed(2)}}</td><td class="calculated result">{{formatLabResult(labRecordForm,row)}}</td><td><button @click="deleteLabSampleRow(index)">删除</button></td></tr><tr v-for="index in 3" :key="`empty-${index}`"><td v-for="cell in 9" :key="cell">&nbsp;</td></tr></tbody></table>
+                  <table class="lab-paper-table lab-method-table"><tbody><tr><th>方法依据</th><td colspan="3">HJ 828—2017</td><th>标准溶液 C2</th><td colspan="3">硫酸亚铁铵标准溶液</td></tr><tr><th rowspan="3">计算公式</th><td colspan="3" rowspan="2">COD（mg/L）= C2 ×（V0 − V1）× n × 8000 ÷ V</td><th>基准物质浓度 C1</th><td><input v-model="labRecordForm.c1" /></td><th>基准物质体积</th><td><input v-model="labRecordForm.standardVolume" /></td></tr><tr><th>标准滴定①</th><td><input v-model="labRecordForm.standardStart1" /> 至 <input v-model="labRecordForm.standardEnd1" /></td><th>标准滴定②</th><td><input v-model="labRecordForm.standardStart2" /> 至 <input v-model="labRecordForm.standardEnd2" /></td></tr><tr><td colspan="3">V0：空白试验消耗体积；V1：水样测定消耗体积</td><th>C2（mol/L）</th><td class="calculated">{{codC2(labRecordForm).toFixed(6)}}</td><th>V标均（mL）</th><td class="calculated">{{codStandardAverage(labRecordForm).toFixed(2)}}</td></tr><tr><th>备注</th><td colspan="7"><input v-model="labRecordForm.notes" /></td></tr></tbody></table>
+                </template>
+                <template v-else-if="labRecordForm.type==='NH3'">
+                  <table class="lab-paper-table lab-equipment-table"><tbody><tr><th>仪器型号</th><td><input v-model="labRecordForm.instrumentModel" /></td><th>比色皿</th><td>玻璃 20 mm</td><th>方法依据</th><td>HJ 535—2009</td></tr><tr><th>波长</th><td><input v-model="labRecordForm.wavelength" /> nm</td><th>参比液</th><td><input v-model="labRecordForm.referenceSolution" /></td><th>标准溶液</th><td><input v-model="labRecordForm.standardSolution" /></td></tr><tr><td colspan="6">计算公式：样品浓度（mg/L）= 实测值（μg）÷ 取样体积 V × 稀释倍数</td></tr></tbody></table>
+                  <table class="lab-paper-table nh3-curve"><tbody><tr><th rowspan="3">标准曲线测定</th><th>标准液（mL）</th><td>0.00</td><td>0.50</td><td>1.00</td><td>2.00</td><td>4.00</td><td>6.00</td><td>8.00</td></tr><tr><th>含量（μg）</th><td>0.00</td><td>5.00</td><td>10.00</td><td>20.00</td><td>40.00</td><td>60.00</td><td>80.00</td></tr><tr><th>标准曲线</th><td colspan="3">A0 = <input v-model="labRecordForm.a0" /></td><td colspan="4">y = <input v-model="labRecordForm.curveSlope" /> x + <input v-model="labRecordForm.curveIntercept" /></td></tr></tbody></table>
+                  <table class="lab-paper-table nh3-samples"><thead><tr><th>样品来源</th><th>样品名称</th><th>取样体积 V（mL）</th><th>稀释倍数</th><th>吸光度差 A−A0</th><th>实测值（μg）</th><th>检测结果（mg/L）</th><th>操作</th></tr></thead><tbody><tr v-for="(row,index) in labRecordForm.samples" :key="index"><td><input v-model="row.source" /></td><td><input v-model="row.name" /></td><td><input v-model="row.volume" /></td><td><input v-model="row.dilution" /></td><td><input v-model="row.absorbance" /></td><td class="calculated">{{ammoniaMass(labRecordForm,row).toFixed(4)}}</td><td class="calculated result">{{ammoniaResult(labRecordForm,row).toFixed(3)}}</td><td><button @click="deleteLabSampleRow(index)">删除</button></td></tr><tr v-for="index in 4" :key="`empty-nh3-${index}`"><td v-for="cell in 8" :key="cell">&nbsp;</td></tr></tbody></table>
+                  <table class="lab-paper-table"><tbody><tr><th>备注</th><td><input v-model="labRecordForm.notes" /></td></tr></tbody></table>
+                </template>
+                <template v-else-if="labRecordForm.type==='SS'">
+                  <table class="lab-paper-table ss-main"><thead><tr><th rowspan="2">样品来源</th><th rowspan="2">样品名称</th><th rowspan="2">取样体积 V（mL）</th><th rowspan="2">容器编号</th><th colspan="3">（容器＋滤膜）重 W1（g）</th><th colspan="3">（容器＋滤膜＋被测物）重 W2（g）</th><th rowspan="2">W2−W1（g）</th><th rowspan="2">检测结果（mg/L）</th><th rowspan="2">操作</th></tr><tr><th>第一次</th><th>第二次</th><th>最终值</th><th>第一次</th><th>第二次</th><th>最终值</th></tr></thead><tbody><tr v-for="(row,index) in labRecordForm.samples" :key="index"><td><input v-model="row.source" /></td><td><input v-model="row.name" /></td><td><input v-model="row.volume" /></td><td><input v-model="row.containerNo" /></td><td><input v-model="row.tareFirst" /></td><td><input v-model="row.tareSecond" /></td><td class="calculated">{{stableWeight(row.tareFirst,row.tareSecond).toFixed(4)}}</td><td><input v-model="row.loadedFirst" /></td><td><input v-model="row.loadedSecond" /></td><td class="calculated">{{stableWeight(row.loadedFirst,row.loadedSecond).toFixed(4)}}</td><td class="calculated">{{ssNetWeight(row).toFixed(4)}}</td><td class="calculated result">{{formatLabResult(labRecordForm,row)}}</td><td><button @click="deleteLabSampleRow(index)">删除</button></td></tr><tr v-for="index in 7" :key="`empty-ss-${index}`"><td v-for="cell in 13" :key="cell">&nbsp;</td></tr></tbody></table>
+                  <table class="lab-paper-table ss-method"><tbody><tr><th>方法依据</th><td>GB 11901—89</td><th>干燥条件</th><td>干燥温度 <input v-model="labRecordForm.dryingTemperature" /> ℃</td><th>计算公式</th><td>悬浮物（mg/L）=（W2−W1）× 1,000,000 ÷ V</td></tr><tr><th>备注</th><td colspan="5"><input v-model="labRecordForm.notes" /></td></tr></tbody></table>
+                </template>
+                <template v-else>
+                  <table class="lab-paper-table fc-main"><thead><tr><th>样品来源</th><th>样品名称</th><th>稀释后取样体积 V（mL）</th><th>稀释倍数（n）</th><th>培养基</th><th>皿号</th><th>粪大肠菌群数（个）</th><th>监测结果（个/L）</th><th>操作</th></tr></thead><tbody><tr v-for="(row,index) in labRecordForm.samples" :key="index"><td><input v-model="row.source" /></td><td><input v-model="row.name" /></td><td><input v-model="row.volume" /></td><td><input v-model="row.dilution" /></td><td><input v-model="row.medium" /></td><td><input v-model="row.plateNo" /></td><td><input v-model="row.colonyCount" /></td><td class="calculated result">{{formatLabResult(labRecordForm,row)}}</td><td><button @click="deleteLabSampleRow(index)">删除</button></td></tr><tr v-for="index in 8" :key="`empty-fc-${index}`"><td v-for="cell in 9" :key="cell">&nbsp;</td></tr></tbody></table>
+                  <table class="lab-paper-table fc-method"><tbody><tr><th>培养条件</th><td>培养温度 <input v-model="labRecordForm.cultureTemperature" /> ℃　培养时间 <input v-model="labRecordForm.cultureTime" /> h</td><th>计算公式</th><td>粪大肠菌群数（个/L）= 滤膜上菌落数 × 1000 × n ÷ V</td></tr><tr><th>方法依据</th><td>HJ 347.1—2018</td><th>备注</th><td><input v-model="labRecordForm.notes" /></td></tr></tbody></table>
+                </template>
+                <footer class="lab-paper-footer"><label>取样日期<input v-model="labRecordForm.sampleDate" type="date" /></label><label>检测日期<input v-model="labRecordForm.testDate" type="date" /></label><label>检测人<input v-model="labRecordForm.analyst" /></label><label>复核人<input v-model="labRecordForm.reviewer" /></label></footer>
+              </article>
+            </section>
+          </template>
+        </template>
+        <template v-else-if="active==='labReports'">
+          <template v-if="labReportView==='folders'">
+            <section class="lab-simple-toolbar"><div><button @click="labReportView='folders'">刷新</button></div><span>选择报表周期，进入化验统计报表</span></section>
+            <section class="lab-folder-grid lab-report-folders"><button @click="openLabDailyReport"><i>日报</i><b>化验日报表</b><small>汇总每日水质与污泥检测结果</small><em>{{labDailyReports.length}} 张已保存</em></button><button class="lab-folder-planned" disabled><i>月报</i><b>化验月报表</b><small>按月汇总与趋势分析</small><em>规划中</em></button></section>
+          </template>
+          <template v-else>
+            <section class="lab-form-toolbar lab-report-toolbar"><button @click="labReportView='folders'">← 返回报表</button><label>报表日期<input v-model="labDailyReport.date" type="date" @change="changeLabReportDate" /></label><button class="primary" @click="refreshLabDailyReport()">更新原始记录</button><button @click="saveLabDailyReport">保存</button><button @click="printLabDailyReport">打印 / 预览</button><button @click="exportLabDailyReport">导出 Excel</button><span>最近更新：{{labDailyReport.updatedAt}}</span></section>
+            <section class="lab-paper-wrap lab-report-wrap">
+              <article class="lab-report-paper">
+                <h1>化验日报表</h1>
+                <button class="lab-report-refresh" @click="refreshLabDailyReport()">更新</button>
+                <div class="lab-report-meta"><label>项目名称<input v-model="labDailyReport.projectName" /></label><label>统计报表编号<input v-model="labDailyReport.reportNo" /></label></div>
+                <table class="lab-report-table"><thead><tr><th>类别</th><th>频次</th><th>项目</th><th colspan="2">进水</th><th colspan="2">出水</th></tr></thead><tbody>
+                  <tr><td rowspan="12" class="report-category">污水</td><td rowspan="9">日检</td><th>pH</th><td colspan="2"><input v-model="labDailyReport.values['sewage.ph.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sewage.ph.out']" /></td></tr>
+                  <tr><th>CODCr（mg/L）</th><td colspan="2"><input v-model="labDailyReport.values['sewage.cod.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sewage.cod.out']" /></td></tr>
+                  <tr><th>BOD₅（mg/L）</th><td colspan="2"><input v-model="labDailyReport.values['sewage.bod5.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sewage.bod5.out']" /></td></tr>
+                  <tr><th>SS（mg/L）</th><td colspan="2"><input v-model="labDailyReport.values['sewage.ss.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sewage.ss.out']" /></td></tr>
+                  <tr><th>NH₃-N（mg/L）</th><td colspan="2"><input v-model="labDailyReport.values['sewage.nh3.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sewage.nh3.out']" /></td></tr>
+                  <tr><th>TP（mg/L）</th><td colspan="2"><input v-model="labDailyReport.values['sewage.tp.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sewage.tp.out']" /></td></tr>
+                  <tr><th>TN（mg/L）</th><td colspan="2"><input v-model="labDailyReport.values['sewage.tn.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sewage.tn.out']" /></td></tr>
+                  <tr><th>NO₃-N（mg/L）</th><td colspan="2"><input v-model="labDailyReport.values['sewage.no3.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sewage.no3.out']" /></td></tr>
+                  <tr><th>粪大肠菌群数（个/L）</th><td colspan="2"><input v-model="labDailyReport.values['sewage.fc.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sewage.fc.out']" /></td></tr>
+                  <tr><td rowspan="3">周检</td><th>氯化物（mg/L）</th><td colspan="2"><input v-model="labDailyReport.values['sewage.chloride.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sewage.chloride.out']" /></td></tr>
+                  <tr><th>总固体（mg/L）</th><td colspan="2"><input v-model="labDailyReport.values['sewage.totalSolids.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sewage.totalSolids.out']" /></td></tr>
+                  <tr><th>溶解性固体（mg/L）</th><td colspan="2"><input v-model="labDailyReport.values['sewage.dissolvedSolids.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sewage.dissolvedSolids.out']" /></td></tr>
+
+                  <tr class="report-section-start"><td rowspan="7" class="report-category">生化池<br>混合液</td><td rowspan="5">日检</td><th>生化池类别</th><th>A池</th><th>B池</th><th>C池</th><th>D池</th></tr>
+                  <tr><th>DO（mg/L）</th><td v-for="pool in ['A','B','C','D']" :key="pool"><input v-model="labDailyReport.values[`bio.do.${pool}`]" /></td></tr>
+                  <tr><th>SV（%）</th><td v-for="pool in ['A','B','C','D']" :key="pool"><input v-model="labDailyReport.values[`bio.sv.${pool}`]" /></td></tr>
+                  <tr><th>MLSS（mg/L）</th><td v-for="pool in ['A','B','C','D']" :key="pool"><input v-model="labDailyReport.values[`bio.mlss.${pool}`]" /></td></tr>
+                  <tr><th>SVI（mL/g）</th><td v-for="pool in ['A','B','C','D']" :key="pool"><input v-model="labDailyReport.values[`bio.svi.${pool}`]" /></td></tr>
+                  <tr><td rowspan="2">周检</td><th>MLVSS（mg/L）</th><td v-for="pool in ['A','B','C','D']" :key="pool"><input v-model="labDailyReport.values[`bio.mlvss.${pool}`]" /></td></tr>
+                  <tr><th>MLVSS/MLSS（%）</th><td v-for="pool in ['A','B','C','D']" :key="pool"><input v-model="labDailyReport.values[`bio.ratio.${pool}`]" /></td></tr>
+
+                  <tr class="report-section-start"><td rowspan="5" class="report-category">回流污泥</td><td rowspan="5">周检</td><th>生化池类别</th><th>A池</th><th>B池</th><th>C池</th><th>D池</th></tr>
+                  <tr><th>SV（%）</th><td v-for="pool in ['A','B','C','D']" :key="pool"><input v-model="labDailyReport.values[`return.sv.${pool}`]" /></td></tr>
+                  <tr><th>MLSS（mg/L）</th><td v-for="pool in ['A','B','C','D']" :key="pool"><input v-model="labDailyReport.values[`return.mlss.${pool}`]" /></td></tr>
+                  <tr><th>SVI（mL/g）</th><td v-for="pool in ['A','B','C','D']" :key="pool"><input v-model="labDailyReport.values[`return.svi.${pool}`]" /></td></tr>
+                  <tr><th>MLVSS（mg/L）</th><td v-for="pool in ['A','B','C','D']" :key="pool"><input v-model="labDailyReport.values[`return.mlvss.${pool}`]" /></td></tr>
+
+                  <tr class="report-section-start"><td rowspan="5" class="report-category">污泥</td><td rowspan="2">日检</td><th>类别</th><th colspan="2">脱水前污泥</th><th colspan="2">脱水后污泥</th></tr>
+                  <tr><th>含水率（%）</th><td colspan="2"><input v-model="labDailyReport.values['sludge.moistureBefore.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sludge.moistureAfter.out']" /></td></tr>
+                  <tr><td rowspan="2">周检</td><th>pH</th><td colspan="2"><input v-model="labDailyReport.values['sludge.phBefore.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sludge.phAfter.out']" /></td></tr>
+                  <tr><th>有机物含量（%）</th><td colspan="2"><input v-model="labDailyReport.values['sludge.organicBefore.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sludge.organicAfter.out']" /></td></tr>
+                  <tr><td>月检</td><th>粪大肠菌群数（个/L）</th><td colspan="2"><input v-model="labDailyReport.values['sludge.fcBefore.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sludge.fcAfter.out']" /></td></tr>
+                  <tr><th>备注</th><td colspan="6" class="report-notes">1、污泥检测项目，不脱泥时无数据。<br>2、BOD₅为5天前样品检测结果，粪大肠菌群数为前一日样品检测结果，其余为当日样品检测结果。</td></tr>
+                </tbody></table>
+                <footer class="lab-report-footer"><label>日期<input v-model="labDailyReport.date" type="date" /></label><label>填报人<input v-model="labDailyReport.reporter" /></label><label>审核人<input v-model="labDailyReport.reviewer" /></label></footer>
+              </article>
+            </section>
+          </template>
         </template>
         <template v-else-if="active==='overview'">
           <div class="metrics">
@@ -760,6 +1415,40 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
           <div class="panel table-panel"><div class="panel-head"><div><h2>访客扫码登记记录</h2><small>保留来访单位、事由、接待人和确认时间</small></div><span>{{visitorRecords.length}} 人次</span></div><table><thead><tr><th>访客</th><th>单位 / 手机</th><th>来访事由</th><th>接待人</th><th>登记时间</th><th>状态</th></tr></thead><tbody><tr v-for="item in visitorRecords" :key="item.id"><td><b>{{item.visitorName}}</b></td><td>{{item.companyName||'—'}}<small>{{item.mobile||'—'}}</small></td><td>{{item.visitPurpose}}</td><td>{{item.hostName}}</td><td>{{new Date(item.registeredAt).toLocaleString('zh-CN')}}</td><td><span class="tag green">已确认告知</span></td></tr></tbody></table></div>
         </template>
       </article>
+    </section>
+  </div>
+
+  <div v-if="activeModuleMetricManager" class="modal-mask module-metric-mask">
+    <section class="module-metric-dialog">
+      <header class="module-metric-head"><div><p class="eyebrow">{{moduleMetricLabels[activeModuleMetricManager]}}</p><h2>{{activeMetricBoard||moduleMetricLabels[activeModuleMetricManager]}} · 指标配置</h2><small>配置完成并保存前，后台页面保持锁定。</small></div><button @click="closeModuleMetricManager">×</button></header>
+      <form v-if="showNewMetricForm" class="module-new-metric-form" @submit.prevent="addCustomMetric">
+        <label v-if="!activeMetricBoard">指标分类<select v-model="newMetricForm.category"><optgroup label="结果指标"><option v-for="category in resultCategories" :key="category">{{category}}</option></optgroup><optgroup label="过程控制"><option v-for="category in processCategories" :key="category">{{category}}</option></optgroup></select></label>
+        <label>指标名称<input v-model="newMetricForm.name" required placeholder="例如：吨水电耗" /></label>
+        <label>单位<input v-model="newMetricForm.unit" required placeholder="kWh/m³" /></label>
+        <label>数据类型<select v-model="newMetricForm.dataType"><option value="DECIMAL">小数</option><option value="INTEGER">整数</option><option value="PERCENT">百分比</option><option value="TEXT">文本</option><option value="BOOLEAN">是/否</option><option value="DATE">日期</option></select></label>
+        <label class="compact-check"><input v-model="newMetricForm.required" type="checkbox" /> 必填</label>
+        <label class="module-metric-meaning">填写规范<input v-model="newMetricForm.fillSpec" placeholder="例如：保留两位小数，范围 0～100" /></label>
+        <label class="module-metric-meaning">指标说明<input v-model="newMetricForm.meaning" placeholder="指标用途或定义" /></label>
+        <div class="module-new-metric-actions"><button type="button" @click="cancelModuleMetricCreation">取消</button><button class="primary">添加到本模块</button></div>
+      </form>
+      <div class="module-metric-toolbar"><input v-model="moduleMetricSearch" placeholder="搜索指标名称或说明" /><span>当前显示 {{moduleConfigMetrics.filter(metric=>isMetricEnabledInModule(metric,activeModuleMetricManager)).length}} 项</span><button @click="startMetricCreationFromModule">＋ 新增指标</button></div>
+      <div class="module-metric-table-wrap"><table class="module-metric-table"><thead><tr><th>显示</th><th>指标名称</th><th>单位</th><th>数据类型</th><th>必填</th><th>填写规范</th><th>偏差规则</th><th>正常范围</th><th>预警范围</th><th>隐藏</th><th>操作</th></tr></thead><tbody>
+        <tr v-for="metric in moduleConfigMetrics" :key="metricKey(metric)" :class="{hiddenMetric:settingFor(metric).hidden}">
+          <td><input type="checkbox" :checked="isMetricEnabledInModule(metric,activeModuleMetricManager)" :disabled="settingFor(metric).hidden" @change="setMetricEnabledInModule(metric,activeModuleMetricManager,($event.target as HTMLInputElement).checked)" /></td>
+          <td><small v-if="!activeMetricBoard">{{metric.category}}</small><input v-model="settingFor(metric).displayName" :placeholder="metric.name" /></td>
+          <td><input v-model="settingFor(metric).displayUnit" :placeholder="metric.unit" /></td>
+          <td><select v-model="settingFor(metric).dataType"><option value="DECIMAL">小数</option><option value="INTEGER">整数</option><option value="PERCENT">百分比</option><option value="TEXT">文本</option><option value="BOOLEAN">是/否</option><option value="DATE">日期</option></select></td>
+          <td><input v-model="settingFor(metric).required" type="checkbox" /></td>
+          <td><input v-model="settingFor(metric).fillSpec" placeholder="填写格式、范围或说明" /></td>
+          <td><select v-model="settingFor(metric).mode" :disabled="['TEXT','BOOLEAN','DATE'].includes(settingFor(metric).dataType)"><option value="UPPER">上限管理</option><option value="LOWER">下限管理</option><option value="CENTER">中间值管理</option></select></td>
+          <td><label>± <input v-model.number="settingFor(metric).healthyPct" type="number" min="0" :disabled="['TEXT','BOOLEAN','DATE'].includes(settingFor(metric).dataType)" />%</label></td>
+          <td><label>至 <input v-model.number="settingFor(metric).warningPct" type="number" min="0" :disabled="['TEXT','BOOLEAN','DATE'].includes(settingFor(metric).dataType)" />%</label></td>
+          <td><input v-model="settingFor(metric).hidden" type="checkbox" /></td>
+          <td><button class="metric-delete-button" @click="deleteMetricFromBoard(metric)">删除</button></td>
+        </tr>
+        <tr v-if="!moduleConfigMetrics.length"><td colspan="11" class="entry-empty-row">未找到符合条件的指标</td></tr>
+      </tbody></table></div>
+      <footer class="module-metric-foot"><span>“显示”控制当前页面，“隐藏”可保留字段但不在业务页面呈现。</span><div><button @click="closeModuleMetricManager">取消</button><button class="primary" @click="saveModuleMetricSettings">保存配置</button></div></footer>
     </section>
   </div>
 

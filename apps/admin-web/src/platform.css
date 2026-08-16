@@ -94,7 +94,8 @@ body {
 .login-card input:focus { border-color: #0ea5e9; box-shadow: 0 0 0 3px rgba(14,165,233,.12); }
 .login-card>button { height:39px; border-radius:8px; background:#137aa8; font-size:11px; }
 
-.app-shell { height:100vh; min-height:0; grid-template-columns:204px 1fr; grid-template-rows:58px minmax(0,1fr); overflow:hidden; }
+.app-shell { height:100vh; min-height:0; grid-template-columns:204px minmax(0,1fr); grid-template-rows:58px minmax(0,1fr); overflow:hidden; transition:grid-template-columns .2s ease; }
+.app-shell.sidebarCollapsed { grid-template-columns:62px minmax(0,1fr); }
 
 .global-topbar { grid-column:1/-1; grid-row:1; z-index:20; height:58px; display:flex; align-items:center; justify-content:space-between; padding:0 18px; background:#052d47; color:#e8f7fd; box-shadow:0 2px 12px rgba(4,38,59,.18); }
 .topbar-brand { display:flex; align-items:center; gap:13px; min-width:0; }
@@ -130,6 +131,18 @@ body {
 
 .app-shell > aside .module-nav { min-height:0; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; scrollbar-color:rgba(125,211,252,.25) transparent; }
 .workspace { grid-column:2; grid-row:2; height:100%; overflow-y:auto; overscroll-behavior:contain; }
+.sidebar-toggle { width:100%; min-height:31px; display:flex; align-items:center; justify-content:center; gap:6px; margin:0 0 8px; padding:5px 8px; border:1px solid rgba(125,211,252,.16); border-radius:7px; background:rgba(56,189,248,.06); color:#a9d9ec; font-size:10px; cursor:pointer; }
+.sidebar-toggle:hover { border-color:rgba(125,211,252,.34); background:rgba(56,189,248,.12); color:#fff; }
+.sidebar-toggle span { font-size:18px; font-weight:400; line-height:1; }
+.sidebar-toggle b { font-size:10px; font-weight:500; }
+.app-shell.sidebarCollapsed > aside { padding-left:8px; padding-right:8px; }
+.sidebarCollapsed .sidebar-toggle { width:40px; margin-left:auto; margin-right:auto; padding:4px; }
+.sidebarCollapsed .sidebar-toggle b,.sidebarCollapsed .module-nav-home>span:not(.nav-icon),.sidebarCollapsed .nav-group-title>span:not(.nav-icon),.sidebarCollapsed .nav-group-title i { display:none; }
+.sidebarCollapsed .module-nav-home,.sidebarCollapsed .nav-group-title { grid-template-columns:1fr; justify-items:center; padding:8px 4px; }
+.sidebarCollapsed .module-nav-home,.sidebarCollapsed .nav-group-title { min-height:42px; }
+.sidebarCollapsed .nav-children { display:none!important; }
+.sidebarCollapsed .module-nav { padding-right:0; }
+.sidebarCollapsed .nav-icon { width:26px; height:26px; font-size:17px; }
 
 .logo-row {
   gap: 10px;

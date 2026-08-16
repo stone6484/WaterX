@@ -42,13 +42,13 @@
 
 .diagnosis-section-head h2,.panel-head h2,.module-heading h2,.condition-detail > header h2 { font-size: var(--wx-font-lg); }
 .diagnosis-table td b,.diagnosis-table td strong,.process-config-table td b,
-.process-config-table td strong,.metric-manager-table td:first-child b { font-size: var(--wx-font-md); }
+.process-config-table td strong,.metric-manager-table td:nth-child(2) b { font-size: var(--wx-font-md); }
 
 /* 诊断表三类核心数值保持同字号，仅实际值使用粗体。 */
+.diagnosis-table td:nth-child(3),
 .diagnosis-table td:nth-child(4),
-.diagnosis-table td:nth-child(5),
-.diagnosis-table td:nth-child(6) { color: var(--wx-text); font-size: var(--wx-font-md); font-weight: 400; }
-.diagnosis-table td:nth-child(6) strong { color: var(--wx-heading); font-size: inherit; font-weight: 650; }
+.diagnosis-table td:nth-child(5) { color: var(--wx-text); font-size: var(--wx-font-md); font-weight: 400; }
+.diagnosis-table td:nth-child(5) strong { color: var(--wx-heading); font-size: inherit; font-weight: 650; }
 
 /* 右侧过程控制与左侧结果指标使用同一排版层级。 */
 .control-group-title b { font-size: var(--wx-font-md); font-weight: 650; }
@@ -56,11 +56,11 @@
 .control-indicator-head { font-size: var(--wx-font-sm); }
 .control-indicator-row { min-height: 42px; font-size: var(--wx-font-sm); }
 .control-indicator-row b { color: var(--wx-heading); font-size: var(--wx-font-md); font-weight: 650; }
-.control-indicator-row > span:nth-child(2) { font-size: var(--wx-font-sm); }
-.control-indicator-row > span:nth-child(3),
+.control-indicator-row > span:nth-child(3) { font-size: var(--wx-font-sm); }
+.control-indicator-row > span:nth-child(4),
 .control-indicator-row strong,
 .control-indicator-row em { font-size: var(--wx-font-md); }
-.control-indicator-row > span:nth-child(3) { color: var(--wx-text); font-weight: 400; }
+.control-indicator-row > span:nth-child(4) { color: var(--wx-text); font-weight: 400; }
 .control-indicator-row strong { color: var(--wx-heading); font-weight: 650; }
 .control-indicator-row em { font-weight: 500; }
 
