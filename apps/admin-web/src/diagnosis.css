@@ -158,7 +158,7 @@ button.primary { border-color:#0284c7!important; background:#0284c7!important; c
 .entry-list-actions { display:flex; align-items:center; gap:7px; }
 .entry-list-actions button,.entry-filter-panel button,.entry-row-actions button,.entry-form-toolbar>div>button { min-height:30px; padding:6px 11px; border:1px solid #c7dce7; border-radius:6px; background:#fff; color:#28749b; font-size:10px; font-weight:600; cursor:pointer; }
 .entry-list-actions button.danger-lite { border-color:#efcece; color:#c34d4d; }
-.entry-filter-panel { display:grid; grid-template-columns:minmax(150px,1.3fr) 130px 142px 142px 110px minmax(220px,1.5fr) auto auto; align-items:end; gap:8px; margin-bottom:8px; padding:10px 12px; border:1px solid #dcebf4; border-radius:10px; background:#f8fbfd; }
+.entry-filter-panel { display:grid; grid-template-columns:minmax(150px,1.3fr) 130px 142px 142px 110px repeat(4,auto); align-items:end; gap:8px; margin-bottom:8px; padding:10px 12px; border:1px solid #dcebf4; border-radius:10px; background:#f8fbfd; }
 .entry-filter-panel label { display:grid; gap:5px; color:#607b8d; font-size:9px; font-weight:700; }
 .entry-filter-panel input,.entry-filter-panel select { width:100%; height:31px; padding:0 8px; border:1px solid #ccdee8; border-radius:6px; background:#fff; color:#274b62; font-size:10px; outline:none; }
 .entry-filter-panel input:focus,.entry-filter-panel select:focus { border-color:#58afd2; box-shadow:0 0 0 2px rgba(14,165,233,.08); }
@@ -166,10 +166,16 @@ button.primary { border-color:#0284c7!important; background:#0284c7!important; c
 .entry-range-filter span { grid-column:1/-1; color:#607b8d; font-size:9px; font-weight:700; }
 .entry-range-filter i { color:#91a4af; font-size:9px; font-style:normal; }
 .entry-query-button,.entry-reset-button { height:31px; }
+.entry-import-input { display:none; }
 .entry-list-panel .process-table-wrap { max-height:620px; }
-.daily-entry-table { min-width:1900px; }
+.daily-entry-table { width:max-content; min-width:100%; }
 .daily-entry-table th { white-space:nowrap; }
 .daily-entry-table td { height:45px; white-space:nowrap; }
+.daily-entry-table .entry-metric-column { min-width:112px; text-align:center; }
+.daily-entry-table th.entry-metric-column small,.daily-entry-table th.entry-metric-column b,.daily-entry-table th.entry-metric-column em { display:block; white-space:nowrap; }
+.daily-entry-table th.entry-metric-column small { margin-bottom:2px; color:#6c899a; font-size:8px; font-weight:600; }
+.daily-entry-table th.entry-metric-column b { color:#294f67; font-size:9px; }
+.daily-entry-table th.entry-metric-column em { margin-top:2px; color:#8799a4; font-size:8px; font-style:normal; font-weight:500; }
 .daily-entry-table tbody tr.selected td { background:#f0f9fd; }
 .daily-entry-table td b { font-size:10px; }
 .daily-entry-table td strong { font-size:10px; }
@@ -186,6 +192,15 @@ button.primary { border-color:#0284c7!important; background:#0284c7!important; c
 .entry-empty-row { height:110px!important; color:#8a9da9!important; text-align:center; }
 .entry-form-toolbar>div:first-child { flex-wrap:wrap; }
 .entry-form-toolbar>div>button { color:#51788f; }
+.entry-pagination { min-height:52px; display:flex; align-items:center; justify-content:space-between; gap:18px; margin-top:8px; padding:8px 14px; border:1px solid #dcebf4; border-radius:10px; background:#fff; color:#607b8d; font-size:10px; }
+.entry-pagination>div,.entry-pagination nav,.entry-pagination label { display:flex; align-items:center; gap:8px; }
+.entry-pagination select,.entry-pagination input,.entry-pagination button { height:31px; border:1px solid #cbdde7; border-radius:6px; background:#fff; color:#315a72; font-size:10px; }
+.entry-pagination select { min-width:86px; padding:0 8px; }
+.entry-pagination input { width:52px; padding:0 6px; text-align:center; }
+.entry-pagination button { min-width:32px; padding:0 9px; cursor:pointer; }
+.entry-pagination button:hover:not(:disabled) { border-color:#78bbd8; color:#087eae; }
+.entry-pagination button.selected { border-color:#168fcb; background:#168fcb; color:#fff; font-weight:700; }
+.entry-pagination button:disabled { background:#f2f5f7; color:#a2b0b8; cursor:not-allowed; }
 
 @media (max-width:1400px) {
   .entry-filter-panel { grid-template-columns:repeat(4,minmax(120px,1fr)); }
@@ -319,7 +334,7 @@ button.primary { border-color:#0284c7!important; background:#0284c7!important; c
 .condition-detail>header span { color:#748b9b; font-size:9px; }
 .condition-detail>header>div:last-child { display:flex; gap:6px; }
 .condition-detail button.danger-lite { border-color:#f0cece; color:#c44848; }
-.condition-meta { display:grid; grid-template-columns:minmax(150px,.8fr) 150px minmax(260px,1.5fr) auto; align-items:end; gap:12px; min-height:66px; padding:11px 14px; border-bottom:1px solid #e5eef3; background:#f8fbfd; }
+.condition-meta { display:grid; grid-template-columns:minmax(140px,.8fr) 128px 128px minmax(220px,1.4fr) auto; align-items:end; gap:12px; min-height:66px; padding:11px 14px; border-bottom:1px solid #e5eef3; background:#f8fbfd; }
 .condition-meta label { display:grid; gap:4px; color:#698191; font-size:9px; }
 .condition-meta input { height:29px; padding:0 8px; border:1px solid #cbdfe9; border-radius:6px; background:#fff; color:#31566d; font-size:10px; }
 .condition-meta input:disabled { border-color:transparent; background:transparent; }
@@ -558,7 +573,21 @@ button.primary { border-color:#0284c7!important; background:#0284c7!important; c
 .deviation-cell>div { flex-wrap:nowrap; white-space:nowrap; }
 .deviation-cell em { display:inline-block!important; white-space:nowrap; }
 
-/* 工艺分析日报：台账管理 + 横向双层表头 */
+/* 工艺分析日报：诊断结果摘要台账 */
+.process-report-toolbar>div { display:grid; gap:3px; }
+.process-report-toolbar b { color:#244b63; font-size:12px; }
+.process-report-toolbar small { color:#7a919f; font-size:9px; }
+.process-report-filters { grid-template-columns:minmax(180px,1fr) 142px 142px auto auto; }
+.process-summary-table { min-width:900px; table-layout:auto; }
+.process-summary-table th,.process-summary-table td { white-space:nowrap; }
+.process-summary-table th:first-child,.process-summary-table td:first-child { min-width:170px; text-align:left; }
+.process-summary-table th:nth-child(2),.process-summary-table td:nth-child(2),
+.process-summary-table th:nth-child(3),.process-summary-table td:nth-child(3) { min-width:110px; }
+.process-summary-table th:nth-child(8),.process-summary-table td:nth-child(8) { min-width:160px; }
+.report-count { min-width:28px; height:24px; display:inline-flex; align-items:center; justify-content:center; border-radius:12px; font-weight:750; }
+.report-count.normal { background:#e5f7ef; color:#07865b; }
+.report-count.warning { background:#fff3dc; color:#c97700; }
+.report-count.alarm { background:#ffebec; color:#dc3545; }
 .process-report-sheet { min-height:calc(100vh - 150px); padding:20px; border:1px solid #dce9f0; border-radius:10px; background:#fff; }
 .process-report-sheet>header { margin-bottom:18px; text-align:center; }
 .process-report-sheet h2 { margin:0 0 5px; color:#183f58; font-size:18px; }
@@ -568,7 +597,11 @@ button.primary { border-color:#0284c7!important; background:#0284c7!important; c
 .process-report-table-wrap th,.process-report-table-wrap td { min-width:92px; height:42px; padding:7px; border:1px solid #51606a; color:#263f50; font-size:10px; text-align:center; white-space:normal; }
 .process-report-table-wrap thead tr:first-child th { background:#eaf4f9; color:#174f70; font-size:11px; font-weight:750; }
 .process-report-table-wrap thead tr:nth-child(2) th { background:#f7fafb; }
+.process-report-table-wrap thead th b { display:block; font-size:10px; }
+.process-report-table-wrap thead th small { display:block; margin-top:3px; color:#718999; font-size:9px; font-weight:500; }
 .process-report-table-wrap td { font-weight:650; }
+.process-report-table-wrap td input { width:100%; height:30px; box-sizing:border-box; border:1px solid #d6e5ee; border-radius:5px; background:#fff; color:#173b53; font:600 11px/1.2 inherit; text-align:center; }
+.process-report-table-wrap td input:focus { border-color:#168dd0; outline:2px solid rgba(22,141,208,.12); }
 .process-report-list { min-height:360px; }
 
 @media (max-width: 900px) {

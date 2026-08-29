@@ -6,5 +6,6 @@ import './platform.css'
 import './diagnosis.css'
 import './typography.css'
 import './dashboard.css'
+import './module-shell.css'
 
 createApp(App).mount('#app')

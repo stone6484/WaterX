@@ -1,7 +1,14 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import QRCode from 'qrcode'
 import { ApiClient, type Area, type AssessmentHistory, type ControlMeasureInput, type Employee, type EmployeeQualification, type EmployeeSafetyArchive, type Hazard, type InspectionPlan, type InspectionStatistics, type InspectionSummary, type InspectionTask, type InspectionTemplate, type InvestmentSummary, type OccupationalExam, type OccupationalFactor, type OccupationalHealthSummary, type OrgUnit, type RiskObject, type RiskSummary, type SafetyAsset, type SafetyAssetSummary, type SafetyAttachment, type SafetyBudget, type SafetyCommitment, type SafetyCommitmentTemplate, type SafetyExpense, type SafetyHazard, type Site, type TrainingAssignment, type TrainingCourse, type TrainingMaterial, type TrainingStatistics, type TrainingSummary, type VisitorBriefing, type VisitorRecord, type WorkPermit, type WorkPermitTemplate } from '@safety/api-client'
+import ManagementQualityPage from './modules/management-quality/ManagementQualityPage.vue'
+import ImprovementDraftPanel from './modules/management-quality/ImprovementDraftPanel.vue'
+import { isQualityPageId } from './modules/management-quality/rules'
+import type { ImprovementDraft, QualityPageId } from './modules/management-quality/types'
+import ProcessEvaluationPage from './modules/process-evaluation/ProcessEvaluationPage.vue'
+import { isProcessEvaluationPageId } from './modules/process-evaluation/rules'
+import type { ProcessEvaluationPageId } from './modules/process-evaluation/types'
 
 const api = new ApiClient()
 const token = ref(sessionStorage.getItem('accessToken') || '')
@@ -78,7 +85,38 @@ const loading = ref(false)
 const error = ref('')
 const username = ref('platform_admin')
 const password = ref('')
-const active = ref<'platform' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education'>('platform')
+const plannedPages = {
+  operationsShift: { module:'生产运行', title:'班组与排班', stage:'D', description:'维护运行班组、岗位与值班计划，形成清晰的当班责任边界。', capabilities:['班组档案','岗位配置','轮班日历','临时调班'] },
+  operationsHandover: { module:'生产运行', title:'交接班管理', stage:'D', description:'承接班次交接事项、异常说明和关键参数确认，避免信息断点。', capabilities:['交班清单','接班确认','遗留事项','异常交接'] },
+  operationsTasks: { module:'生产运行', title:'当班任务', stage:'D', description:'汇集本班巡检、操作、处置和临时任务，跟踪当班执行状态。', capabilities:['任务看板','岗位派发','执行反馈','逾期提醒'] },
+  operationsLog: { module:'生产运行', title:'运行日志', stage:'D', description:'按班次沉淀运行过程、关键事件和处置记录，形成连续运行档案。', capabilities:['班次日志','关键事件','异常记录','日志归档'] },
+  inventoryOverview: { module:'库存管理', title:'库存总览', stage:'D', description:'汇总备品备件、药剂、耗材和应急物资的库存态势。', capabilities:['库存结构','库存金额','收发趋势','风险提示'] },
+  inventoryMaterials: { module:'库存管理', title:'物资台账', stage:'D', description:'统一维护物资分类、规格、单位、仓位与安全库存。', capabilities:['物资分类','规格型号','仓位管理','安全库存'] },
+  inventoryInbound: { module:'库存管理', title:'入库管理', stage:'D', description:'记录采购、退料及调拨入库，保留批次和验收信息。', capabilities:['到货登记','验收入库','批次追溯','入库台账'] },
+  inventoryOutbound: { module:'库存管理', title:'出库与领用', stage:'D', description:'覆盖领料、出库、退库和使用去向，关联成本与责任人。', capabilities:['领用申请','出库确认','退库登记','去向追踪'] },
+  inventoryStocktake: { module:'库存管理', title:'库存盘点', stage:'D', description:'按计划发起盘点，记录账实差异和调整依据。', capabilities:['盘点计划','盘点任务','差异复核','库存调整'] },
+  inventoryAlerts: { module:'库存管理', title:'库存预警', stage:'D', description:'关注低库存、超储、临期和呆滞物资，支持提前处置。', capabilities:['低库存预警','超储提示','临期提醒','呆滞分析'] },
+  businessTargets: { module:'经营管理', title:'经营目标', stage:'P', description:'承接年度与月度经营目标，明确水厂经营管理方向。', capabilities:['年度目标','月度分解','责任归属','目标跟踪'] },
+  businessPlan: { module:'经营管理', title:'生产计划', stage:'P', description:'统筹处理量、药剂、能源、维修和人员等生产经营计划。', capabilities:['水量计划','物耗计划','检修协同','计划调整'] },
+  businessBudget: { module:'经营管理', title:'预算管理', stage:'P', description:'建立经营预算与费用控制边界，为执行分析提供基线。', capabilities:['预算编制','预算分解','预算调整','占用控制'] },
+  businessExecution: { module:'经营管理', title:'执行分析', stage:'P', description:'对比目标、计划、预算和实际执行，呈现偏差与原因。', capabilities:['计划达成','预算执行','偏差分析','滚动预测'] },
+  businessCost: { module:'经营管理', title:'成本收益', stage:'P', description:'观察处理成本、资源消耗和项目收益的结构与变化。', capabilities:['成本归集','单耗分析','收益分析','结构对比'] },
+  businessReceivables: { module:'经营管理', title:'回款管理', stage:'P', description:'跟踪合同应收、开票和回款节点，识别经营现金风险。', capabilities:['应收台账','开票跟踪','回款计划','逾期提醒'] },
+  improvementIssues: { module:'改进提升', title:'问题清单', stage:'A', description:'统一收集过程评价、管理质量和日常运营发现的问题。', capabilities:['问题登记','来源关联','责任分派','优先级管理'] },
+  improvementPlans: { module:'改进提升', title:'改进计划', stage:'A', description:'将问题转化为有负责人、有节点、有资源的改进计划。', capabilities:['措施制定','节点计划','资源需求','审批确认'] },
+  improvementExecution: { module:'改进提升', title:'整改执行', stage:'A', description:'跟踪整改动作、过程证据和延期情况，保持执行透明。', capabilities:['进度反馈','证据上传','延期申请','风险升级'] },
+  improvementReview: { module:'改进提升', title:'复核关闭', stage:'A', description:'验证整改效果和关闭条件，避免问题未经确认直接销项。', capabilities:['效果复核','关闭确认','退回整改','复发跟踪'] },
+  improvementAnalysis: { module:'改进提升', title:'改进分析', stage:'A', description:'分析问题结构、关闭效率和复发趋势，支持持续改进。', capabilities:['问题趋势','关闭周期','复发分析','改进成效'] }
+} as const
+type PlannedPageId = keyof typeof plannedPages
+type AppPage = 'platform' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education' | PlannedPageId | QualityPageId | ProcessEvaluationPageId
+const active = ref<AppPage>('platform')
+const currentPlannedPage = computed(()=>plannedPages[active.value as PlannedPageId])
+const currentQualityPage = computed(()=>isQualityPageId(active.value) ? active.value : null)
+const currentProcessEvaluationPage = computed(()=>isProcessEvaluationPageId(active.value) ? active.value : null)
+const pendingImprovementDraft = ref<ImprovementDraft | null>(null)
+const safetyPages:AppPage[]=['overview','org','employee','area','risk','inspection','hazard','permit','training','asset','health','investment','education']
+const isSafetyPage = computed(()=>safetyPages.includes(active.value))
 const dashboardTaskTab = ref<'pending'|'processed'|'cc'|'started'>('pending')
 const dashboardTasks = {
   pending: [{title:'审核一期生化线冬季工况调整',module:'生产运行',time:'今天 14:30',status:'待审核'},{title:'确认重点部位安全检查整改结果',module:'安全管理',time:'今天 17:00',status:'待处理'},{title:'复核二期进水 COD 异常数据',module:'化验管理',time:'明天 09:00',status:'待复核'}],
@@ -86,8 +124,28 @@ const dashboardTasks = {
   cc: [{title:'2#鼓风机维护完成记录',module:'设备管理',time:'今天 10:20',status:'供查阅'},{title:'本周出水水质分析周报',module:'化验管理',time:'周一 08:30',status:'供查阅'}],
   started: [{title:'发起夏季高负荷工况评审',module:'生产运行',time:'08-12 15:10',status:'审批中'},{title:'发起季度应急物资盘点',module:'安全管理',time:'08-10 09:15',status:'执行中'}]
 }
-const expandedModules = ref<Record<string, boolean>>({ production: false, equipment: false, laboratory: false, safety: false, energy: false, business: false, basic: false })
+const expandedModules = ref<Record<string, boolean>>({ operations:false, process:false, equipment:false, laboratory:false, safety:false, inventory:false, efficiency:false, business:false, evaluation:false, quality:false, improvement:false, basic:false })
 const sidebarCollapsed = ref(false)
+function openQualityPage(page:QualityPageId) {
+  active.value = page
+}
+function openProcessEvaluationPage(page:ProcessEvaluationPageId) {
+  active.value = page
+}
+function handleProcessEvaluationNavigate(page:string) {
+  if (page === 'operationEntry') { active.value = 'operationEntry'; loadOperationEntry(); expandedModules.value.process = true }
+  else if (page === 'labRecords') { active.value = 'labRecords'; labRecordView.value = 'folders'; expandedModules.value.laboratory = true }
+  else if (page === 'hazard') { active.value = 'hazard'; expandedModules.value.safety = true }
+}
+function handleQualityImprovement(draft:ImprovementDraft) {
+  pendingImprovementDraft.value = draft
+  active.value = 'improvementIssues'
+  expandedModules.value.improvement = true
+}
+function promoteImprovementDraft() {
+  active.value = 'improvementPlans'
+  expandedModules.value.improvement = true
+}
 function toggleModule(module: string) {
   if (sidebarCollapsed.value) {
     sidebarCollapsed.value = false
@@ -112,7 +170,6 @@ type DiagnosisMetric = {
 }
 const diagnosisDate = ref(new Date().toISOString().slice(0, 10))
 const diagnosisLine = ref('一期生化线')
-const diagnosisScenario = ref('冬季工况')
 const diagnosisUpdatedAt = ref('尚未更新')
 const diagnosisMetrics: DiagnosisMetric[] = [
   { category: '进水水质', name: 'COD', unit: 'mg/L', design: '350', target: '280', actual: '302', deviation: 7.9, level: 'normal', meaning: '化学需氧量' },
@@ -396,23 +453,73 @@ function beginDesignEdit() { designMetrics.value.forEach(metric=>{if(!designValu
 function saveDesignValues() { localStorage.setItem('waterx-process-design-values', JSON.stringify(designValues)); designEditMode.value = false }
 Object.assign(designValues, JSON.parse(localStorage.getItem('waterx-process-design-values') || '{}'))
 
-type ConditionPlan = { id: string; name: string; effectiveDate: string; description: string; targets: Record<string,string> }
-const conditionPlans = reactive<ConditionPlan[]>(JSON.parse(localStorage.getItem('waterx-condition-plans') || 'null') || [
-  { id: 'winter', name: '冬季工况', effectiveDate: '2026-11-01', description: '低水温条件下强化硝化与污泥龄控制', targets: Object.fromEntries(diagnosisMetrics.map(metric => [metricKey(metric), metric.target])) },
-  { id: 'summer', name: '夏季工况', effectiveDate: '2026-05-01', description: '高水温条件下兼顾能耗与稳定达标', targets: Object.fromEntries(diagnosisMetrics.map(metric => [metricKey(metric), metric.target])) }
-])
+type ConditionPlan = { id: string; name: string; effectiveFrom: string; effectiveTo: string; description: string; targets: Record<string,string> }
+type StoredConditionPlan = Partial<ConditionPlan> & { effectiveDate?: string }
+const today = new Date().toISOString().slice(0,10)
+function dateAfter(date:string,days:number){
+  const [year,month,day]=date.split('-').map(Number)
+  return new Date(Date.UTC(year!,month!-1,day!+days)).toISOString().slice(0,10)
+}
+function legacyConditionEnd(plan:StoredConditionPlan,from:string){
+  const year=Number(from.slice(0,4))
+  if(/冬季/.test(plan.name||''))return `${year+1}-04-30`
+  if(/夏季/.test(plan.name||''))return `${year}-10-31`
+  return dateAfter(from,30)
+}
+function normalizeConditionPlan(plan:StoredConditionPlan,index:number):ConditionPlan{
+  const effectiveFrom=plan.effectiveFrom||plan.effectiveDate||today
+  return {
+    id:plan.id||`condition-${Date.now()}-${index}`,
+    name:plan.name||`工况${index+1}`,
+    effectiveFrom,
+    effectiveTo:plan.effectiveTo||legacyConditionEnd(plan,effectiveFrom),
+    description:plan.description||'',
+    targets:plan.targets||Object.fromEntries(diagnosisMetrics.map(metric=>[metricKey(metric),metric.target]))
+  }
+}
+function loadConditionPlans():ConditionPlan[]{
+  try {
+    const stored=JSON.parse(localStorage.getItem('waterx-condition-plans')||'null') as StoredConditionPlan[]|null
+    if(stored?.length)return stored.map(normalizeConditionPlan)
+  } catch { /* local data is invalid; use the safe defaults below */ }
+  return [
+    { id:'summer',name:'夏季工况',effectiveFrom:'2026-05-01',effectiveTo:'2026-10-31',description:'高水温条件下兼顾能耗与稳定达标',targets:Object.fromEntries(diagnosisMetrics.map(metric=>[metricKey(metric),metric.target])) },
+    { id:'winter',name:'冬季工况',effectiveFrom:'2026-11-01',effectiveTo:'2027-04-30',description:'低水温条件下强化硝化与污泥龄控制',targets:Object.fromEntries(diagnosisMetrics.map(metric=>[metricKey(metric),metric.target])) }
+  ]
+}
+const conditionPlans = reactive<ConditionPlan[]>(loadConditionPlans())
 const selectedConditionId = ref(conditionPlans[0]?.id || '')
 const selectedCondition = computed(() => conditionPlans.find(item => item.id === selectedConditionId.value))
 const conditionEditMode = ref(false)
 const showConditionForm = ref(false)
-const conditionForm = reactive({ name: '', effectiveDate: new Date().toISOString().slice(0,10), description: '' })
+const conditionForm = reactive({ name:'',effectiveFrom:today,effectiveTo:dateAfter(today,30),description:'' })
 const conditionMetrics = computed(() => allManagedMetrics.value.filter(metric => isMetricEnabledInModule(metric,'condition') && !isDerivedMetric(metric) && metric.target!=='—'))
-function createCondition() {
-  const plan: ConditionPlan = { id: `condition-${Date.now()}`, ...conditionForm, targets: Object.fromEntries(conditionMetrics.value.map(metric => [metricKey(metric), metric.target])) }
-  conditionPlans.push(plan); selectedConditionId.value = plan.id; showConditionForm.value = false; conditionEditMode.value = true
-  Object.assign(conditionForm, { name: '', effectiveDate: new Date().toISOString().slice(0,10), description: '' }); saveConditions()
+function conditionForDate(date:string){
+  return [...conditionPlans]
+    .filter(plan=>Boolean(date)&&plan.effectiveFrom<=date&&date<=plan.effectiveTo)
+    .sort((a,b)=>b.effectiveFrom.localeCompare(a.effectiveFrom))[0]
 }
-function saveConditions() { localStorage.setItem('waterx-condition-plans', JSON.stringify(conditionPlans)); conditionEditMode.value = false }
+const diagnosisCondition = computed(()=>conditionForDate(diagnosisDate.value))
+const diagnosisScenario = computed(()=>diagnosisCondition.value?.name||'未匹配工况')
+function conditionValidationMessage(plan:Pick<ConditionPlan,'id'|'name'|'effectiveFrom'|'effectiveTo'>){
+  if(!plan.name.trim())return '请输入工况名称'
+  if(!plan.effectiveFrom||!plan.effectiveTo)return '请选择工况的起始日期和结束日期'
+  if(plan.effectiveFrom>plan.effectiveTo)return '结束日期不能早于起始日期'
+  const overlap=conditionPlans.find(item=>item.id!==plan.id&&plan.effectiveFrom<=item.effectiveTo&&item.effectiveFrom<=plan.effectiveTo)
+  if(overlap)return `该时间范围与“${overlap.name}”（${overlap.effectiveFrom} 至 ${overlap.effectiveTo}）重叠，请调整后再保存`
+  return ''
+}
+function createCondition() {
+  const plan: ConditionPlan = { id:`condition-${Date.now()}`,...conditionForm,targets:Object.fromEntries(conditionMetrics.value.map(metric=>[metricKey(metric),metric.target])) }
+  const validationMessage=conditionValidationMessage(plan)
+  if(validationMessage){window.alert(validationMessage);return}
+  conditionPlans.push(plan); selectedConditionId.value = plan.id; showConditionForm.value = false; conditionEditMode.value = true
+  Object.assign(conditionForm,{name:'',effectiveFrom:today,effectiveTo:dateAfter(today,30),description:''}); saveConditions()
+}
+function saveConditions() {
+  if(selectedCondition.value){const validationMessage=conditionValidationMessage(selectedCondition.value);if(validationMessage){window.alert(validationMessage);return}}
+  localStorage.setItem('waterx-condition-plans',JSON.stringify(conditionPlans));conditionEditMode.value=false
+}
 function deleteCondition(id: string) { if (!window.confirm('确定删除该工况吗？')) return; const index = conditionPlans.findIndex(item=>item.id===id); if(index>=0) conditionPlans.splice(index,1); selectedConditionId.value=conditionPlans[0]?.id||''; saveConditions() }
 
 const entryDate = ref(new Date().toISOString().slice(0,10))
@@ -444,9 +551,8 @@ const operationEntryView = ref<'list'|'form'>('list')
 const operationEntryRecords = reactive<OperationEntryRecord[]>([])
 const selectedOperationEntryIds = ref<string[]>([])
 const editingOperationEntryId = ref('')
-const entryConditionId = ref(selectedConditionId.value)
-const entryCondition = computed(() => conditionPlans.find(item=>item.id===entryConditionId.value) || conditionPlans[0])
-const operationEntryFilters = reactive({ keyword:'', line:'', dateFrom:'', dateTo:'', status:'', codMin:'', codMax:'' })
+const entryCondition = computed(()=>conditionForDate(entryDate.value))
+const operationEntryFilters = reactive({ keyword:'', line:'', dateFrom:'', dateTo:'', status:'' })
 const filteredOperationEntryRecords = computed(() => operationEntryRecords.filter(record => {
   const keyword = operationEntryFilters.keyword.trim().toLowerCase()
   if (keyword && ![record.siteName,record.siteCode,record.line,record.entryDate,record.scenario,record.updatedBy].some(value=>value.toLowerCase().includes(keyword))) return false
@@ -454,20 +560,31 @@ const filteredOperationEntryRecords = computed(() => operationEntryRecords.filte
   if (operationEntryFilters.dateFrom && record.entryDate<operationEntryFilters.dateFrom) return false
   if (operationEntryFilters.dateTo && record.entryDate>operationEntryFilters.dateTo) return false
   if (operationEntryFilters.status && record.status!==operationEntryFilters.status) return false
-  const codMetric = allManagedMetrics.value.find(metric=>metricCode(metric)==='INQ-001')
-  const cod = codMetric ? numericValue(record.values[metricKey(codMetric)]) : null
-  if (operationEntryFilters.codMin && (cod===null || cod<Number(operationEntryFilters.codMin))) return false
-  if (operationEntryFilters.codMax && (cod===null || cod>Number(operationEntryFilters.codMax))) return false
   return true
 }).sort((a,b)=>b.entryDate.localeCompare(a.entryDate)))
-const allFilteredOperationEntriesSelected = computed(() => filteredOperationEntryRecords.value.length>0 && filteredOperationEntryRecords.value.every(record=>selectedOperationEntryIds.value.includes(record.id)))
+const operationEntryPage = ref(1)
+const operationEntryPageSize = ref(10)
+const operationEntryPageCount = computed(()=>Math.max(1,Math.ceil(filteredOperationEntryRecords.value.length/operationEntryPageSize.value)))
+const pagedOperationEntryRecords = computed(()=>{
+  const start=(operationEntryPage.value-1)*operationEntryPageSize.value
+  return filteredOperationEntryRecords.value.slice(start,start+operationEntryPageSize.value)
+})
+const operationEntryPageNumbers = computed(()=>{
+  const total=operationEntryPageCount.value
+  const start=Math.max(1,Math.min(operationEntryPage.value-2,total-4))
+  return Array.from({length:Math.min(5,total)},(_,index)=>start+index)
+})
+const allPagedOperationEntriesSelected = computed(() => pagedOperationEntryRecords.value.length>0 && pagedOperationEntryRecords.value.every(record=>selectedOperationEntryIds.value.includes(record.id)))
+const operationEntryImportInput = ref<HTMLInputElement|null>(null)
+watch(()=>[operationEntryFilters.keyword,operationEntryFilters.line,operationEntryFilters.dateFrom,operationEntryFilters.dateTo,operationEntryFilters.status],()=>{operationEntryPage.value=1})
+watch(operationEntryPageSize,()=>{operationEntryPage.value=1})
 function persistOperationEntryRecords() { localStorage.setItem(operationEntryStorageKey,JSON.stringify(operationEntryRecords)) }
 function replaceEntryValues(values: Record<string,string>) {
   Object.keys(entryValues).forEach(key=>delete entryValues[key])
   entryMetrics.value.forEach(metric=>{ entryValues[metricKey(metric)] = values[metricKey(metric)] || '' })
 }
 function newOperationEntry() {
-  editingOperationEntryId.value=''; entryDate.value=new Date().toISOString().slice(0,10); diagnosisLine.value='一期生化线'; entryConditionId.value=conditionPlans[0]?.id||''
+  editingOperationEntryId.value=''; entryDate.value=new Date().toISOString().slice(0,10); diagnosisLine.value='一期生化线'
   replaceEntryValues({}); entrySavedAt.value='尚未保存'; activeEntryCategory.value=entryGroups.value[0]?.category||'进水水质'; operationEntryView.value='form'
 }
 function editOperationEntry(record?: OperationEntryRecord) {
@@ -476,26 +593,26 @@ function editOperationEntry(record?: OperationEntryRecord) {
   if (!target) { window.alert('请先选择一条日报记录'); return }
   if(target.status==='LOCKED'){window.alert('该日报已锁定，请先解锁后再编辑');return}
   editingOperationEntryId.value=target.id; entryDate.value=target.entryDate; diagnosisLine.value=target.line
-  entryConditionId.value=conditionPlans.find(plan=>plan.name===target.scenario)?.id || conditionPlans[0]?.id || ''
   replaceEntryValues(target.values); entrySavedAt.value=target.updatedAt; activeEntryCategory.value=entryGroups.value[0]?.category||'进水水质'; operationEntryView.value='form'
 }
 function saveOperationEntry() {
   const sourceValues=Object.fromEntries(entryMetrics.value.map(metric=>[metricKey(metric),entryValues[metricKey(metric)]||'']))
   const existingForDay = operationEntryRecords.find(record=>record.line===diagnosisLine.value && record.entryDate===entryDate.value && record.id!==editingOperationEntryId.value)
+  if (existingForDay?.status==='LOCKED') { window.alert('该工艺线在所选日期的日报已锁定，不能覆盖'); return }
   if (existingForDay && !window.confirm('该工艺线在所选日期已有日报，是否覆盖原记录？')) return
   const filled = Object.values(sourceValues).filter(value=>String(value).trim()).length
   const now = new Date().toLocaleString('zh-CN',{hour12:false})
   const record: OperationEntryRecord = {
     id: editingOperationEntryId.value || existingForDay?.id || `entry-${Date.now()}`,
     siteId:selectedSite.value, siteName:currentSite.value?.name||'第一污水处理厂（示例）', siteCode:currentSite.value?.code||'PS001',
-    line:diagnosisLine.value, entryDate:entryDate.value, scenario:entryCondition.value?.name||'未指定工况', values:sourceValues,
+    line:diagnosisLine.value, entryDate:entryDate.value, scenario:entryCondition.value?.name||'未匹配工况', values:sourceValues,
     status:filled===entryMetrics.value.length?'COMPLETED':'DRAFT', updatedBy:'平台管理员', updatedAt:now
   }
   const index=operationEntryRecords.findIndex(item=>item.id===record.id)
   if(index>=0) operationEntryRecords.splice(index,1,record); else operationEntryRecords.push(record)
   persistOperationEntryRecords()
   localStorage.setItem(`waterx-operation-entry-${diagnosisLine.value}-${entryDate.value}`, JSON.stringify(sourceValues))
-  entrySavedAt.value=now; entryRevision.value++; selectedOperationEntryIds.value=[record.id]; operationEntryView.value='list'
+  entrySavedAt.value=now; entryRevision.value++; selectedOperationEntryIds.value=[record.id]; operationEntryPage.value=1; operationEntryView.value='list'
 }
 function loadOperationEntry() {
   const record=operationEntryRecords.find(item=>item.line===diagnosisLine.value&&item.entryDate===entryDate.value)
@@ -507,7 +624,7 @@ function deleteOperationEntries(ids=selectedOperationEntryIds.value) {
   if(operationEntryRecords.some(record=>ids.includes(record.id)&&record.status==='LOCKED')){window.alert('所选日报中包含已锁定记录，请先解锁');return}
   if(!window.confirm(`确定删除已选择的 ${ids.length} 条日报吗？`))return
   ids.forEach(id=>{const index=operationEntryRecords.findIndex(item=>item.id===id);if(index>=0)operationEntryRecords.splice(index,1)})
-  selectedOperationEntryIds.value=[];persistOperationEntryRecords()
+  selectedOperationEntryIds.value=[];persistOperationEntryRecords();setOperationEntryPage(Math.min(operationEntryPage.value,operationEntryPageCount.value))
 }
 function toggleLockOperationEntries(){
   if(!selectedOperationEntryIds.value.length){window.alert('请先选择要锁定或解锁的日报记录');return}
@@ -516,9 +633,98 @@ function toggleLockOperationEntries(){
   records.forEach(record=>{record.status=unlock?(Object.values(record.values).filter(Boolean).length===entryMetrics.value.length?'COMPLETED':'DRAFT'):'LOCKED'})
   persistOperationEntryRecords()
 }
-function toggleAllOperationEntries(checked:boolean){selectedOperationEntryIds.value=checked?filteredOperationEntryRecords.value.map(record=>record.id):[]}
-function resetOperationEntryFilters(){Object.assign(operationEntryFilters,{keyword:'',line:'',dateFrom:'',dateTo:'',status:'',codMin:'',codMax:''})}
-function recordMetricValue(record:OperationEntryRecord,code:string){const metric=allManagedMetrics.value.find(item=>metricCode(item)===code);return metric?(record.values[metricKey(metric)]||'—'):'—'}
+function toggleAllOperationEntries(checked:boolean){
+  const pageIds=pagedOperationEntryRecords.value.map(record=>record.id)
+  selectedOperationEntryIds.value=checked?[...new Set([...selectedOperationEntryIds.value,...pageIds])]:selectedOperationEntryIds.value.filter(id=>!pageIds.includes(id))
+}
+function resetOperationEntryFilters(){Object.assign(operationEntryFilters,{keyword:'',line:'',dateFrom:'',dateTo:'',status:''});operationEntryPage.value=1}
+function setOperationEntryPage(page:number){operationEntryPage.value=Math.min(Math.max(1,page),operationEntryPageCount.value)}
+function operationEntryMetricHeader(metric:DiagnosisMetric){
+  const unit=metricDisplayUnit(metric)
+  return `${metric.category}｜${metricDisplayName(metric)}${unit&&unit!=='—'?`（${unit}）`:''}`
+}
+async function exportOperationEntries(){
+  if(!filteredOperationEntryRecords.value.length){window.alert('当前筛选条件下没有可导出的日报');return}
+  const XLSX=await import('xlsx')
+  const rows=filteredOperationEntryRecords.value.map(record=>{
+    const row:Record<string,string>={
+      '填报状态':statusText(record.status),'水厂名称':record.siteName,'水厂编号':record.siteCode,'工艺条线':record.line,
+      '填报日期':record.entryDate,'匹配工况':record.scenario
+    }
+    entryMetrics.value.forEach(metric=>{row[operationEntryMetricHeader(metric)]=record.values[metricKey(metric)]||''})
+    row['填报进度']=`${Object.values(record.values).filter(Boolean).length}/${entryMetrics.value.length}`
+    row['填报人']=record.updatedBy;row['更新时间']=record.updatedAt
+    return row
+  })
+  const worksheet=XLSX.utils.json_to_sheet(rows)
+  worksheet['!cols']=Object.keys(rows[0]!).map(header=>({wch:Math.min(28,Math.max(12,header.length+3))}))
+  const workbook=XLSX.utils.book_new();XLSX.utils.book_append_sheet(workbook,worksheet,'运行数据填报')
+  XLSX.writeFile(workbook,`运行数据填报汇总-${new Date().toISOString().slice(0,10)}.xlsx`)
+}
+function chooseOperationEntryImport(){operationEntryImportInput.value?.click()}
+function importCellText(value:unknown){return value===null||value===undefined?'':String(value).trim()}
+function importEntryDate(value:unknown){
+  if(value instanceof Date)return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`
+  if(typeof value==='number'){
+    const parsed=new Date(Date.UTC(1899,11,30)+Math.floor(value)*86400000)
+    return parsed.toISOString().slice(0,10)
+  }
+  const text=importCellText(value).replace(/[/.]/g,'-')
+  const match=text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+  return match?`${match[1]}-${match[2]!.padStart(2,'0')}-${match[3]!.padStart(2,'0')}`:''
+}
+async function importOperationEntries(event:Event){
+  const input=event.target as HTMLInputElement
+  const file=input.files?.[0]
+  if(!file)return
+  try{
+    const XLSX=await import('xlsx')
+    const workbook=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true})
+    const firstSheet=workbook.SheetNames[0]
+    if(!firstSheet)throw new Error('Excel 文件中没有工作表')
+    const rows=XLSX.utils.sheet_to_json<Record<string,unknown>>(workbook.Sheets[firstSheet]!,{defval:''})
+    if(!rows.length)throw new Error('Excel 工作表中没有可导入的数据')
+    const nameCounts=new Map<string,number>()
+    entryMetrics.value.forEach(metric=>{const name=metricDisplayName(metric);nameCounts.set(name,(nameCounts.get(name)||0)+1)})
+    let imported=0,skipped=0
+    const errors:string[]=[]
+    rows.forEach((row,rowIndex)=>{
+      const line=importCellText(row['工艺条线']||row['工艺线'])
+      const recordDate=importEntryDate(row['填报日期']||row['日期'])
+      if(!line||!recordDate){errors.push(`第 ${rowIndex+2} 行缺少工艺条线或有效填报日期`);return}
+      const siteName=importCellText(row['水厂名称'])||currentSite.value?.name||'第一污水处理厂（示例）'
+      const existing=operationEntryRecords.find(record=>record.siteName===siteName&&record.line===line&&record.entryDate===recordDate)
+      if(existing?.status==='LOCKED'){skipped++;return}
+      const values:Record<string,string>={...(existing?.values||{})}
+      entryMetrics.value.forEach(metric=>{
+        const name=metricDisplayName(metric)
+        const candidates=[operationEntryMetricHeader(metric),`${metric.category}｜${name}`,`${metric.category}-${name}`]
+        if(nameCounts.get(name)===1)candidates.push(name)
+        const matchedHeader=candidates.find(header=>Object.prototype.hasOwnProperty.call(row,header))
+        if(matchedHeader)values[metricKey(metric)]=importCellText(row[matchedHeader])
+        else if(!existing)values[metricKey(metric)]=''
+      })
+      const filled=entryMetrics.value.filter(metric=>importCellText(values[metricKey(metric)])).length
+      const importedStatus=importCellText(row['填报状态']||row['状态'])
+      const now=new Date().toLocaleString('zh-CN',{hour12:false})
+      const condition=conditionForDate(recordDate)
+      const record:OperationEntryRecord={
+        id:existing?.id||`entry-import-${Date.now()}-${rowIndex}`,siteId:selectedSite.value,siteName,
+        siteCode:importCellText(row['水厂编号'])||currentSite.value?.code||'PS001',line,entryDate:recordDate,
+        scenario:condition?.name||'未匹配工况',values,
+        status:/锁定/.test(importedStatus)?'LOCKED':filled===entryMetrics.value.length?'COMPLETED':'DRAFT',
+        updatedBy:'批量导入',updatedAt:now
+      }
+      const index=operationEntryRecords.findIndex(item=>item.id===record.id)
+      if(index>=0)operationEntryRecords.splice(index,1,record);else operationEntryRecords.push(record)
+      localStorage.setItem(`waterx-operation-entry-${record.line}-${record.entryDate}`,JSON.stringify(values))
+      imported++
+    })
+    persistOperationEntryRecords();entryRevision.value++;operationEntryPage.value=1
+    window.alert(`批量导入完成：成功 ${imported} 条，跳过已锁定 ${skipped} 条，格式错误 ${errors.length} 条${errors.length?`\n${errors.slice(0,3).join('\n')}`:''}`)
+  }catch(error){window.alert(`导入失败：${error instanceof Error?error.message:'无法读取 Excel 文件'}`)}
+  finally{input.value=''}
+}
 function statusText(status:OperationEntryRecord['status']){return status==='COMPLETED'?'已完成':status==='LOCKED'?'已锁定':'草稿'}
 function numericValue(value: string | undefined) { const match = value?.replace(/,/g,'').match(/-?\d+(\.\d+)?/); return match ? Number(match[0]) : null }
 function evaluateMetricStatus(metric:DiagnosisMetric,target:string,actual:string){
@@ -534,13 +740,14 @@ function evaluateMetricStatus(metric:DiagnosisMetric,target:string,actual:string
 }
 const analysisRows = computed<DiagnosisMetric[]>(() => {
   entryRevision.value
-  const plan = conditionPlans.find(item => item.name === diagnosisScenario.value) || conditionPlans[0]
+  const plan = diagnosisCondition.value
   const savedActuals = JSON.parse(localStorage.getItem(`waterx-operation-entry-${diagnosisLine.value}-${diagnosisDate.value}`) || '{}') as Record<string,string>
   return visibleDiagnosisMetrics.value.map(metric => {
     const key = metricKey(metric)
     const design = designValueFor(metric)
-    const target = plan?.targets[key] || metric.target
     const actual = savedActuals[key] || metric.actual
+    if(!plan)return { ...metric,design,target:'—',actual,deviation:null,level:'warning' }
+    const target = plan.targets[key] || metric.target
     const {deviation,level}=evaluateMetricStatus(metric,target,actual)
     return { ...metric, design, target, actual, deviation, level }
   })
@@ -673,43 +880,22 @@ const activeAnalysisGroup = computed(()=>analysisGroups.value.find(group=>group.
 const activeControlGroupKey = ref('water')
 const activeControlGroup = computed(()=>displayControlGroups.value.find(group=>group.key===activeControlGroupKey.value)||displayControlGroups.value[0])
 function statusCounts(items: Array<{level:DiagnosisLevel}>) { return { normal:items.filter(item=>item.level==='normal').length, warning:items.filter(item=>item.level==='warning').length, alarm:items.filter(item=>item.level==='alarm').length } }
-type ProcessAnalysisReport = { id:string; siteName:string; line:string; reportDate:string; scenario:string; status:'DRAFT'|'LOCKED'; values:Record<string,string>; updatedBy:string; updatedAt:string }
+type ProcessAnalysisReport = {
+  id:string; siteName:string; line:string; reportDate:string; scenario:string
+  normalCount?:number; warningCount?:number; alarmCount?:number
+  values?:Record<string,string>; updatedAt:string
+}
 const processReportStorageKey='waterx-process-analysis-reports'
 const processReports=reactive<ProcessAnalysisReport[]>(JSON.parse(localStorage.getItem(processReportStorageKey)||'[]'))
-const processReportView=ref<'list'|'form'>('list')
-const selectedProcessReportIds=ref<string[]>([])
-const editingProcessReportId=ref('')
-const processReportDate=ref(new Date().toISOString().slice(0,10))
-const processReportFilters=reactive({keyword:'',dateFrom:'',dateTo:'',status:''})
-const processReportGroups=computed(()=>[
-  ...analysisGroups.value.map(group=>({category:group.category,metrics:group.metrics.map(metric=>({name:metricDisplayName(metric),value:metric.actual}))})),
-  ...displayControlGroups.value.map(group=>({category:group.title,metrics:group.indicators.map(metric=>({name:metricDisplayName({category:group.title,...metric}),value:metric.actual}))}))
-])
+const processReportFilters=reactive({keyword:'',dateFrom:'',dateTo:''})
 const filteredProcessReports=computed(()=>processReports.filter(record=>{
   const keyword=processReportFilters.keyword.trim().toLowerCase()
-  if(keyword && !`${record.siteName} ${record.line} ${record.scenario} ${record.updatedBy}`.toLowerCase().includes(keyword))return false
+  if(keyword && !`${record.siteName} ${record.line} ${record.scenario}`.toLowerCase().includes(keyword))return false
   if(processReportFilters.dateFrom&&record.reportDate<processReportFilters.dateFrom)return false
   if(processReportFilters.dateTo&&record.reportDate>processReportFilters.dateTo)return false
-  if(processReportFilters.status&&record.status!==processReportFilters.status)return false
   return true
 }).sort((a,b)=>b.reportDate.localeCompare(a.reportDate)))
 function persistProcessReports(){localStorage.setItem(processReportStorageKey,JSON.stringify(processReports))}
-function newProcessReport(){editingProcessReportId.value='';processReportDate.value=diagnosisDate.value;processReportView.value='form'}
-function editProcessReport(record?:ProcessAnalysisReport){
-  const target=record||processReports.find(item=>selectedProcessReportIds.value.includes(item.id))
-  if(!target){window.alert('请选择一条工艺分析日报');return}if(target.status==='LOCKED'){window.alert('该日报已锁定，请先解锁');return}
-  editingProcessReportId.value=target.id;processReportDate.value=target.reportDate;diagnosisLine.value=target.line;diagnosisScenario.value=target.scenario;processReportView.value='form'
-}
-function saveProcessReport(){
-  const values:Record<string,string>={};processReportGroups.value.forEach(group=>group.metrics.forEach(metric=>values[`${group.category}::${metric.name}`]=metric.value))
-  const now=new Date().toLocaleString('zh-CN',{hour12:false});const existing=processReports.find(item=>item.id===editingProcessReportId.value)
-  const record:ProcessAnalysisReport={id:existing?.id||`process-report-${Date.now()}`,siteName:currentSite.value?.name||'第一污水处理厂（示例）',line:diagnosisLine.value,reportDate:processReportDate.value,scenario:diagnosisScenario.value,status:existing?.status||'DRAFT',values,updatedBy:'平台管理员',updatedAt:now}
-  const index=processReports.findIndex(item=>item.id===record.id);if(index>=0)processReports.splice(index,1,record);else processReports.push(record)
-  selectedProcessReportIds.value=[record.id];persistProcessReports();processReportView.value='list'
-}
-function deleteProcessReports(){if(!selectedProcessReportIds.value.length){window.alert('请先选择日报');return}if(processReports.some(item=>selectedProcessReportIds.value.includes(item.id)&&item.status==='LOCKED')){window.alert('已锁定日报不能删除');return}if(!window.confirm('确定删除所选工艺分析日报吗？'))return;selectedProcessReportIds.value.forEach(id=>{const index=processReports.findIndex(item=>item.id===id);if(index>=0)processReports.splice(index,1)});selectedProcessReportIds.value=[];persistProcessReports()}
-function toggleProcessReportLock(){if(!selectedProcessReportIds.value.length){window.alert('请先选择日报');return}processReports.filter(item=>selectedProcessReportIds.value.includes(item.id)).forEach(item=>item.status=item.status==='LOCKED'?'DRAFT':'LOCKED');persistProcessReports()}
-function processReportValue(record:ProcessAnalysisReport,category:string,name:string){return record.values[`${category}::${name}`]||'—'}
 function deleteMetricFromBoard(metric: DiagnosisMetric) {
   const customCollection = processCategories.includes(metric.category) ? customProcessMetrics : customMetrics
   const index = customCollection.findIndex(item=>metricKey(item)===metricKey(metric))
@@ -722,6 +908,31 @@ function deleteMetricFromBoard(metric: DiagnosisMetric) {
 function refreshDiagnosis() {
   diagnosisUpdatedAt.value = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
 }
+function saveDiagnosisReport() {
+  if (!diagnosisDate.value) { window.alert('请选择分析日期'); return }
+  const counts = statusCounts(analysisRows.value)
+  const siteName = currentSite.value?.name || '第一污水处理厂（示例）'
+  const existing = processReports.find(record => record.siteName===siteName && record.line===diagnosisLine.value && record.reportDate===diagnosisDate.value)
+  const now = new Date()
+  const record:ProcessAnalysisReport = {
+    id: existing?.id || `process-report-${Date.now()}`,
+    siteName,
+    line: diagnosisLine.value,
+    reportDate: diagnosisDate.value,
+    scenario: diagnosisScenario.value,
+    normalCount: counts.normal,
+    warningCount: counts.warning,
+    alarmCount: counts.alarm,
+    values: Object.fromEntries(analysisRows.value.map(metric => [metricKey(metric), metric.actual])),
+    updatedAt: now.toLocaleString('zh-CN', { hour12:false })
+  }
+  const index = processReports.findIndex(item=>item.id===record.id)
+  if (index>=0) processReports.splice(index,1,record)
+  else processReports.push(record)
+  persistProcessReports()
+  diagnosisUpdatedAt.value = now.toLocaleTimeString('zh-CN', { hour:'2-digit', minute:'2-digit' })
+  window.alert(existing ? '已更新工艺分析日报' : '已保存至工艺分析日报')
+}
 function deviationWidth(value: number | null) {
   if (value === null) return '0%'
   return `${Math.min(100, Math.max(8, Math.abs(value)))}%`
@@ -730,17 +941,25 @@ function deviationWidth(value: number | null) {
 const currentSite = computed(() => sites.value.find(s => s.id === selectedSite.value))
 function ensureOperationEntryRecords() {
   const stored = JSON.parse(localStorage.getItem(operationEntryStorageKey) || 'null') as OperationEntryRecord[] | null
-  if (stored?.length) { operationEntryRecords.splice(0,operationEntryRecords.length,...stored); return }
+  if (stored?.length) {
+    stored.forEach(record=>{
+      if(record.id.startsWith('demo-entry-'))record.scenario=conditionForDate(record.entryDate)?.name||'未匹配工况'
+    })
+    operationEntryRecords.splice(0,operationEntryRecords.length,...stored)
+    persistOperationEntryRecords()
+    return
+  }
   const baseDate = new Date()
   const seeded = Array.from({length:7},(_,index)=>{
     const date = new Date(baseDate); date.setDate(baseDate.getDate()-index)
+    const entryDate=date.toISOString().slice(0,10)
     const values = Object.fromEntries(entryMetrics.value.map((metric,metricIndex)=>{
       const raw=metric.actual||''; const number=numericValue(raw)
       return [metricKey(metric),number===null?raw:String(Number((number*(1+(index-3)*0.006+(metricIndex%3)*0.002)).toFixed(3)))]
     }))
     return {
-      id:`demo-entry-${date.toISOString().slice(0,10)}`,siteId:selectedSite.value,siteName:'第一污水处理厂（示例）',siteCode:'PS001',
-      line:index===5?'二期生化线':'一期生化线',entryDate:date.toISOString().slice(0,10),scenario:index<3?'夏季工况':'冬季工况',values,
+      id:`demo-entry-${entryDate}`,siteId:selectedSite.value,siteName:'第一污水处理厂（示例）',siteCode:'PS001',
+      line:index===5?'二期生化线':'一期生化线',entryDate,scenario:conditionForDate(entryDate)?.name||'未匹配工况',values,
       status:(index===0?'DRAFT':index===6?'LOCKED':'COMPLETED') as OperationEntryRecord['status'],updatedBy:index%2?'运行部经理':'值班运行员',updatedAt:`${date.toISOString().slice(0,10)} ${index%2?'17:35':'08:20'}`
     }
   })
@@ -1087,8 +1306,12 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
         <button class="module-nav-home" :class="{selected:active==='platform'}" @click="active='platform'"><span class="nav-icon">⌂</span><span>首页</span></button>
 
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('production')"><span class="nav-icon">≋</span><span>生产运行</span><i :class="{open:expandedModules.production}">›</i></button>
-          <div v-show="expandedModules.production" class="nav-children"><button :class="{selected:active==='processDesign'}" @click="active='processDesign'">工艺设计标准</button><button :class="{selected:active==='conditionMatrix'}" @click="active='conditionMatrix'">工况矩阵管理</button><button :class="{selected:active==='operationEntry'}" @click="active='operationEntry';loadOperationEntry()">运行数据填报</button><button :class="{selected:active==='processAnalysis'}" @click="active='processAnalysis'">工艺诊断分析</button><button :class="{selected:active==='processReport'}" @click="active='processReport';processReportView='list'">工艺分析日报</button><button disabled>工艺调整记录 <small>规划中</small></button></div>
+          <button class="nav-group-title" @click="toggleModule('operations')"><span class="nav-icon">◷</span><span>生产运行</span><i :class="{open:expandedModules.operations}">›</i></button>
+          <div v-show="expandedModules.operations" class="nav-children"><button :class="{selected:active==='operationsShift'}" @click="active='operationsShift'">班组与排班 <small>规划</small></button><button :class="{selected:active==='operationsHandover'}" @click="active='operationsHandover'">交接班管理 <small>规划</small></button><button :class="{selected:active==='operationsTasks'}" @click="active='operationsTasks'">当班任务 <small>规划</small></button><button :class="{selected:active==='operationsLog'}" @click="active='operationsLog'">运行日志 <small>规划</small></button></div>
+        </section>
+        <section class="nav-group">
+          <button class="nav-group-title" @click="toggleModule('process')"><span class="nav-icon">≋</span><span>工艺管理</span><i :class="{open:expandedModules.process}">›</i></button>
+          <div v-show="expandedModules.process" class="nav-children"><button :class="{selected:active==='processDesign'}" @click="active='processDesign'">工艺设计标准</button><button :class="{selected:active==='conditionMatrix'}" @click="active='conditionMatrix'">工况矩阵管理</button><button :class="{selected:active==='operationEntry'}" @click="active='operationEntry';loadOperationEntry()">运行数据填报</button><button :class="{selected:active==='processAnalysis'}" @click="active='processAnalysis'">工艺诊断分析</button><button :class="{selected:active==='processReport'}" @click="active='processReport'">工艺分析日报</button><button disabled>工艺调整记录 <small>规划中</small></button></div>
         </section>
         <section class="nav-group">
           <button class="nav-group-title" @click="toggleModule('equipment')"><span class="nav-icon">⚙</span><span>设备管理</span><i :class="{open:expandedModules.equipment}">›</i></button>
@@ -1119,12 +1342,28 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
         </section>
 
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('energy')"><span class="nav-icon">♻</span><span>节能降耗</span><i :class="{open:expandedModules.energy}">›</i></button>
-          <div v-show="expandedModules.energy" class="nav-children"><button disabled>能耗计量 <small>规划中</small></button><button disabled>能效分析 <small>规划中</small></button></div>
+          <button class="nav-group-title" @click="toggleModule('inventory')"><span class="nav-icon">▤</span><span>库存管理</span><i :class="{open:expandedModules.inventory}">›</i></button>
+          <div v-show="expandedModules.inventory" class="nav-children"><button :class="{selected:active==='inventoryOverview'}" @click="active='inventoryOverview'">库存总览 <small>规划</small></button><button :class="{selected:active==='inventoryMaterials'}" @click="active='inventoryMaterials'">物资台账 <small>规划</small></button><button :class="{selected:active==='inventoryInbound'}" @click="active='inventoryInbound'">入库管理 <small>规划</small></button><button :class="{selected:active==='inventoryOutbound'}" @click="active='inventoryOutbound'">出库与领用 <small>规划</small></button><button :class="{selected:active==='inventoryStocktake'}" @click="active='inventoryStocktake'">库存盘点 <small>规划</small></button><button :class="{selected:active==='inventoryAlerts'}" @click="active='inventoryAlerts'">库存预警 <small>规划</small></button></div>
         </section>
         <section class="nav-group">
           <button class="nav-group-title" @click="toggleModule('business')"><span class="nav-icon">¥</span><span>经营管理</span><i :class="{open:expandedModules.business}">›</i></button>
-          <div v-show="expandedModules.business" class="nav-children"><button disabled>成本预算 <small>规划中</small></button><button disabled>经营分析 <small>规划中</small></button></div>
+          <div v-show="expandedModules.business" class="nav-children"><button :class="{selected:active==='businessTargets'}" @click="active='businessTargets'">经营目标 <small>规划</small></button><button :class="{selected:active==='businessPlan'}" @click="active='businessPlan'">生产计划 <small>规划</small></button><button :class="{selected:active==='businessBudget'}" @click="active='businessBudget'">预算管理 <small>规划</small></button><button :class="{selected:active==='businessExecution'}" @click="active='businessExecution'">执行分析 <small>规划</small></button><button :class="{selected:active==='businessCost'}" @click="active='businessCost'">成本收益 <small>规划</small></button><button :class="{selected:active==='businessReceivables'}" @click="active='businessReceivables'">回款管理 <small>规划</small></button></div>
+        </section>
+        <section class="nav-group">
+          <button class="nav-group-title" @click="toggleModule('efficiency')"><span class="nav-icon">♻</span><span>提质增效</span><i :class="{open:expandedModules.efficiency}">›</i></button>
+          <div v-show="expandedModules.efficiency" class="nav-children"><button disabled>能耗计量 <small>规划中</small></button><button disabled>能效分析 <small>规划中</small></button></div>
+        </section>
+        <section class="nav-group">
+          <button class="nav-group-title" @click="toggleModule('evaluation')"><span class="nav-icon">✓</span><span>过程评价</span><i :class="{open:expandedModules.evaluation}">›</i></button>
+          <div v-show="expandedModules.evaluation" class="nav-children"><button :class="{selected:active==='evaluationResults'}" @click="active='evaluationResults'">评价结果管理</button><button :class="{selected:active==='evaluationOperations'}" @click="active='evaluationOperations'">运行管理评价</button><button :class="{selected:active==='evaluationEquipment'}" @click="active='evaluationEquipment'">设备管理评价</button><button :class="{selected:active==='evaluationLaboratory'}" @click="active='evaluationLaboratory'">化验管理评价</button><button :class="{selected:active==='evaluationSafety'}" @click="active='evaluationSafety'">安全管理评价</button><button :class="{selected:active==='evaluationComprehensive'}" @click="active='evaluationComprehensive'">综合管理评价</button><button :class="{selected:active==='evaluationRectification'}" @click="active='evaluationRectification'">问题与整改</button><button :class="{selected:active==='evaluationReport'}" @click="active='evaluationReport'">评价报告</button></div>
+        </section>
+        <section class="nav-group">
+          <button class="nav-group-title" @click="toggleModule('quality')"><span class="nav-icon">◇</span><span>管理质量</span><i :class="{open:expandedModules.quality}">›</i></button>
+          <div v-show="expandedModules.quality" class="nav-children"><button :class="{selected:active==='qualityCompliance'}" @click="active='qualityCompliance'">合法合规</button><button :class="{selected:active==='qualityStable'}" @click="active='qualityStable'">稳定达标</button><button :class="{selected:active==='qualitySafety'}" @click="active='qualitySafety'">安全运行</button><button :class="{selected:active==='qualityEfficiency'}" @click="active='qualityEfficiency'">经济高效</button></div>
+        </section>
+        <section class="nav-group">
+          <button class="nav-group-title" @click="toggleModule('improvement')"><span class="nav-icon">↗</span><span>改进提升</span><i :class="{open:expandedModules.improvement}">›</i></button>
+          <div v-show="expandedModules.improvement" class="nav-children"><button :class="{selected:active==='improvementIssues'}" @click="active='improvementIssues'">问题清单 <small>规划</small></button><button :class="{selected:active==='improvementPlans'}" @click="active='improvementPlans'">改进计划 <small>规划</small></button><button :class="{selected:active==='improvementExecution'}" @click="active='improvementExecution'">整改执行 <small>规划</small></button><button :class="{selected:active==='improvementReview'}" @click="active='improvementReview'">复核关闭 <small>规划</small></button><button :class="{selected:active==='improvementAnalysis'}" @click="active='improvementAnalysis'">改进分析 <small>规划</small></button></div>
         </section>
         <section class="nav-group">
           <button class="nav-group-title" @click="toggleModule('basic')"><span class="nav-icon">▦</span><span>基础信息</span><i :class="{open:expandedModules.basic}">›</i></button>
@@ -1133,8 +1372,8 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
       </nav>
     </aside>
     <section class="workspace">
-      <article>
-        <div v-if="!['platform','processAnalysis','processReport','processDesign','conditionMatrix','operationEntry','labRecords','labReports'].includes(active)" class="page-title"><div><p class="eyebrow">{{currentSite?.code}}</p><h1>{{active==='overview' ? '安全态势总览' : active==='org' ? '组织架构' : active==='employee' ? '人员档案' : active==='area' ? '厂区区域管理' : active==='risk' ? '风险分级管控' : active==='inspection' ? '安全检查任务' : active==='hazard'?'隐患排查治理':active==='permit'?'危险作业审批':active==='training'?'安全培训与人员资质':active==='asset'?'设备设施与应急物资':active==='health'?'职业健康管理':active==='investment'?'安全投入管理':'安全承诺与访客告知' }}</h1></div><span class="date-chip">{{ new Date().toLocaleDateString('zh-CN') }}</span></div>
+      <article :class="{'safety-workspace':isSafetyPage}">
+        <div v-if="isSafetyPage" class="page-title"><div><p class="eyebrow">{{currentSite?.code}}</p><h1>{{active==='overview' ? '安全态势总览' : active==='org' ? '组织架构' : active==='employee' ? '人员档案' : active==='area' ? '厂区区域管理' : active==='risk' ? '风险分级管控' : active==='inspection' ? '安全检查任务' : active==='hazard'?'隐患排查治理':active==='permit'?'危险作业审批':active==='training'?'安全培训与人员资质':active==='asset'?'设备设施与应急物资':active==='health'?'职业健康管理':active==='investment'?'安全投入管理':'安全承诺与访客告知' }}</h1></div><span class="date-chip">{{ new Date().toLocaleDateString('zh-CN') }}</span></div>
         <p v-if="error" class="error banner">{{error}}</p>
         <template v-if="active==='platform'">
           <section class="dashboard-toolbar"><span>今日运营概览</span><div><button>今日</button><button>本月</button><button>自定义</button></div></section>
@@ -1143,13 +1382,34 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
           <section class="dashboard-card task-center"><header><b>我的事项</b><span>内容随当前用户和角色动态变化</span></header><nav><button v-for="tab in [{key:'pending',name:'待处理'},{key:'processed',name:'已处理'},{key:'cc',name:'抄送我'},{key:'started',name:'我发起'}]" :key="tab.key" :class="{active:dashboardTaskTab===tab.key}" @click="dashboardTaskTab=tab.key as typeof dashboardTaskTab">{{tab.name}}<em>{{dashboardTasks[tab.key as keyof typeof dashboardTasks].length}}</em></button></nav><div class="dashboard-task-list"><article v-for="task in dashboardTasks[dashboardTaskTab]" :key="task.title"><span>{{task.module}}</span><b>{{task.title}}</b><small>{{task.time}}</small><em>{{task.status}}</em></article></div>
           </section>
         </template>
+        <ProcessEvaluationPage v-else-if="currentProcessEvaluationPage" :active-page="currentProcessEvaluationPage" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" @update:active-page="openProcessEvaluationPage" @navigate:app="handleProcessEvaluationNavigate" />
+        <template v-else-if="currentPlannedPage">
+          <section class="module-skeleton-head">
+            <div><p class="eyebrow">{{currentPlannedPage.module}} · {{currentSite?.code||'CURRENT SITE'}}</p><h1>{{currentPlannedPage.title}}</h1><p>{{currentPlannedPage.description}}</p></div>
+            <span class="planning-chip">页面骨架 · 规划中</span>
+          </section>
+          <ImprovementDraftPanel v-if="pendingImprovementDraft && (active==='improvementIssues' || active==='improvementPlans')" :draft="pendingImprovementDraft" :mode="active==='improvementPlans'?'plan':'issue'" @create-plan="promoteImprovementDraft" @clear="pendingImprovementDraft=null" />
+          <section class="module-skeleton-kpis">
+            <article><span>业务角色</span><strong>{{currentPlannedPage.stage}}</strong><small>{{currentPlannedPage.stage==='P'?'目标与计划':currentPlannedPage.stage==='D'?'业务执行':'改进与提升'}}</small></article>
+            <article><span>页面状态</span><strong>骨架</strong><small>功能和字段待专项确认</small></article>
+            <article><span>数据范围</span><strong>当前水厂</strong><small>{{currentSite?.name||'第一污水处理厂（示例）'}}</small></article>
+            <article><span>规则状态</span><strong>待确认</strong><small>本轮不固化业务规则</small></article>
+          </section>
+          <section class="module-skeleton-grid">
+            <article class="module-outline-card"><header><div><b>首版能力范围</b><small>用于确认入口、边界和后续建设顺序</small></div><span>{{currentPlannedPage.capabilities.length}} 项</span></header><div class="capability-list"><span v-for="(item,index) in currentPlannedPage.capabilities" :key="item"><i>{{index+1}}</i><b>{{item}}</b><small>规划中</small></span></div></article>
+            <article class="module-outline-card"><header><div><b>页面建设原则</b><small>保持专业模块独立，不按形式合并入口</small></div></header><ul><li>保留水厂与业务数据域，后续按岗位配置权限。</li><li>业务台账、流程状态和审计字段进入后端后再正式启用。</li><li>与相邻模块通过业务关联衔接，不复制各自专业数据。</li><li>本页当前仅用于产品结构确认，不代表最终字段和流程。</li></ul></article>
+          </section>
+          <section class="module-roadmap-strip"><span><b>01</b>入口与边界确认</span><i></i><span><b>02</b>字段与规则评审</span><i></i><span><b>03</b>交互原型</span><i></i><span><b>04</b>后端工程化</span></section>
+        </template>
+        <ManagementQualityPage v-else-if="currentQualityPage" :active-page="currentQualityPage" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" @update:active-page="openQualityPage" @start-improvement="handleQualityImprovement" />
         <template v-else-if="active==='processAnalysis'">
           <section class="diagnosis-toolbar">
             <label>水厂<select :value="selectedSite"><option :value="selectedSite">{{currentSite?.name || '示范污水处理厂'}}</option></select></label>
             <label>工艺线<select v-model="diagnosisLine"><option>一期生化线</option><option>二期生化线</option></select></label>
-            <label>工况方案<select v-model="diagnosisScenario"><option v-for="plan in conditionPlans" :key="plan.id">{{plan.name}}</option></select></label>
+            <label>匹配工况<select :value="diagnosisCondition?.id||''" disabled title="根据分析日期自动匹配"><option v-if="!diagnosisCondition" value="">未匹配工况</option><option v-for="plan in conditionPlans" :key="plan.id" :value="plan.id">{{plan.name}}</option></select></label>
             <label>分析日期<input v-model="diagnosisDate" type="date" /></label>
-            <button @click="refreshDiagnosis">更新分析</button>
+            <button @click="refreshDiagnosis">更新</button>
+            <button class="primary" @click="saveDiagnosisReport">保存</button>
             <div class="toolbar-status"><span><i class="diagnosis-dot normal"></i>{{analysisRows.filter(i=>i.level==='normal').length}} 正常</span><span><i class="diagnosis-dot warning"></i>{{analysisRows.filter(i=>i.level==='warning').length}} 预警</span><span><i class="diagnosis-dot alarm"></i>{{analysisRows.filter(i=>i.level==='alarm').length}} 告警</span><small>更新 {{diagnosisUpdatedAt}}</small></div>
           </section>
 
@@ -1197,15 +1457,9 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
           </div>
         </template>
         <template v-else-if="active==='processReport'">
-          <template v-if="processReportView==='list'">
-            <section class="entry-list-toolbar"><div class="entry-list-actions"><button class="primary" @click="newProcessReport">＋ 新建</button><button @click="editProcessReport()">编辑</button><button @click="toggleProcessReportLock">锁定 / 解锁</button><button class="danger-lite" @click="deleteProcessReports">删除</button><button @click="Object.assign(processReportFilters,{keyword:'',dateFrom:'',dateTo:'',status:''})">刷新</button></div><span>共 {{filteredProcessReports.length}} 张工艺分析日报</span></section>
-            <section class="entry-filter-panel"><label>关键词<input v-model="processReportFilters.keyword" placeholder="水厂、工艺线、工况" /></label><label>开始日期<input v-model="processReportFilters.dateFrom" type="date" /></label><label>结束日期<input v-model="processReportFilters.dateTo" type="date" /></label><label>状态<select v-model="processReportFilters.status"><option value="">全部</option><option value="DRAFT">未锁定</option><option value="LOCKED">已锁定</option></select></label><button class="primary entry-query-button">查询</button></section>
-            <section class="process-data-panel process-report-list"><div class="process-table-wrap"><table class="process-config-table"><thead><tr><th>选择</th><th>状态</th><th>水厂名称</th><th>工艺线</th><th>日报日期</th><th>工况</th><th>进水COD</th><th>出水COD</th><th>MLSS</th><th>填报人</th><th>更新时间</th><th>操作</th></tr></thead><tbody><tr v-for="record in filteredProcessReports" :key="record.id"><td><input v-model="selectedProcessReportIds" type="checkbox" :value="record.id" /></td><td><span :class="['entry-record-status',record.status.toLowerCase()]">{{record.status==='LOCKED'?'已锁定':'未锁定'}}</span></td><td><b>{{record.siteName}}</b></td><td>{{record.line}}</td><td><strong>{{record.reportDate}}</strong></td><td>{{record.scenario}}</td><td>{{processReportValue(record,'进水水质','COD')}}</td><td>{{processReportValue(record,'出水水质','COD')}}</td><td>{{processReportValue(record,'污泥性状','MLSS')}}</td><td>{{record.updatedBy}}</td><td>{{record.updatedAt}}</td><td class="entry-row-actions"><button @click="editProcessReport(record)">编辑</button></td></tr><tr v-if="!filteredProcessReports.length"><td colspan="12" class="entry-empty-row">暂无工艺分析日报，可点击“新建”生成</td></tr></tbody></table></div></section>
-          </template>
-          <template v-else>
-            <section class="process-page-toolbar"><div><button @click="processReportView='list'">← 返回台账</button><label>水厂<select :value="selectedSite"><option :value="selectedSite">{{currentSite?.name}}</option></select></label><label>工艺线<select v-model="diagnosisLine"><option>一期生化线</option><option>二期生化线</option></select></label><label>日报日期<input v-model="processReportDate" type="date" /></label><label>工况<select v-model="diagnosisScenario"><option v-for="plan in conditionPlans" :key="plan.id">{{plan.name}}</option></select></label></div><div><button class="primary" @click="saveProcessReport">保存日报</button></div></section>
-            <section class="process-report-sheet"><header><h2>工艺分析日报</h2><p>{{currentSite?.name}} · {{diagnosisLine}} · {{processReportDate}} · {{diagnosisScenario}}</p></header><div class="process-report-table-wrap"><table><thead><tr><template v-for="group in processReportGroups" :key="group.category"><th :colspan="group.metrics.length">{{group.category}}</th></template></tr><tr><template v-for="group in processReportGroups" :key="group.category"><th v-for="metric in group.metrics" :key="metric.name">{{metric.name}}</th></template></tr></thead><tbody><tr><template v-for="group in processReportGroups" :key="group.category"><td v-for="metric in group.metrics" :key="metric.name">{{metric.value}}</td></template></tr></tbody></table></div></section>
-          </template>
+          <section class="entry-list-toolbar process-report-toolbar"><div><b>工艺分析日报</b><small>由工艺诊断分析保存生成</small></div><span>共 {{filteredProcessReports.length}} 条记录</span></section>
+          <section class="entry-filter-panel process-report-filters"><label>关键词<input v-model="processReportFilters.keyword" placeholder="水厂、工艺线、工况" /></label><label>开始日期<input v-model="processReportFilters.dateFrom" type="date" /></label><label>结束日期<input v-model="processReportFilters.dateTo" type="date" /></label><button class="primary entry-query-button">查询</button><button @click="Object.assign(processReportFilters,{keyword:'',dateFrom:'',dateTo:''})">清空</button></section>
+          <section class="process-data-panel process-report-list"><div class="process-table-wrap"><table class="process-config-table process-summary-table"><thead><tr><th>水厂</th><th>工艺线</th><th>匹配工况</th><th>分析日期</th><th>正常指标个数</th><th>预警指标个数</th><th>告警指标个数</th><th>更新时间</th></tr></thead><tbody><tr v-for="record in filteredProcessReports" :key="record.id"><td><b>{{record.siteName}}</b></td><td>{{record.line}}</td><td>{{record.scenario}}</td><td><strong>{{record.reportDate}}</strong></td><td><span class="report-count normal">{{record.normalCount??'—'}}</span></td><td><span class="report-count warning">{{record.warningCount??'—'}}</span></td><td><span class="report-count alarm">{{record.alarmCount??'—'}}</span></td><td>{{record.updatedAt}}</td></tr><tr v-if="!filteredProcessReports.length"><td colspan="8" class="entry-empty-row">暂无工艺分析日报，请先在“工艺诊断分析”中保存</td></tr></tbody></table></div></section>
         </template>
         <template v-else-if="active==='processDesign'">
           <section class="process-page-toolbar"><div><label>水厂<select :value="selectedSite"><option :value="selectedSite">{{currentSite?.name}}</option></select></label><label>工艺线<select v-model="diagnosisLine"><option>一期生化线</option><option>二期生化线</option></select></label></div><div><span>共 {{designMetrics.length}} 项设计指标</span><button class="page-gear-button" title="配置指标" aria-label="配置工艺设计标准指标" @click="openModuleMetricManager('design')">⚙</button><button v-if="!designEditMode" @click="beginDesignEdit">编辑设计值</button><button v-else class="primary" @click="saveDesignValues">保存设计值</button></div></section>
@@ -1213,10 +1467,10 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
         </template>
         <template v-else-if="active==='conditionMatrix'">
           <section class="condition-layout">
-            <aside class="condition-list"><header><div><b>工况管理</b><small>{{conditionPlans.length}} 套</small></div><button @click="showConditionForm=true">＋ 新增</button></header><button v-for="plan in conditionPlans" :key="plan.id" :class="{selected:selectedConditionId===plan.id}" @click="selectedConditionId=plan.id;conditionEditMode=false"><span><b>{{plan.name}}</b><small>{{plan.effectiveDate}} 起</small></span><i>›</i></button></aside>
-            <section v-if="selectedCondition" class="condition-detail"><div class="condition-meta"><label>工况名称<input v-model="selectedCondition.name" :disabled="!conditionEditMode" /></label><label>实施日期<input v-model="selectedCondition.effectiveDate" type="date" :disabled="!conditionEditMode" /></label><label>说明<input v-model="selectedCondition.description" :disabled="!conditionEditMode" /></label><div class="condition-actions"><button class="page-gear-button" title="配置指标" aria-label="配置工况指标" @click="openModuleMetricManager('condition')">⚙</button><button class="danger-lite" @click="deleteCondition(selectedCondition.id)">删除</button><button v-if="!conditionEditMode" @click="conditionEditMode=true">修改</button><button v-else class="primary" @click="saveConditions">保存</button></div></div><div class="process-table-wrap"><table class="process-config-table"><thead><tr><th>指标分类</th><th>指标名称</th><th>单位</th><th>设计值</th><th>目标值</th><th>状态</th></tr></thead><tbody><tr v-for="metric in conditionMetrics" :key="metricKey(metric)"><td><span class="category-chip">{{metric.category}}</span></td><td><b>{{metricDisplayName(metric)}}</b></td><td>{{metricDisplayUnit(metric)}}</td><td>{{designValueFor(metric)}}</td><td><input v-if="conditionEditMode" v-model="selectedCondition.targets[metricKey(metric)]" /><strong v-else>{{selectedCondition.targets[metricKey(metric)]||metric.target||'—'}}</strong></td><td><span class="process-status">已启用</span></td></tr></tbody></table></div></section>
+            <aside class="condition-list"><header><div><b>工况管理</b><small>{{conditionPlans.length}} 套</small></div><button @click="showConditionForm=true">＋ 新增</button></header><button v-for="plan in conditionPlans" :key="plan.id" :class="{selected:selectedConditionId===plan.id}" @click="selectedConditionId=plan.id;conditionEditMode=false"><span><b>{{plan.name}}</b><small>{{plan.effectiveFrom}} 至 {{plan.effectiveTo}}</small></span><i>›</i></button></aside>
+            <section v-if="selectedCondition" class="condition-detail"><div class="condition-meta"><label>工况名称<input v-model="selectedCondition.name" :disabled="!conditionEditMode" /></label><label>起始日期<input v-model="selectedCondition.effectiveFrom" type="date" :disabled="!conditionEditMode" /></label><label>结束日期<input v-model="selectedCondition.effectiveTo" type="date" :disabled="!conditionEditMode" /></label><label>说明<input v-model="selectedCondition.description" :disabled="!conditionEditMode" /></label><div class="condition-actions"><button class="page-gear-button" title="配置指标" aria-label="配置工况指标" @click="openModuleMetricManager('condition')">⚙</button><button class="danger-lite" @click="deleteCondition(selectedCondition.id)">删除</button><button v-if="!conditionEditMode" @click="conditionEditMode=true">修改</button><button v-else class="primary" @click="saveConditions">保存</button></div></div><div class="process-table-wrap"><table class="process-config-table"><thead><tr><th>指标分类</th><th>指标名称</th><th>单位</th><th>设计值</th><th>目标值</th><th>状态</th></tr></thead><tbody><tr v-for="metric in conditionMetrics" :key="metricKey(metric)"><td><span class="category-chip">{{metric.category}}</span></td><td><b>{{metricDisplayName(metric)}}</b></td><td>{{metricDisplayUnit(metric)}}</td><td>{{designValueFor(metric)}}</td><td><input v-if="conditionEditMode" v-model="selectedCondition.targets[metricKey(metric)]" /><strong v-else>{{selectedCondition.targets[metricKey(metric)]||metric.target||'—'}}</strong></td><td><span class="process-status">已启用</span></td></tr></tbody></table></div></section>
           </section>
-          <div v-if="showConditionForm" class="inline-popover"><form @submit.prevent="createCondition"><header><b>新增工况</b><button type="button" @click="showConditionForm=false">×</button></header><label>工况名称<input v-model="conditionForm.name" required placeholder="例如：雨季高负荷工况" /></label><label>实施日期<input v-model="conditionForm.effectiveDate" type="date" required /></label><label>工况说明<textarea v-model="conditionForm.description" rows="3"></textarea></label><footer><button type="button" @click="showConditionForm=false">取消</button><button class="primary">创建工况</button></footer></form></div>
+          <div v-if="showConditionForm" class="inline-popover"><form @submit.prevent="createCondition"><header><b>新增工况</b><button type="button" @click="showConditionForm=false">×</button></header><label>工况名称<input v-model="conditionForm.name" required placeholder="例如：雨季高负荷工况" /></label><label>起始日期<input v-model="conditionForm.effectiveFrom" type="date" required /></label><label>结束日期<input v-model="conditionForm.effectiveTo" type="date" required /></label><label>工况说明<textarea v-model="conditionForm.description" rows="3"></textarea></label><footer><button type="button" @click="showConditionForm=false">取消</button><button class="primary">创建工况</button></footer></form></div>
         </template>
         <template v-else-if="active==='operationEntry'">
           <template v-if="operationEntryView==='list'">
@@ -1230,23 +1484,24 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
               <label>开始日期<input v-model="operationEntryFilters.dateFrom" type="date" /></label>
               <label>结束日期<input v-model="operationEntryFilters.dateTo" type="date" /></label>
               <label>填报状态<select v-model="operationEntryFilters.status"><option value="">全部</option><option value="DRAFT">草稿</option><option value="COMPLETED">已完成</option><option value="LOCKED">已锁定</option></select></label>
-              <div class="entry-range-filter"><span>进水 COD</span><input v-model="operationEntryFilters.codMin" type="number" placeholder="最小值" /><i>—</i><input v-model="operationEntryFilters.codMax" type="number" placeholder="最大值" /></div>
-              <button class="primary entry-query-button">查询</button><button class="entry-reset-button" @click="resetOperationEntryFilters">清空</button>
+              <button class="primary entry-query-button">查询</button><button class="entry-reset-button" @click="resetOperationEntryFilters">清空</button><button @click="chooseOperationEntryImport">批量导入</button><button @click="exportOperationEntries">批量导出</button>
+              <input ref="operationEntryImportInput" class="entry-import-input" type="file" accept=".xlsx,.xls" @change="importOperationEntries" />
             </section>
             <section class="process-data-panel entry-list-panel">
-              <div class="process-table-wrap"><table class="process-config-table daily-entry-table"><thead><tr><th class="entry-select-cell"><input type="checkbox" :checked="allFilteredOperationEntriesSelected" @change="toggleAllOperationEntries(($event.target as HTMLInputElement).checked)" /></th><th>状态</th><th>水厂名称</th><th>水厂编号</th><th>工艺条线</th><th>填报日期</th><th>工况</th><th>进水 COD</th><th>进水 BOD₅</th><th>进水 SS</th><th>进水 NH₃-N</th><th>进水 TN</th><th>进水 TP</th><th>填报进度</th><th>填报人</th><th>更新时间</th><th>操作</th></tr></thead><tbody>
-                <tr v-for="record in filteredOperationEntryRecords" :key="record.id" :class="{selected:selectedOperationEntryIds.includes(record.id)}"><td class="entry-select-cell"><input v-model="selectedOperationEntryIds" type="checkbox" :value="record.id" /></td><td><span :class="['entry-record-status',record.status.toLowerCase()]">{{statusText(record.status)}}</span></td><td><b>{{record.siteName}}</b></td><td><code>{{record.siteCode}}</code></td><td>{{record.line}}</td><td><strong>{{record.entryDate}}</strong></td><td>{{record.scenario}}</td><td>{{recordMetricValue(record,'INQ-001')}}</td><td>{{recordMetricValue(record,'INQ-002')}}</td><td>{{recordMetricValue(record,'INQ-003')}}</td><td>{{recordMetricValue(record,'INQ-004')}}</td><td>{{recordMetricValue(record,'INQ-005')}}</td><td>{{recordMetricValue(record,'INQ-006')}}</td><td>{{Object.values(record.values).filter(Boolean).length}} / {{entryMetrics.length}}</td><td>{{record.updatedBy}}</td><td>{{record.updatedAt}}</td><td class="entry-row-actions"><button @click="editOperationEntry(record)">编辑</button><button @click="deleteOperationEntries([record.id])">删除</button></td></tr>
-                <tr v-if="!filteredOperationEntryRecords.length"><td colspan="17" class="entry-empty-row">未查询到符合条件的日报</td></tr>
+              <div class="process-table-wrap"><table class="process-config-table daily-entry-table"><thead><tr><th class="entry-select-cell"><input type="checkbox" :checked="allPagedOperationEntriesSelected" @change="toggleAllOperationEntries(($event.target as HTMLInputElement).checked)" /></th><th>状态</th><th>水厂名称</th><th>水厂编号</th><th>工艺条线</th><th>填报日期</th><th>匹配工况</th><th v-for="metric in entryMetrics" :key="metricKey(metric)" class="entry-metric-column"><small>{{metric.category}}</small><b>{{metricDisplayName(metric)}}</b><em>{{metricDisplayUnit(metric)}}</em></th><th>填报进度</th><th>填报人</th><th>更新时间</th></tr></thead><tbody>
+                <tr v-for="record in pagedOperationEntryRecords" :key="record.id" :class="{selected:selectedOperationEntryIds.includes(record.id)}"><td class="entry-select-cell"><input v-model="selectedOperationEntryIds" type="checkbox" :value="record.id" /></td><td><span :class="['entry-record-status',record.status.toLowerCase()]">{{statusText(record.status)}}</span></td><td><b>{{record.siteName}}</b></td><td><code>{{record.siteCode}}</code></td><td>{{record.line}}</td><td><strong>{{record.entryDate}}</strong></td><td>{{record.scenario}}</td><td v-for="metric in entryMetrics" :key="metricKey(metric)" class="entry-metric-column">{{record.values[metricKey(metric)]||'—'}}</td><td>{{Object.values(record.values).filter(Boolean).length}} / {{entryMetrics.length}}</td><td>{{record.updatedBy}}</td><td>{{record.updatedAt}}</td></tr>
+                <tr v-if="!filteredOperationEntryRecords.length"><td :colspan="entryMetrics.length+10" class="entry-empty-row">未查询到符合条件的日报</td></tr>
               </tbody></table></div>
             </section>
+            <section class="entry-pagination"><div><span>共 {{filteredOperationEntryRecords.length}} 条</span><select v-model.number="operationEntryPageSize"><option :value="10">10条/页</option><option :value="20">20条/页</option><option :value="50">50条/页</option><option :value="100">100条/页</option></select></div><nav><button :disabled="operationEntryPage===1" @click="setOperationEntryPage(operationEntryPage-1)">‹</button><button v-for="page in operationEntryPageNumbers" :key="page" :class="{selected:page===operationEntryPage}" @click="setOperationEntryPage(page)">{{page}}</button><button :disabled="operationEntryPage===operationEntryPageCount" @click="setOperationEntryPage(operationEntryPage+1)">›</button></nav><label>前往<input :value="operationEntryPage" type="number" min="1" :max="operationEntryPageCount" @change="setOperationEntryPage(Number(($event.target as HTMLInputElement).value))" />页</label></section>
           </template>
           <template v-else>
-            <section class="process-page-toolbar entry-form-toolbar"><div><button @click="operationEntryView='list'">← 返回列表</button><label>水厂<select :value="selectedSite"><option :value="selectedSite">{{currentSite?.name||'第一污水处理厂（示例）'}}</option></select></label><label>工艺线<select v-model="diagnosisLine" @change="loadOperationEntry"><option>一期生化线</option><option>二期生化线</option></select></label><label>填报日期<input v-model="entryDate" type="date" @change="loadOperationEntry" /></label><label>工况<select v-model="entryConditionId"><option v-for="plan in conditionPlans" :key="plan.id" :value="plan.id">{{plan.name}}</option></select></label></div><div><span>需填 {{entryMetrics.length}} 项 · 自动计算 {{calculatedEntryMetricCount}} 项　上次保存：{{entrySavedAt}}</span><button class="primary" @click="saveOperationEntry">保存日报</button></div></section>
+            <section class="process-page-toolbar entry-form-toolbar"><div><button @click="operationEntryView='list'">← 返回列表</button><label>水厂<select :value="selectedSite"><option :value="selectedSite">{{currentSite?.name||'第一污水处理厂（示例）'}}</option></select></label><label>工艺线<select v-model="diagnosisLine" @change="loadOperationEntry"><option>一期生化线</option><option>二期生化线</option></select></label><label>填报日期<input v-model="entryDate" type="date" @change="loadOperationEntry" /></label><label>匹配工况<select :value="entryCondition?.id||''" disabled title="根据填报日期自动匹配"><option v-if="!entryCondition" value="">未匹配工况</option><option v-for="plan in conditionPlans" :key="plan.id" :value="plan.id">{{plan.name}}</option></select></label></div><div><span>需填 {{entryMetrics.length}} 项 · 自动计算 {{calculatedEntryMetricCount}} 项　上次保存：{{entrySavedAt}}</span><button class="primary" @click="saveOperationEntry">保存日报</button></div></section>
             <section class="process-data-panel entry-panel">
               <div class="process-explain"><b>每日原始数据填报</b><span>仅填写现场采集或人工记录的第一手数据；比值、去除率及其他公式指标由系统自动计算。</span></div>
               <nav class="entry-category-tabs" aria-label="指标分类页签"><button v-for="group in entryGroups" :key="group.category" type="button" :class="{selected:activeEntryGroup?.category===group.category}" @click="activeEntryCategory=group.category"><span>{{group.category}}</span><small>{{filledEntryCount(group.metrics)}} / {{group.metrics.length}}</small></button></nav>
               <div v-if="activeEntryGroup" class="entry-group-summary"><b>{{activeEntryGroup.category}}</b><span>共 {{activeEntryGroup.metrics.length}} 项原始数据，已填写 {{filledEntryCount(activeEntryGroup.metrics)}} 项</span><button class="page-gear-button" title="配置指标" :aria-label="`配置${activeEntryGroup.category}填报指标`" @click="openModuleMetricManager('entry',activeEntryGroup.category)">⚙</button></div>
-              <div v-if="activeEntryGroup" class="process-table-wrap"><table class="process-config-table entry-table"><thead><tr><th>指标名称</th><th>单位</th><th>设计值</th><th>当前工况目标值</th><th>实际值</th><th>数据状态</th></tr></thead><tbody><tr v-for="metric in activeEntryGroup.metrics" :key="metricKey(metric)"><td><b>{{metricDisplayName(metric)}}</b></td><td>{{metricDisplayUnit(metric)}}</td><td>{{designValueFor(metric)}}</td><td>{{entryCondition?.targets[metricKey(metric)]||metric.target}}</td><td><input v-model="entryValues[metricKey(metric)]" :placeholder="settingFor(metric).fillSpec||'请输入'" :required="settingFor(metric).required" /></td><td><span :class="['entry-state',{empty:!entryValues[metricKey(metric)]}]">{{entryValues[metricKey(metric)]?'已填写':'待填写'}}</span></td></tr></tbody></table></div>
+              <div v-if="activeEntryGroup" class="process-table-wrap"><table class="process-config-table entry-table"><thead><tr><th>指标名称</th><th>单位</th><th>设计值</th><th>当前工况目标值</th><th>实际值</th><th>数据状态</th></tr></thead><tbody><tr v-for="metric in activeEntryGroup.metrics" :key="metricKey(metric)"><td><b>{{metricDisplayName(metric)}}</b></td><td>{{metricDisplayUnit(metric)}}</td><td>{{designValueFor(metric)}}</td><td>{{entryCondition?(entryCondition.targets[metricKey(metric)]||metric.target):'—'}}</td><td><input v-model="entryValues[metricKey(metric)]" :placeholder="settingFor(metric).fillSpec||'请输入'" :required="settingFor(metric).required" /></td><td><span :class="['entry-state',{empty:!entryValues[metricKey(metric)]}]">{{entryValues[metricKey(metric)]?'已填写':'待填写'}}</span></td></tr></tbody></table></div>
             </section>
           </template>
         </template>
