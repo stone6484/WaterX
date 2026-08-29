@@ -117,3 +117,224 @@
 .table-panel td small,.hazard-table td small { display:block; margin-top:5px; color:#7b8982; line-height:1.45; max-width:320px; }
 .hazard-table table { min-width:1180px; }.hazard-table { overflow-x:auto; }
 @media(max-width:900px){.safety-metrics{grid-template-columns:1fr}.template-strip{align-items:stretch}.template-strip>div{min-width:220px}}
+
+/* Safety UI aligned with the WaterX process-management visual system. */
+.safety-workspace {
+  --safety-primary:#0879aa;
+  --safety-primary-strong:#075985;
+  --safety-surface:#fff;
+  --safety-surface-soft:#f5fafd;
+  --safety-border:#d6e5ee;
+  --safety-heading:#173f58;
+  --safety-text:#294b60;
+  --safety-muted:#708796;
+}
+
+.safety-workspace .page-title { min-height:44px; align-items:center; margin-bottom:14px; }
+.safety-workspace .page-title > div { gap:2px; }
+.safety-workspace .page-title h1 { font-size:20px; font-weight:650; }
+.safety-workspace .page-title .eyebrow { margin:0; color:#6f91a6; }
+.safety-workspace .date-chip { border:1px solid var(--safety-border); background:#fff; color:var(--safety-muted); }
+
+.safety-workspace .metrics,
+.safety-workspace .risk-metrics,
+.safety-workspace .safety-metrics { gap:12px; }
+.safety-workspace .metrics section,
+.safety-workspace .risk-metrics section,
+.safety-workspace .safety-metrics section {
+  min-height:108px;
+  align-content:center;
+  gap:4px;
+  padding:16px 18px;
+  border:1px solid var(--safety-border);
+  border-radius:13px;
+  background:var(--safety-surface);
+  color:var(--safety-text);
+  box-shadow:0 5px 20px rgba(14,116,162,.045);
+}
+.safety-workspace .metrics span,
+.safety-workspace .risk-metrics span,
+.safety-workspace .safety-metrics span { color:var(--safety-muted); font-size:11px; font-weight:600; }
+.safety-workspace .metrics strong,
+.safety-workspace .risk-metrics strong,
+.safety-workspace .safety-metrics strong { color:var(--safety-heading); font-size:26px; line-height:1.25; font-weight:650; }
+.safety-workspace .metrics small,
+.safety-workspace .risk-metrics small,
+.safety-workspace .safety-metrics small { color:#8297a6; font-size:11px; }
+.safety-workspace .metrics .accent,
+.safety-workspace .risk-total,
+.safety-workspace .safety-metrics .hazard-accent {
+  border-color:#0b78aa!important;
+  background:linear-gradient(135deg,#075985,#0879aa)!important;
+  color:#fff;
+}
+.safety-workspace .metrics .accent span,
+.safety-workspace .metrics .accent strong,
+.safety-workspace .metrics .accent small,
+.safety-workspace .risk-total span,
+.safety-workspace .risk-total strong,
+.safety-workspace .risk-total small,
+.safety-workspace .safety-metrics .hazard-accent span,
+.safety-workspace .safety-metrics .hazard-accent strong,
+.safety-workspace .safety-metrics .hazard-accent small { color:#eefaff!important; }
+
+.safety-workspace .panel {
+  margin-top:14px;
+  border:1px solid var(--safety-border);
+  border-radius:13px;
+  background:var(--safety-surface);
+  box-shadow:0 5px 20px rgba(14,116,162,.045);
+}
+.safety-workspace .panel-head { min-height:56px; padding:13px 16px; border-color:#e1edf4; }
+.safety-workspace .panel-head h2,
+.safety-workspace .template-strip h2 { color:var(--safety-heading); font-size:16px; font-weight:650; }
+.safety-workspace .panel-head small,
+.safety-workspace .panel-head span,
+.safety-workspace .template-strip small { color:var(--safety-muted); }
+
+.safety-workspace table { color:var(--safety-text); }
+.safety-workspace th {
+  height:42px;
+  padding:10px 13px;
+  border-color:#e1edf4;
+  background:#f0f7fb;
+  color:#587284;
+  font-size:11px;
+  font-weight:650;
+  white-space:nowrap;
+}
+.safety-workspace td {
+  min-height:46px;
+  padding:11px 13px;
+  border-color:#e7eff4;
+  color:var(--safety-text);
+  font-size:11px;
+  vertical-align:middle;
+}
+.safety-workspace tbody tr:hover { background:#f7fbfd; }
+.safety-workspace td b { color:var(--safety-heading); font-size:12px; font-weight:650; }
+.safety-workspace td small,
+.safety-workspace .table-panel td small,
+.safety-workspace .hazard-table td small { color:var(--safety-muted); font-size:10px; }
+.safety-workspace code { color:#0879aa; }
+
+.safety-workspace .panel-actions { gap:8px; }
+.safety-workspace .panel-actions > span { margin-right:2px; }
+.safety-workspace .panel-actions input,
+.safety-workspace .panel-actions select {
+  min-height:31px;
+  padding:5px 8px;
+  border:1px solid #c8dce7;
+  border-radius:7px;
+  background:#fff;
+  color:var(--safety-text);
+  font-size:11px;
+  outline:none;
+}
+.safety-workspace .panel-actions input:focus,
+.safety-workspace .panel-actions select:focus { border-color:#168dd0; box-shadow:0 0 0 3px rgba(22,141,208,.1); }
+.safety-workspace .panel-actions button,
+.safety-workspace .row-actions button,
+.safety-workspace .template-strip > div > button {
+  border:1px solid var(--safety-primary);
+  border-radius:7px;
+  background:var(--safety-primary);
+  color:#fff;
+  font-size:11px;
+  font-weight:600;
+  box-shadow:none;
+}
+.safety-workspace .panel-actions button,
+.safety-workspace .template-strip > div > button { min-height:31px; padding:6px 11px; }
+.safety-workspace .template-strip > div > button { margin-top:9px; cursor:pointer; }
+.safety-workspace .row-actions { gap:6px; margin-top:7px; }
+.safety-workspace .row-actions button { min-height:27px; padding:4px 8px; }
+.safety-workspace .panel-actions button:hover,
+.safety-workspace .row-actions button:hover,
+.safety-workspace .template-strip > div > button:hover { border-color:var(--safety-primary-strong); background:var(--safety-primary-strong); }
+.safety-workspace .panel-actions .secondary-action,
+.safety-workspace .row-actions .secondary { border-color:#bdd8e7; background:#fff; color:#2f6e90; }
+.safety-workspace .panel-actions .secondary-action:hover,
+.safety-workspace .row-actions .secondary:hover { border-color:#78b5d3; background:#edf7fc; }
+.safety-workspace .row-actions .danger { border-color:#efcaca; background:#fff; color:#c43e3e; }
+.safety-workspace .row-actions .danger:hover { border-color:#dd7777; background:#fff4f4; }
+
+.safety-workspace .tag {
+  display:inline-flex;
+  align-items:center;
+  min-height:23px;
+  padding:3px 8px;
+  border:1px solid #cfe2ed;
+  border-radius:999px;
+  background:#eef6fa;
+  color:#3b647e;
+  font-size:10px;
+  font-weight:600;
+}
+.safety-workspace .tag.green { border-color:#bfe6d4; background:#edf9f3; color:#087f5b; }
+.safety-workspace .tag.warning { border-color:#f4d6a1; background:#fff8e8; color:#a86400; }
+.safety-workspace .tag.danger { border-color:#efc4c4; background:#fff1f1; color:#c43e3e; }
+.safety-workspace .risk-badge { border:1px solid currentColor; border-radius:999px; padding:4px 8px; font-size:10px; }
+.safety-workspace .risk-badge.red { background:#fff1f1; color:#c43e3e; }
+.safety-workspace .risk-badge.orange { background:#fff6ea; color:#bd6508; }
+.safety-workspace .risk-badge.yellow { background:#fffbea; color:#8a7000; }
+.safety-workspace .risk-badge.blue { background:#edf6fc; color:#2875a0; }
+
+.safety-workspace .roadmap { padding:18px; }
+.safety-workspace .roadmap ol { padding-top:18px; }
+.safety-workspace .roadmap li { border-color:#dceaf2; }
+.safety-workspace .roadmap li.done { border-color:#168dd0; }
+.safety-workspace .roadmap li b { color:#7b94a4; }
+.safety-workspace .roadmap li span { color:var(--safety-heading); }
+.safety-workspace .roadmap li small { color:var(--safety-muted); }
+.safety-workspace .template-strip { padding:16px; gap:10px; }
+.safety-workspace .template-strip > span { min-width:178px; padding:11px 13px; border:1px solid #dceaf2; border-radius:9px; background:var(--safety-surface-soft); }
+.safety-workspace .template-strip > span b { color:var(--safety-heading); }
+.safety-workspace .statistics-grid { background:#dceaf2; }
+.safety-workspace .statistics-grid section { padding:17px 18px; }
+.safety-workspace .statistics-grid span,
+.safety-workspace .statistics-grid small { color:var(--safety-muted); }
+.safety-workspace .statistics-grid strong { color:var(--safety-primary-strong); font-size:25px; }
+.safety-workspace .statistics-grid .escalation-summary { background:#fffaf4; }
+
+/* Safety dialogs use the same compact blue form language. */
+.modal-mask { background:rgba(5,45,71,.58); backdrop-filter:blur(2px); }
+.risk-form,
+.area-form,
+.risk-detail { border:1px solid #cfe2ed; border-radius:14px; background:#f5fafd; box-shadow:0 24px 70px rgba(5,45,71,.24); }
+.form-head { min-height:62px; padding:14px 18px; border-color:#dce9f1; }
+.form-head h2 { color:#173f58; font-size:18px; font-weight:650; }
+.form-head > button { width:30px; height:30px; border:1px solid #d2e3ed; background:#f2f8fb; color:#4f7185; font-size:18px; }
+.form-head > button:hover { border-color:#9bc9df; background:#eaf6fb; color:#075985; }
+.form-section { margin:12px 14px; padding:16px; border-color:#dce9f1; border-radius:11px; }
+.form-section h3 { color:#173f58; font-size:14px; }
+.risk-form label,
+.area-form label,
+.task-form-body label,
+.reassess-form label { color:#46677b; font-size:11px; }
+.risk-form input, .risk-form select, .risk-form textarea,
+.area-form input, .area-form select,
+.task-form-body input, .task-form-body select, .task-form-body textarea,
+.reassess-form input, .reassess-form textarea { min-height:36px; border-color:#cadde8; border-radius:7px; color:#294b60; }
+.risk-form input:focus, .risk-form select:focus, .risk-form textarea:focus,
+.area-form input:focus, .area-form select:focus,
+.task-form-body input:focus, .task-form-body select:focus, .task-form-body textarea:focus,
+.reassess-form input:focus, .reassess-form textarea:focus { border-color:#168dd0; box-shadow:0 0 0 3px rgba(22,141,208,.12); outline:none; }
+.method-tabs button { border-color:#cadde8; border-radius:7px; color:#527086; }
+.method-tabs button.active { border-color:#168dd0; background:#eaf6fb; color:#0879aa; }
+.form-foot { padding:13px 18px; border-color:#dce9f1; }
+.form-foot span { color:#708796; }
+.form-foot button { min-height:34px; padding:7px 13px; border-color:#bdd5e3; border-radius:7px; color:#41657b; }
+.form-foot .primary,
+.submit-reassess { border:1px solid #0879aa; border-radius:7px; background:#0879aa; color:#fff; }
+.form-foot .primary:hover,
+.submit-reassess:hover { border-color:#075985; background:#075985; }
+.detail-summary div,
+.history-list article,
+.reassess-form { border-color:#dce9f1; border-radius:9px; }
+.detail-summary span,
+.history-head span,
+.history-list p { color:#708796; }
+
+@media(max-width:1100px){.safety-workspace .risk-metrics{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.safety-workspace .risk-metrics{grid-template-columns:repeat(2,1fr)}.safety-workspace .page-title{align-items:flex-end}}

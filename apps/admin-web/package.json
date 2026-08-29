@@ -12,7 +12,8 @@
     "@safety/api-client": "workspace:*",
     "@types/qrcode": "^1.5.6",
     "qrcode": "^1.5.4",
-    "vue": "3.5.17"
+    "vue": "3.5.17",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "6.0.0",
