@@ -9,6 +9,7 @@ import type { ImprovementDraft, QualityPageId } from './modules/management-quali
 import ProcessEvaluationPage from './modules/process-evaluation/ProcessEvaluationPage.vue'
 import { isProcessEvaluationPageId } from './modules/process-evaluation/rules'
 import type { ProcessEvaluationPageId } from './modules/process-evaluation/types'
+import LabRawRecordsPage from './modules/lab-raw-records/LabRawRecordsPage.vue'
 
 const api = new ApiClient()
 const token = ref(sessionStorage.getItem('accessToken') || '')
@@ -1506,6 +1507,9 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
           </template>
         </template>
         <template v-else-if="active==='labRecords'">
+          <LabRawRecordsPage />
+        </template>
+        <template v-else-if="false">
           <template v-if="labRecordView==='folders'">
             <section class="lab-simple-toolbar"><div><button @click="labRecordView='folders'">刷新</button></div><span>选择检测项目，进入每日原始记录台账</span></section>
             <section class="lab-folder-grid"><button v-for="folder in labFolders" :key="folder.type" @click="openLabFolder(folder.type)"><i>{{folder.icon}}</i><b>{{folder.name}}</b><small>{{folder.method}}</small><em>{{labOriginalRecords.filter(record=>record.type===folder.type).length}} 张记录</em></button><button class="lab-folder-planned" disabled><i>＋</i><b>其他检测项目</b><small>后续按同一模板扩展</small><em>规划中</em></button></section>
