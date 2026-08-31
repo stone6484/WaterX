@@ -1,0 +1,3034 @@
+{
+  "$schema": "./aeration_air-model.schema.json",
+  "modelCode": "AIR",
+  "modelName": "曝气供气系统分析",
+  "version": "0.1.0",
+  "status": "DRAFT",
+  "objectScope": "UNIT",
+  "ownerDomain": "unit.aeration_air",
+  "unitType": "AERATION_AIR_SYSTEM",
+  "timezone": "Asia/Shanghai",
+  "pages": [
+    "分析概览",
+    "数据与计算",
+    "偏差诊断",
+    "优化方案",
+    "效果跟踪"
+  ],
+  "processVariants": [
+    "鼓风曝气+微孔曝气器",
+    "分区供气",
+    "填料区供气可配置"
+  ],
+  "boundary": {
+    "owns": [
+      "风机运行点与供气能力",
+      "压力链与空气系统阻力",
+      "曝气器通气与阻力",
+      "分区配气均衡",
+      "供气能耗和清洗优化验证"
+    ],
+    "references": [
+      "整体工艺DO/NH3需求与控制目标",
+      "水量水温负荷",
+      "设备状态与工单",
+      "MBBR流化需求",
+      "安全限制"
+    ],
+    "forbids": [
+      "全厂氨氮/TN超标原因",
+      "曝气需求的生物过程主判断",
+      "污泥活性与泥龄诊断",
+      "全厂能耗构成主结论",
+      "设备维修质量评价"
+    ]
+  },
+  "benchmarkResolution": {
+    "displayOrder": [
+      "DESIGN",
+      "SITE_TARGET",
+      "STANDARD",
+      "HISTORICAL_BEST",
+      "PEER_BENCHMARK"
+    ],
+    "allowUnconfirmedExperience": false,
+    "noMatchBehavior": "NO_APPLICABLE_BENCHMARK"
+  },
+  "evaluationStatuses": [
+    "NOT_APPLICABLE",
+    "DATA_INSUFFICIENT",
+    "NORMAL",
+    "TRIGGERED",
+    "SUPPRESSED"
+  ],
+  "registries": {
+    "functions": [
+      "minimumBlowerEvidenceMissing",
+      "minimumZoneEvidenceMissing",
+      "diffuserBaselineComparable",
+      "throttlingLossHigh",
+      "airIntakeEnvironmentAbnormal",
+      "rainDryEnergyAbnormal",
+      "diffuserAgeResistanceRisk"
+    ],
+    "modelReferences": [
+      "powerPerKpa",
+      "annualOperatingHours"
+    ],
+    "benchmarkReferences": [
+      "siteCapacityRange",
+      "historicalComparableRange"
+    ]
+  },
+  "fields": [
+    {
+      "fieldCode": "site_id",
+      "group": "对象",
+      "name": "厂区ID",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "基础信息",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "unit_id",
+      "group": "对象",
+      "name": "单体ID",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "基础信息",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "analysis_period",
+      "group": "对象",
+      "name": "分析周期",
+      "dataType": "DATE_RANGE",
+      "unit": "—",
+      "source": "分析任务",
+      "cadence": "周期",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "model_version",
+      "group": "对象",
+      "name": "模型版本",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "模型中心",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "config_version",
+      "group": "对象",
+      "name": "单体配置版本",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "单体配置",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "air_system_type",
+      "group": "适用性",
+      "name": "曝气供气系统类型",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "单体配置",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "design_flow",
+      "group": "设计",
+      "name": "设计处理水量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "设计文件",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "actual_flow",
+      "group": "运行",
+      "name": "实际处理水量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "流量计",
+      "cadence": "小时",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "blower_count_installed",
+      "group": "风机",
+      "name": "风机安装台数",
+      "dataType": "INTEGER",
+      "unit": "台",
+      "source": "设备台账",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "blower_count_running",
+      "group": "风机",
+      "name": "风机运行台数",
+      "dataType": "INTEGER",
+      "unit": "台",
+      "source": "自控",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "blower_rated_flow",
+      "group": "风机",
+      "name": "单机额定风量",
+      "dataType": "DECIMAL",
+      "unit": "Nm3/min",
+      "source": "设备台账",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "blower_rated_pressure",
+      "group": "风机",
+      "name": "额定出口升压",
+      "dataType": "DECIMAL",
+      "unit": "kPa",
+      "source": "设备台账",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "blower_actual_flow",
+      "group": "风机",
+      "name": "系统实际风量",
+      "dataType": "DECIMAL",
+      "unit": "Nm3/min",
+      "source": "风量计",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "blower_inlet_pressure",
+      "group": "风机",
+      "name": "风机入口绝压",
+      "dataType": "DECIMAL",
+      "unit": "kPa(a)",
+      "source": "压力计",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "blower_outlet_pressure",
+      "group": "风机",
+      "name": "风机出口绝压",
+      "dataType": "DECIMAL",
+      "unit": "kPa(a)",
+      "source": "压力计",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "blower_power",
+      "group": "风机",
+      "name": "运行风机总功率",
+      "dataType": "DECIMAL",
+      "unit": "kW",
+      "source": "电表",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "blower_energy",
+      "group": "能耗",
+      "name": "曝气风机日电量",
+      "dataType": "DECIMAL",
+      "unit": "kWh/d",
+      "source": "电表",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "blower_inlet_temp",
+      "group": "环境",
+      "name": "风机入口空气温度",
+      "dataType": "DECIMAL",
+      "unit": "℃",
+      "source": "温度计",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "blower_outlet_temp",
+      "group": "环境",
+      "name": "风机出口空气温度",
+      "dataType": "DECIMAL",
+      "unit": "℃",
+      "source": "温度计",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "blower_room_temp",
+      "group": "环境",
+      "name": "风机房温度",
+      "dataType": "DECIMAL",
+      "unit": "℃",
+      "source": "温度计",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "site_altitude",
+      "group": "环境",
+      "name": "当地海拔",
+      "dataType": "DECIMAL",
+      "unit": "m",
+      "source": "基础信息",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "basin_water_depth",
+      "group": "压力链",
+      "name": "曝气器浸没水深",
+      "dataType": "DECIMAL",
+      "unit": "m",
+      "source": "设计/液位",
+      "cadence": "小时",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "header_pressure",
+      "group": "压力链",
+      "name": "曝气总管压力",
+      "dataType": "DECIMAL",
+      "unit": "kPa",
+      "source": "压力计",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "drop_leg_pressure",
+      "group": "压力链",
+      "name": "曝气立管压力",
+      "dataType": "DECIMAL",
+      "unit": "kPa",
+      "source": "压力计",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "valve_opening",
+      "group": "压力链",
+      "name": "关键调节阀开度",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "自控",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "diffuser_type",
+      "group": "曝气器",
+      "name": "曝气器类型",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "设备台账",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "diffuser_count",
+      "group": "曝气器",
+      "name": "曝气器数量",
+      "dataType": "INTEGER",
+      "unit": "个",
+      "source": "设备台账",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "diffuser_effective_area",
+      "group": "曝气器",
+      "name": "单个膜片有效面积",
+      "dataType": "DECIMAL",
+      "unit": "m2",
+      "source": "设备台账",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "diffuser_service_area",
+      "group": "曝气器",
+      "name": "曝气器服务总面积",
+      "dataType": "DECIMAL",
+      "unit": "m2",
+      "source": "设计文件",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "factory_oxygen_utilization",
+      "group": "曝气器",
+      "name": "出厂氧利用率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "产品资料",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "initial_diffuser_resistance",
+      "group": "曝气器",
+      "name": "新膜片阻力",
+      "dataType": "DECIMAL",
+      "unit": "kPa",
+      "source": "调试/基线",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "current_diffuser_resistance",
+      "group": "曝气器",
+      "name": "当前膜片阻力",
+      "dataType": "DECIMAL",
+      "unit": "kPa",
+      "source": "压力核算/检测",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "diffuser_age",
+      "group": "曝气器",
+      "name": "膜片使用年限",
+      "dataType": "DECIMAL",
+      "unit": "年",
+      "source": "设备台账",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "zone_flow_json",
+      "group": "配气",
+      "name": "各曝气分区风量",
+      "dataType": "JSON",
+      "unit": "Nm3/min",
+      "source": "分区流量计",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "zone_do_json",
+      "group": "配气",
+      "name": "各曝气分区DO",
+      "dataType": "JSON",
+      "unit": "mg/L",
+      "source": "在线DO",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "zone_valve_json",
+      "group": "配气",
+      "name": "各分区阀门开度",
+      "dataType": "JSON",
+      "unit": "%",
+      "source": "自控",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "do_target_json",
+      "group": "外部目标",
+      "name": "整体工艺下发DO目标",
+      "dataType": "JSON",
+      "unit": "mg/L",
+      "source": "整体工艺诊断引用",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "nh3_feedback",
+      "group": "外部目标",
+      "name": "氨氮反馈值",
+      "dataType": "DECIMAL",
+      "unit": "mg/L",
+      "source": "在线/整体诊断",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "control_mode",
+      "group": "控制",
+      "name": "曝气控制模式",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "自控配置",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "night_flow",
+      "group": "工况",
+      "name": "夜间小时水量",
+      "dataType": "DECIMAL",
+      "unit": "m3/h",
+      "source": "流量计",
+      "cadence": "小时",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "day_flow",
+      "group": "工况",
+      "name": "昼间小时水量",
+      "dataType": "DECIMAL",
+      "unit": "m3/h",
+      "source": "流量计",
+      "cadence": "小时",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "night_energy",
+      "group": "工况",
+      "name": "夜间曝气电量",
+      "dataType": "DECIMAL",
+      "unit": "kWh",
+      "source": "电表",
+      "cadence": "时段",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "day_energy",
+      "group": "工况",
+      "name": "昼间曝气电量",
+      "dataType": "DECIMAL",
+      "unit": "kWh",
+      "source": "电表",
+      "cadence": "时段",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "rain_state",
+      "group": "工况",
+      "name": "雨天/旱天",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "运行记录",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "cleaning_date",
+      "group": "清洗",
+      "name": "最近曝气器清洗日期",
+      "dataType": "DATE",
+      "unit": "—",
+      "source": "维护记录",
+      "cadence": "事件",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "pre_clean_pressure",
+      "group": "清洗",
+      "name": "清洗前出口升压",
+      "dataType": "DECIMAL",
+      "unit": "kPa",
+      "source": "事件快照",
+      "cadence": "事件",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "post_clean_pressure",
+      "group": "清洗",
+      "name": "清洗后出口升压",
+      "dataType": "DECIMAL",
+      "unit": "kPa",
+      "source": "事件快照",
+      "cadence": "事件",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "cleaning_cost",
+      "group": "清洗",
+      "name": "单次清洗成本",
+      "dataType": "DECIMAL",
+      "unit": "CNY/次",
+      "source": "成本记录",
+      "cadence": "事件",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "electricity_price",
+      "group": "成本",
+      "name": "电价",
+      "dataType": "DECIMAL",
+      "unit": "CNY/kWh",
+      "source": "经营参数",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "air_filter_state",
+      "group": "环境",
+      "name": "进风过滤状态",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "巡检/压差",
+      "cadence": "班次",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "heat_dissipation_state",
+      "group": "环境",
+      "name": "风机房散热状态",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "巡检",
+      "cadence": "班次",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "minimum_air_demand",
+      "group": "外部目标",
+      "name": "工艺最低供气约束",
+      "dataType": "DECIMAL",
+      "unit": "Nm3/min",
+      "source": "整体工艺目标",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "external_process_diagnosis_id",
+      "group": "外部",
+      "name": "整体工艺诊断引用",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "整体工艺诊断",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    }
+  ],
+  "metrics": [
+    {
+      "metricCode": "CAPACITY_UTILIZATION",
+      "group": "能力",
+      "name": "供气能力利用率",
+      "formula": "blower_actual_flow/(blower_rated_flow*blower_count_running)",
+      "unit": "%",
+      "dependencies": [
+        "blower_actual_flow",
+        "blower_rated_flow",
+        "blower_count_running"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.capacity_utilization.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "PRESSURE_RISE",
+      "group": "风机",
+      "name": "风机实际升压",
+      "formula": "blower_outlet_pressure-blower_inlet_pressure",
+      "unit": "kPa",
+      "dependencies": [
+        "blower_outlet_pressure",
+        "blower_inlet_pressure"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.pressure_rise.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "SPECIFIC_POWER",
+      "group": "风机",
+      "name": "单位风量功率",
+      "formula": "blower_power/blower_actual_flow",
+      "unit": "kW/(Nm3/min)",
+      "dependencies": [
+        "blower_power",
+        "blower_actual_flow"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.specific_power.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "BLOWER_WIRE_EFFICIENCY_PROXY",
+      "group": "风机",
+      "name": "风机线效率表征",
+      "formula": "blower_actual_flow*PRESSURE_RISE/blower_power",
+      "unit": "index",
+      "dependencies": [
+        "blower_actual_flow",
+        "PRESSURE_RISE",
+        "blower_power"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.blower_wire_efficiency_proxy.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "用于同机同工况对比，不替代厂家效率测试",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "AIR_WATER_RATIO",
+      "group": "供气",
+      "name": "系统气水比",
+      "formula": "blower_actual_flow*60*24/actual_flow",
+      "unit": "—",
+      "dependencies": [
+        "blower_actual_flow",
+        "actual_flow"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.air_water_ratio.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "UNIT_AERATION_ENERGY",
+      "group": "能耗",
+      "name": "曝气吨水电耗",
+      "formula": "blower_energy/actual_flow",
+      "unit": "kWh/m3",
+      "dependencies": [
+        "blower_energy",
+        "actual_flow"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.unit_aeration_energy.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "HYDROSTATIC_PRESSURE",
+      "group": "压力链",
+      "name": "曝气静水压力",
+      "formula": "basin_water_depth*9.81",
+      "unit": "kPa",
+      "dependencies": [
+        "basin_water_depth"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.hydrostatic_pressure.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "PIPE_SYSTEM_LOSS",
+      "group": "压力链",
+      "name": "管路与阀门阻力",
+      "formula": "header_pressure-HYDROSTATIC_PRESSURE-current_diffuser_resistance",
+      "unit": "kPa",
+      "dependencies": [
+        "header_pressure",
+        "HYDROSTATIC_PRESSURE",
+        "current_diffuser_resistance"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.pipe_system_loss.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "DIFFUSER_RESISTANCE_INCREASE",
+      "group": "曝气器",
+      "name": "膜片阻力增加",
+      "formula": "current_diffuser_resistance-initial_diffuser_resistance",
+      "unit": "kPa",
+      "dependencies": [
+        "current_diffuser_resistance",
+        "initial_diffuser_resistance"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.diffuser_resistance_increase.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "DIFFUSER_BLOCKAGE_PROXY",
+      "group": "曝气器",
+      "name": "膜片堵塞率表征",
+      "formula": "DIFFUSER_RESISTANCE_INCREASE/current_diffuser_resistance",
+      "unit": "%",
+      "dependencies": [
+        "DIFFUSER_RESISTANCE_INCREASE",
+        "current_diffuser_resistance"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.diffuser_blockage_proxy.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅作阻力表征",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "AIRFLOW_PER_DIFFUSER",
+      "group": "曝气器",
+      "name": "单盘平均通气量",
+      "formula": "blower_actual_flow*60/diffuser_count",
+      "unit": "Nm3/(h·个)",
+      "dependencies": [
+        "blower_actual_flow",
+        "diffuser_count"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.airflow_per_diffuser.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "SERVICE_AREA_PER_DIFFUSER",
+      "group": "曝气器",
+      "name": "单盘服务面积",
+      "formula": "diffuser_service_area/diffuser_count",
+      "unit": "m2/个",
+      "dependencies": [
+        "diffuser_service_area",
+        "diffuser_count"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.service_area_per_diffuser.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "ZONE_AIR_CV",
+      "group": "配气",
+      "name": "分区风量离散度",
+      "formula": "CV(zone_flow_json)",
+      "unit": "%",
+      "dependencies": [
+        "zone_flow_json"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.zone_air_cv.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "ZONE_DO_CV",
+      "group": "配气",
+      "name": "分区DO离散度",
+      "formula": "CV(zone_do_json)",
+      "unit": "%",
+      "dependencies": [
+        "zone_do_json"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.zone_do_cv.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "DO_TARGET_DEVIATION",
+      "group": "控制",
+      "name": "分区DO目标偏差表征",
+      "formula": "weightedDeviation(zone_do_json,do_target_json)",
+      "unit": "mg/L",
+      "dependencies": [
+        "zone_do_json",
+        "do_target_json"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.do_target_deviation.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "THROTTLING_LOSS_PROXY",
+      "group": "压力链",
+      "name": "阀门节流损失表征",
+      "formula": "throttlingLoss(valve_opening,zone_flow_json,header_pressure)",
+      "unit": "index",
+      "dependencies": [
+        "valve_opening",
+        "zone_flow_json",
+        "header_pressure"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.throttling_loss_proxy.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "NIGHT_UNIT_ENERGY",
+      "group": "工况",
+      "name": "夜间吨水曝气电耗",
+      "formula": "night_energy/night_flow",
+      "unit": "kWh/m3",
+      "dependencies": [
+        "night_energy",
+        "night_flow"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.night_unit_energy.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "DAY_UNIT_ENERGY",
+      "group": "工况",
+      "name": "昼间吨水曝气电耗",
+      "formula": "day_energy/day_flow",
+      "unit": "kWh/m3",
+      "dependencies": [
+        "day_energy",
+        "day_flow"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.day_unit_energy.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "DAY_NIGHT_ENERGY_RATIO",
+      "group": "工况",
+      "name": "昼夜单位电耗比",
+      "formula": "NIGHT_UNIT_ENERGY/DAY_UNIT_ENERGY",
+      "unit": "倍",
+      "dependencies": [
+        "NIGHT_UNIT_ENERGY",
+        "DAY_UNIT_ENERGY"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.day_night_energy_ratio.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CLEANING_PRESSURE_RECOVERY",
+      "group": "清洗",
+      "name": "清洗压降恢复",
+      "formula": "pre_clean_pressure-post_clean_pressure",
+      "unit": "kPa",
+      "dependencies": [
+        "pre_clean_pressure",
+        "post_clean_pressure"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.cleaning_pressure_recovery.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CLEANING_SAVED_POWER",
+      "group": "清洗",
+      "name": "清洗节省功率估算",
+      "formula": "CLEANING_PRESSURE_RECOVERY*@model.powerPerKpa",
+      "unit": "kW",
+      "dependencies": [
+        "CLEANING_PRESSURE_RECOVERY",
+        "@model.powerPerKpa"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.cleaning_saved_power.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CLEANING_ANNUAL_SAVING",
+      "group": "清洗",
+      "name": "清洗年节电收益估算",
+      "formula": "CLEANING_SAVED_POWER*@model.annualOperatingHours*electricity_price-cleaning_cost",
+      "unit": "CNY/年",
+      "dependencies": [
+        "CLEANING_SAVED_POWER",
+        "@model.annualOperatingHours",
+        "electricity_price",
+        "cleaning_cost"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.cleaning_annual_saving.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "PRESSURE_MARGIN",
+      "group": "能力",
+      "name": "供气压力裕量",
+      "formula": "blower_rated_pressure-PRESSURE_RISE",
+      "unit": "kPa",
+      "dependencies": [
+        "blower_rated_pressure",
+        "PRESSURE_RISE"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.pressure_margin.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "FLOW_MARGIN",
+      "group": "能力",
+      "name": "最低供气流量裕量",
+      "formula": "blower_actual_flow-minimum_air_demand",
+      "unit": "Nm3/min",
+      "dependencies": [
+        "blower_actual_flow",
+        "minimum_air_demand"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.flow_margin.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "OUTLET_TEMP_RISE",
+      "group": "环境",
+      "name": "风机出口温升",
+      "formula": "blower_outlet_temp-blower_inlet_temp",
+      "unit": "℃",
+      "dependencies": [
+        "blower_outlet_temp",
+        "blower_inlet_temp"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "aeration_air.outlet_temp_rise.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    }
+  ],
+  "benchmarks": [
+    {
+      "benchmarkCode": "AIR-BM-01",
+      "benchmarkType": "DESIGN",
+      "objectCode": "CAPACITY_UTILIZATION",
+      "name": "风机能力利用范围",
+      "lower": "按设备曲线",
+      "upper": "按设备曲线",
+      "unit": "%",
+      "applicability": "对应机型与环境修正",
+      "source": "设备曲线",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-02",
+      "benchmarkType": "DESIGN",
+      "objectCode": "PRESSURE_RISE",
+      "name": "风机升压范围",
+      "lower": "按系统设计",
+      "upper": "按系统设计",
+      "unit": "kPa",
+      "applicability": "水深与管路配置一致",
+      "source": "设计文件",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-03",
+      "benchmarkType": "HISTORICAL_BEST",
+      "objectCode": "SPECIFIC_POWER",
+      "name": "单位风量功率目标",
+      "lower": null,
+      "upper": "待历史确认",
+      "unit": "kW/(Nm3/min)",
+      "applicability": "同机型环境与升压可比",
+      "source": "历史优秀期",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-04",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "AIR_WATER_RATIO",
+      "name": "气水比控制范围",
+      "lower": "待整体工艺下发",
+      "upper": "待整体工艺下发",
+      "unit": "—",
+      "applicability": "负荷水温与工艺目标适用",
+      "source": "整体工艺目标",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-05",
+      "benchmarkType": "HISTORICAL_BEST",
+      "objectCode": "UNIT_AERATION_ENERGY",
+      "name": "曝气吨水电耗目标",
+      "lower": null,
+      "upper": "待历史确认",
+      "unit": "kWh/m3",
+      "applicability": "负荷水温与边界可比",
+      "source": "历史优秀期",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-06",
+      "benchmarkType": "DESIGN",
+      "objectCode": "initial_diffuser_resistance",
+      "name": "新膜片阻力基线",
+      "lower": "按调试基线",
+      "upper": "按调试基线",
+      "unit": "kPa",
+      "applicability": "对应曝气器批次",
+      "source": "调试记录",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-07",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "DIFFUSER_RESISTANCE_INCREASE",
+      "name": "膜片阻力增量上限",
+      "lower": null,
+      "upper": "待一厂一策",
+      "unit": "kPa",
+      "applicability": "压力链已校核",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-08",
+      "benchmarkType": "DESIGN",
+      "objectCode": "AIRFLOW_PER_DIFFUSER",
+      "name": "单盘通气量范围",
+      "lower": "按曝气器曲线",
+      "upper": "按曝气器曲线",
+      "unit": "Nm3/(h·个)",
+      "applicability": "对应曝气器",
+      "source": "产品资料",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-09",
+      "benchmarkType": "DESIGN",
+      "objectCode": "SERVICE_AREA_PER_DIFFUSER",
+      "name": "单盘服务面积",
+      "lower": "按设计版本",
+      "upper": "按设计版本",
+      "unit": "m2/个",
+      "applicability": "对应分区",
+      "source": "设计文件",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-10",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "ZONE_AIR_CV",
+      "name": "分区风量离散度上限",
+      "lower": null,
+      "upper": "待一厂一策",
+      "unit": "%",
+      "applicability": "分区计量完整",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-11",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "ZONE_DO_CV",
+      "name": "分区DO离散度上限",
+      "lower": null,
+      "upper": "待一厂一策",
+      "unit": "%",
+      "applicability": "DO仪表已校核",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-12",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "DO_TARGET_DEVIATION",
+      "name": "DO目标偏差允许范围",
+      "lower": "待整体工艺下发",
+      "upper": "待整体工艺下发",
+      "unit": "mg/L",
+      "applicability": "目标版本有效",
+      "source": "整体工艺目标",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-13",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "PRESSURE_MARGIN",
+      "name": "压力裕量下限",
+      "lower": "待一厂一策",
+      "upper": null,
+      "unit": "kPa",
+      "applicability": "环境修正与设备曲线确认",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-14",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "FLOW_MARGIN",
+      "name": "最低供气裕量下限",
+      "lower": "0",
+      "upper": null,
+      "unit": "Nm3/min",
+      "applicability": "整体最低供气约束有效",
+      "source": "整体工艺约束",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-15",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "OUTLET_TEMP_RISE",
+      "name": "风机出口温升上限",
+      "lower": null,
+      "upper": "待设备确认",
+      "unit": "℃",
+      "applicability": "入口环境可比",
+      "source": "设备台账/试点",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-16",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "CLEANING_ANNUAL_SAVING",
+      "name": "清洗经济性门槛",
+      "lower": "待一厂一策",
+      "upper": null,
+      "unit": "CNY/年",
+      "applicability": "清洗效果可追溯",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "AIR-BM-17",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "DAY_NIGHT_ENERGY_RATIO",
+      "name": "昼夜单位电耗比目标",
+      "lower": null,
+      "upper": "待一厂一策",
+      "unit": "倍",
+      "applicability": "昼夜水量边界完整",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    }
+  ],
+  "rules": [
+    {
+      "ruleCode": "AIR-DATA-01",
+      "group": "数据",
+      "name": "风量压力功率不同期",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.8,
+      "condition": {
+        "op": "FUNCTION",
+        "function": "minimumBlowerEvidenceMissing"
+      },
+      "thresholdRef": "最低证据集",
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "覆盖率、来源、时间和版本",
+      "likelyCauses": [
+        "数据源未接入",
+        "时间或对象口径不完整"
+      ],
+      "recommendation": "补齐最低证据后重新分析",
+      "constraint": "只输出补数要求",
+      "recovery": "最低证据持续满足",
+      "boundary": "数据门槛，不生成业务偏差",
+      "suppresses": [
+        "AIR-BLOWER-01",
+        "AIR-BLOWER-02",
+        "AIR-PRESS-01",
+        "AIR-ENERGY-01"
+      ],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "ruleCode": "AIR-DATA-02",
+      "group": "数据",
+      "name": "分区供气与DO证据不足",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.8,
+      "condition": {
+        "op": "FUNCTION",
+        "function": "minimumZoneEvidenceMissing"
+      },
+      "thresholdRef": "最低证据集",
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "覆盖率、来源、时间和版本",
+      "likelyCauses": [
+        "数据源未接入",
+        "时间或对象口径不完整"
+      ],
+      "recommendation": "补齐最低证据后重新分析",
+      "constraint": "只输出补数要求",
+      "recovery": "最低证据持续满足",
+      "boundary": "数据门槛，不生成业务偏差",
+      "suppresses": [
+        "AIR-ZONE-01",
+        "AIR-ZONE-02",
+        "AIR-CTRL-01"
+      ],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "ruleCode": "AIR-DATA-03",
+      "group": "数据",
+      "name": "膜片阻力基线不可比",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.8,
+      "condition": {
+        "op": "FUNCTION",
+        "function": "diffuserBaselineComparable"
+      },
+      "thresholdRef": "最低证据集",
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "覆盖率、来源、时间和版本",
+      "likelyCauses": [
+        "数据源未接入",
+        "时间或对象口径不完整"
+      ],
+      "recommendation": "补齐最低证据后重新分析",
+      "constraint": "只输出补数要求",
+      "recovery": "最低证据持续满足",
+      "boundary": "数据门槛，不生成业务偏差",
+      "suppresses": [
+        "AIR-DIFF-01",
+        "AIR-DIFF-02",
+        "AIR-CLEAN-01"
+      ],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "BLOWER-01",
+      "group": "风机",
+      "name": "风机能力利用偏离",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "CAPACITY_UTILIZATION",
+        "benchmark": "AIR-BM-01"
+      },
+      "thresholdRef": "AIR-BM-01",
+      "persistence": {
+        "mode": "MINUTE",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "风量、运行台数、环境修正曲线",
+      "likelyCauses": [
+        "运行组合不当",
+        "额定能力未做环境修正"
+      ],
+      "recommendation": "优化运行台数组合",
+      "constraint": "保持最低供气和压力裕量",
+      "recovery": "连续30分钟回归",
+      "boundary": "只评价供气能力",
+      "ruleCode": "AIR-BLOWER-01",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "BLOWER-02",
+      "group": "风机",
+      "name": "单位风量功率偏高",
+      "condition": {
+        "op": "GT",
+        "metric": "SPECIFIC_POWER",
+        "benchmark": "AIR-BM-03.upper"
+      },
+      "thresholdRef": "AIR-BM-03.upper",
+      "persistence": {
+        "mode": "HOUR",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "同期功率、风量、升压",
+      "likelyCauses": [
+        "偏离高效区",
+        "系统阻力或节流偏高"
+      ],
+      "recommendation": "按风机组合与压力链核验",
+      "constraint": "设备维修质量由设备模块判断",
+      "recovery": "连续3小时改善",
+      "boundary": "只评价运行工况效率",
+      "ruleCode": "AIR-BLOWER-02",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "PRESS-01",
+      "group": "压力链",
+      "name": "风机升压偏离",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "PRESSURE_RISE",
+        "benchmark": "AIR-BM-02"
+      },
+      "thresholdRef": "AIR-BM-02",
+      "persistence": {
+        "mode": "MINUTE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "入口/出口压力、水深和负荷",
+      "likelyCauses": [
+        "系统阻力增加",
+        "压力设定或仪表偏差"
+      ],
+      "recommendation": "拆分静水、管路、阀门和膜片阻力",
+      "constraint": "不直接认定设备故障",
+      "recovery": "连续30分钟回归",
+      "boundary": "只评价供气压力链",
+      "ruleCode": "AIR-PRESS-01",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "PRESS-02",
+      "group": "压力链",
+      "name": "压力裕量不足",
+      "condition": {
+        "op": "LT",
+        "metric": "PRESSURE_MARGIN",
+        "benchmark": "AIR-BM-13.lower"
+      },
+      "thresholdRef": "AIR-BM-13.lower",
+      "persistence": {
+        "mode": "MINUTE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "额定升压、实际升压、环境修正",
+      "likelyCauses": [
+        "系统阻力高",
+        "风机选配/组合不足"
+      ],
+      "recommendation": "降低阻力或调整风机组合",
+      "constraint": "保持设备安全边界",
+      "recovery": "连续30分钟恢复",
+      "boundary": "只评价压力能力",
+      "ruleCode": "AIR-PRESS-02",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "PRESS-03",
+      "group": "压力链",
+      "name": "阀门节流损失偏高",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "throttlingLossHigh"
+      },
+      "thresholdRef": "approvedThrottlingRule",
+      "persistence": {
+        "mode": "HOUR",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "阀位、分区风量、总管压力",
+      "likelyCauses": [
+        "总管压力过高",
+        "配气靠节流平衡"
+      ],
+      "recommendation": "优化总管压力与阀位协同",
+      "constraint": "保持分区DO保护",
+      "recovery": "连续3小时改善",
+      "boundary": "只评价运行节流",
+      "ruleCode": "AIR-PRESS-03",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "DIFF-01",
+      "group": "曝气器",
+      "name": "膜片阻力增加",
+      "condition": {
+        "op": "GT",
+        "metric": "DIFFUSER_RESISTANCE_INCREASE",
+        "benchmark": "AIR-BM-07.upper"
+      },
+      "thresholdRef": "AIR-BM-07.upper",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "新膜片基线、当前压力链",
+      "likelyCauses": [
+        "结垢堵塞",
+        "基线或压力测点不一致"
+      ],
+      "recommendation": "完成压力链复核并评估清洗",
+      "constraint": "无基线不下确定结论",
+      "recovery": "连续3日恢复",
+      "boundary": "只评价阻力表征",
+      "ruleCode": "AIR-DIFF-01",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "DIFF-02",
+      "group": "曝气器",
+      "name": "单盘通气量偏离",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "AIRFLOW_PER_DIFFUSER",
+        "benchmark": "AIR-BM-08"
+      },
+      "thresholdRef": "AIR-BM-08",
+      "persistence": {
+        "mode": "MINUTE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "总风量、曝气器数量、运行分区",
+      "likelyCauses": [
+        "风量分配不当",
+        "曝气器数量/分区配置错误"
+      ],
+      "recommendation": "调整分区供气并核验DO",
+      "constraint": "不得超过曝气器曲线限值",
+      "recovery": "连续30分钟回归",
+      "boundary": "只评价曝气器通气工况",
+      "ruleCode": "AIR-DIFF-02",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "ZONE-01",
+      "group": "配气",
+      "name": "分区风量不均衡",
+      "condition": {
+        "op": "GT",
+        "metric": "ZONE_AIR_CV",
+        "benchmark": "AIR-BM-10.upper"
+      },
+      "thresholdRef": "AIR-BM-10.upper",
+      "persistence": {
+        "mode": "MINUTE",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "分区风量、阀位和目标",
+      "likelyCauses": [
+        "配气阀门/管网差异",
+        "计量偏差"
+      ],
+      "recommendation": "按分区目标重新平衡",
+      "constraint": "工艺需求由整体诊断下发",
+      "recovery": "连续30分钟恢复",
+      "boundary": "只评价供气分配",
+      "ruleCode": "AIR-ZONE-01",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "ZONE-02",
+      "group": "配气",
+      "name": "分区DO不均衡",
+      "condition": {
+        "op": "GT",
+        "metric": "ZONE_DO_CV",
+        "benchmark": "AIR-BM-11.upper"
+      },
+      "thresholdRef": "AIR-BM-11.upper",
+      "persistence": {
+        "mode": "MINUTE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "分区DO、风量、负荷目标",
+      "likelyCauses": [
+        "供气分配不均",
+        "DO仪表或负荷差异"
+      ],
+      "recommendation": "先校验仪表再调整分区风量",
+      "constraint": "不判断生物过程根因",
+      "recovery": "连续30分钟恢复",
+      "boundary": "只评价供气响应",
+      "ruleCode": "AIR-ZONE-02",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "CTRL-01",
+      "group": "控制",
+      "name": "DO偏离整体下发目标",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "DO_TARGET_DEVIATION",
+        "benchmark": "AIR-BM-12"
+      },
+      "thresholdRef": "AIR-BM-12",
+      "persistence": {
+        "mode": "MINUTE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "DO目标版本、实际DO、风量",
+      "likelyCauses": [
+        "控制响应不足",
+        "目标/测点映射错误"
+      ],
+      "recommendation": "按已批准目标优化控制参数",
+      "constraint": "不得自行生成生物过程DO目标",
+      "recovery": "连续30分钟回归",
+      "boundary": "只执行供气控制",
+      "ruleCode": "AIR-CTRL-01",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "CTRL-02",
+      "group": "控制",
+      "name": "最低供气裕量不足",
+      "condition": {
+        "op": "LT",
+        "metric": "FLOW_MARGIN",
+        "benchmark": "AIR-BM-14.lower"
+      },
+      "thresholdRef": "AIR-BM-14.lower",
+      "persistence": {
+        "mode": "MINUTE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "实际风量和最低约束",
+      "likelyCauses": [
+        "过度降风",
+        "风机/阀门受限"
+      ],
+      "recommendation": "恢复最低供气并核验约束",
+      "constraint": "最低需求由整体工艺下发",
+      "recovery": "连续30分钟恢复",
+      "boundary": "只判断约束执行",
+      "ruleCode": "AIR-CTRL-02",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "ENERGY-01",
+      "group": "能耗",
+      "name": "曝气吨水电耗偏高",
+      "condition": {
+        "op": "GT",
+        "metric": "UNIT_AERATION_ENERGY",
+        "benchmark": "AIR-BM-05.upper"
+      },
+      "thresholdRef": "AIR-BM-05.upper",
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "风机电量、水量、负荷、水温",
+      "likelyCauses": [
+        "过量供气",
+        "阻力或风机组合不合理"
+      ],
+      "recommendation": "按需求—压力—效率分层优化",
+      "constraint": "不重复全厂能耗构成分析",
+      "recovery": "连续7日节能且DO/NH3保护通过",
+      "boundary": "只评价供气系统能耗",
+      "ruleCode": "AIR-ENERGY-01",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "ENERGY-02",
+      "group": "能耗",
+      "name": "夜间单位电耗未随水量下降",
+      "condition": {
+        "op": "GT",
+        "metric": "DAY_NIGHT_ENERGY_RATIO",
+        "benchmark": "AIR-BM-17.upper"
+      },
+      "thresholdRef": "AIR-BM-17.upper",
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "昼夜水量、电量、DO目标",
+      "likelyCauses": [
+        "连续定风量",
+        "低负荷组合不合理"
+      ],
+      "recommendation": "在最低供气约束下优化夜间策略",
+      "constraint": "保持DO和氨氮保护",
+      "recovery": "连续7日改善",
+      "boundary": "只评价昼夜运行策略",
+      "ruleCode": "AIR-ENERGY-02",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "CLEAN-01",
+      "group": "清洗",
+      "name": "曝气器清洗具备经济性",
+      "condition": {
+        "op": "GT",
+        "metric": "CLEANING_ANNUAL_SAVING",
+        "benchmark": "AIR-BM-16.lower"
+      },
+      "thresholdRef": "AIR-BM-16.lower",
+      "persistence": {
+        "mode": "PERIOD",
+        "count": 1
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "前后压降、功率系数、成本",
+      "likelyCauses": [
+        "膜片阻力可恢复",
+        "清洗成本可覆盖"
+      ],
+      "recommendation": "建立受控清洗验证方案",
+      "constraint": "清洗作业安全与维护审批归所属模块",
+      "recovery": "验证压降和节能收益",
+      "boundary": "只形成清洗经济机会",
+      "ruleCode": "AIR-CLEAN-01",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "ENV-01",
+      "group": "环境",
+      "name": "风机出口温升偏高",
+      "condition": {
+        "op": "GT",
+        "metric": "OUTLET_TEMP_RISE",
+        "benchmark": "AIR-BM-15.upper"
+      },
+      "thresholdRef": "AIR-BM-15.upper",
+      "persistence": {
+        "mode": "MINUTE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "入口/出口温度、室温、过滤散热状态",
+      "likelyCauses": [
+        "进风阻力或散热不足",
+        "高负荷运行"
+      ],
+      "recommendation": "降低环境与进风阻力并转设备核验",
+      "constraint": "不评价设备故障原因",
+      "recovery": "连续30分钟恢复",
+      "boundary": "只评价运行环境影响",
+      "ruleCode": "AIR-ENV-01",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "ENV-02",
+      "group": "环境",
+      "name": "进风过滤或散热状态异常",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "airIntakeEnvironmentAbnormal"
+      },
+      "thresholdRef": "approvedEnvironmentState",
+      "persistence": {
+        "mode": "SHIFT",
+        "count": 2
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "过滤、散热和温度证据",
+      "likelyCauses": [
+        "过滤堵塞",
+        "散热通道不畅"
+      ],
+      "recommendation": "转设备模块核验并限制高负荷",
+      "constraint": "维修质量不在本模块判断",
+      "recovery": "连续2班正常",
+      "boundary": "只评价供气环境风险",
+      "ruleCode": "AIR-ENV-02",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "RAIN-01",
+      "group": "工况",
+      "name": "雨旱工况单位电耗异常",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "rainDryEnergyAbnormal"
+      },
+      "thresholdRef": "historicalWeatherComparable",
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "雨旱水量、负荷、DO目标和电量",
+      "likelyCauses": [
+        "目标未随稀释负荷调整",
+        "可比条件不足"
+      ],
+      "recommendation": "引用整体工艺目标后优化供气",
+      "constraint": "不判断进水变化原因",
+      "recovery": "连续7日可比恢复",
+      "boundary": "只评价供气响应",
+      "ruleCode": "AIR-RAIN-01",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "AGE-01",
+      "group": "曝气器",
+      "name": "曝气器寿命与阻力风险",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "diffuserAgeResistanceRisk"
+      },
+      "thresholdRef": "approvedAgeResistanceRule",
+      "persistence": {
+        "mode": "PERIOD",
+        "count": 2
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "使用年限、阻力和清洗历史",
+      "likelyCauses": [
+        "老化或结垢",
+        "基线变化"
+      ],
+      "recommendation": "安排性能检测并形成更新/清洗方案",
+      "constraint": "不直接判定更换",
+      "recovery": "连续2周期风险解除",
+      "boundary": "只形成资产工况证据",
+      "ruleCode": "AIR-AGE-01",
+      "applicability": "鼓风曝气+微孔曝气器/分区供气/填料区供气可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    }
+  ],
+  "causes": [
+    {
+      "causeCode": "AIR-DATA-01-01",
+      "ruleCode": "AIR-DATA-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：数据源未接入",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-DATA-01-02",
+      "ruleCode": "AIR-DATA-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：时间或对象口径不完整",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-DATA-02-01",
+      "ruleCode": "AIR-DATA-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：数据源未接入",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-DATA-02-02",
+      "ruleCode": "AIR-DATA-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：时间或对象口径不完整",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-DATA-03-01",
+      "ruleCode": "AIR-DATA-03",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：数据源未接入",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-DATA-03-02",
+      "ruleCode": "AIR-DATA-03",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：时间或对象口径不完整",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-BLOWER-01-01",
+      "ruleCode": "AIR-BLOWER-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：运行组合不当",
+      "requiredEvidence": "风量、运行台数、环境修正曲线",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-BLOWER-01-02",
+      "ruleCode": "AIR-BLOWER-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：额定能力未做环境修正",
+      "requiredEvidence": "风量、运行台数、环境修正曲线",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-BLOWER-02-01",
+      "ruleCode": "AIR-BLOWER-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：偏离高效区",
+      "requiredEvidence": "同期功率、风量、升压",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-BLOWER-02-02",
+      "ruleCode": "AIR-BLOWER-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：系统阻力或节流偏高",
+      "requiredEvidence": "同期功率、风量、升压",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-PRESS-01-01",
+      "ruleCode": "AIR-PRESS-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：系统阻力增加",
+      "requiredEvidence": "入口/出口压力、水深和负荷",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-PRESS-01-02",
+      "ruleCode": "AIR-PRESS-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：压力设定或仪表偏差",
+      "requiredEvidence": "入口/出口压力、水深和负荷",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-PRESS-02-01",
+      "ruleCode": "AIR-PRESS-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：系统阻力高",
+      "requiredEvidence": "额定升压、实际升压、环境修正",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-PRESS-02-02",
+      "ruleCode": "AIR-PRESS-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：风机选配/组合不足",
+      "requiredEvidence": "额定升压、实际升压、环境修正",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-PRESS-03-01",
+      "ruleCode": "AIR-PRESS-03",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：总管压力过高",
+      "requiredEvidence": "阀位、分区风量、总管压力",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-PRESS-03-02",
+      "ruleCode": "AIR-PRESS-03",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：配气靠节流平衡",
+      "requiredEvidence": "阀位、分区风量、总管压力",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-DIFF-01-01",
+      "ruleCode": "AIR-DIFF-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：结垢堵塞",
+      "requiredEvidence": "新膜片基线、当前压力链",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-DIFF-01-02",
+      "ruleCode": "AIR-DIFF-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：基线或压力测点不一致",
+      "requiredEvidence": "新膜片基线、当前压力链",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-DIFF-02-01",
+      "ruleCode": "AIR-DIFF-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：风量分配不当",
+      "requiredEvidence": "总风量、曝气器数量、运行分区",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-DIFF-02-02",
+      "ruleCode": "AIR-DIFF-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：曝气器数量/分区配置错误",
+      "requiredEvidence": "总风量、曝气器数量、运行分区",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-ZONE-01-01",
+      "ruleCode": "AIR-ZONE-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：配气阀门/管网差异",
+      "requiredEvidence": "分区风量、阀位和目标",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-ZONE-01-02",
+      "ruleCode": "AIR-ZONE-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：计量偏差",
+      "requiredEvidence": "分区风量、阀位和目标",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-ZONE-02-01",
+      "ruleCode": "AIR-ZONE-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：供气分配不均",
+      "requiredEvidence": "分区DO、风量、负荷目标",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-ZONE-02-02",
+      "ruleCode": "AIR-ZONE-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：DO仪表或负荷差异",
+      "requiredEvidence": "分区DO、风量、负荷目标",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-CTRL-01-01",
+      "ruleCode": "AIR-CTRL-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：控制响应不足",
+      "requiredEvidence": "DO目标版本、实际DO、风量",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-CTRL-01-02",
+      "ruleCode": "AIR-CTRL-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：目标/测点映射错误",
+      "requiredEvidence": "DO目标版本、实际DO、风量",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-CTRL-02-01",
+      "ruleCode": "AIR-CTRL-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：过度降风",
+      "requiredEvidence": "实际风量和最低约束",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-CTRL-02-02",
+      "ruleCode": "AIR-CTRL-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：风机/阀门受限",
+      "requiredEvidence": "实际风量和最低约束",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-ENERGY-01-01",
+      "ruleCode": "AIR-ENERGY-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：过量供气",
+      "requiredEvidence": "风机电量、水量、负荷、水温",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-ENERGY-01-02",
+      "ruleCode": "AIR-ENERGY-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：阻力或风机组合不合理",
+      "requiredEvidence": "风机电量、水量、负荷、水温",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-ENERGY-02-01",
+      "ruleCode": "AIR-ENERGY-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：连续定风量",
+      "requiredEvidence": "昼夜水量、电量、DO目标",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-ENERGY-02-02",
+      "ruleCode": "AIR-ENERGY-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：低负荷组合不合理",
+      "requiredEvidence": "昼夜水量、电量、DO目标",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-CLEAN-01-01",
+      "ruleCode": "AIR-CLEAN-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：膜片阻力可恢复",
+      "requiredEvidence": "前后压降、功率系数、成本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-CLEAN-01-02",
+      "ruleCode": "AIR-CLEAN-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：清洗成本可覆盖",
+      "requiredEvidence": "前后压降、功率系数、成本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-ENV-01-01",
+      "ruleCode": "AIR-ENV-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：进风阻力或散热不足",
+      "requiredEvidence": "入口/出口温度、室温、过滤散热状态",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-ENV-01-02",
+      "ruleCode": "AIR-ENV-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：高负荷运行",
+      "requiredEvidence": "入口/出口温度、室温、过滤散热状态",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-ENV-02-01",
+      "ruleCode": "AIR-ENV-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：过滤堵塞",
+      "requiredEvidence": "过滤、散热和温度证据",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-ENV-02-02",
+      "ruleCode": "AIR-ENV-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：散热通道不畅",
+      "requiredEvidence": "过滤、散热和温度证据",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-RAIN-01-01",
+      "ruleCode": "AIR-RAIN-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：目标未随稀释负荷调整",
+      "requiredEvidence": "雨旱水量、负荷、DO目标和电量",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-RAIN-01-02",
+      "ruleCode": "AIR-RAIN-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：可比条件不足",
+      "requiredEvidence": "雨旱水量、负荷、DO目标和电量",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-AGE-01-01",
+      "ruleCode": "AIR-AGE-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：老化或结垢",
+      "requiredEvidence": "使用年限、阻力和清洗历史",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "AIR-AGE-01-02",
+      "ruleCode": "AIR-AGE-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：基线变化",
+      "requiredEvidence": "使用年限、阻力和清洗历史",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    }
+  ],
+  "pageMappings": [
+    {
+      "componentCode": "AIR-P1-01",
+      "page": "分析概览",
+      "componentType": "SUMMARY",
+      "name": "分析概览摘要",
+      "binding": "aeration_air.1.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P1-02",
+      "page": "分析概览",
+      "componentType": "EVIDENCE",
+      "name": "分析概览证据",
+      "binding": "aeration_air.1.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P1-03",
+      "page": "分析概览",
+      "componentType": "ACTION",
+      "name": "分析概览操作",
+      "binding": "aeration_air.1.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P1-04",
+      "page": "分析概览",
+      "componentType": "BOUNDARY",
+      "name": "分析概览边界",
+      "binding": "aeration_air.1.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P2-01",
+      "page": "数据与计算",
+      "componentType": "SUMMARY",
+      "name": "数据与计算摘要",
+      "binding": "aeration_air.2.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P2-02",
+      "page": "数据与计算",
+      "componentType": "EVIDENCE",
+      "name": "数据与计算证据",
+      "binding": "aeration_air.2.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P2-03",
+      "page": "数据与计算",
+      "componentType": "ACTION",
+      "name": "数据与计算操作",
+      "binding": "aeration_air.2.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P2-04",
+      "page": "数据与计算",
+      "componentType": "BOUNDARY",
+      "name": "数据与计算边界",
+      "binding": "aeration_air.2.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P3-01",
+      "page": "偏差诊断",
+      "componentType": "SUMMARY",
+      "name": "偏差诊断摘要",
+      "binding": "aeration_air.3.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P3-02",
+      "page": "偏差诊断",
+      "componentType": "EVIDENCE",
+      "name": "偏差诊断证据",
+      "binding": "aeration_air.3.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P3-03",
+      "page": "偏差诊断",
+      "componentType": "ACTION",
+      "name": "偏差诊断操作",
+      "binding": "aeration_air.3.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P3-04",
+      "page": "偏差诊断",
+      "componentType": "BOUNDARY",
+      "name": "偏差诊断边界",
+      "binding": "aeration_air.3.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P4-01",
+      "page": "优化方案",
+      "componentType": "SUMMARY",
+      "name": "优化方案摘要",
+      "binding": "aeration_air.4.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P4-02",
+      "page": "优化方案",
+      "componentType": "EVIDENCE",
+      "name": "优化方案证据",
+      "binding": "aeration_air.4.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P4-03",
+      "page": "优化方案",
+      "componentType": "ACTION",
+      "name": "优化方案操作",
+      "binding": "aeration_air.4.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P4-04",
+      "page": "优化方案",
+      "componentType": "BOUNDARY",
+      "name": "优化方案边界",
+      "binding": "aeration_air.4.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P5-01",
+      "page": "效果跟踪",
+      "componentType": "SUMMARY",
+      "name": "效果跟踪摘要",
+      "binding": "aeration_air.5.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P5-02",
+      "page": "效果跟踪",
+      "componentType": "EVIDENCE",
+      "name": "效果跟踪证据",
+      "binding": "aeration_air.5.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P5-03",
+      "page": "效果跟踪",
+      "componentType": "ACTION",
+      "name": "效果跟踪操作",
+      "binding": "aeration_air.5.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "AIR-P5-04",
+      "page": "效果跟踪",
+      "componentType": "BOUNDARY",
+      "name": "效果跟踪边界",
+      "binding": "aeration_air.5.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    }
+  ],
+  "dictionaries": [
+    [
+      "evaluation_status",
+      "NOT_APPLICABLE",
+      "不适用",
+      1
+    ],
+    [
+      "evaluation_status",
+      "DATA_INSUFFICIENT",
+      "数据不足",
+      2
+    ],
+    [
+      "evaluation_status",
+      "NORMAL",
+      "正常",
+      3
+    ],
+    [
+      "evaluation_status",
+      "TRIGGERED",
+      "已触发",
+      4
+    ],
+    [
+      "evaluation_status",
+      "SUPPRESSED",
+      "已抑制",
+      5
+    ],
+    [
+      "conclusion_type",
+      "CONFIRMED_DEVIATION",
+      "已确认偏差",
+      1
+    ],
+    [
+      "conclusion_type",
+      "SUSPECTED_DEVIATION",
+      "疑似偏差",
+      2
+    ],
+    [
+      "conclusion_type",
+      "OPTIMIZATION_OPPORTUNITY",
+      "优化机会",
+      3
+    ],
+    [
+      "conclusion_type",
+      "DATA_INSUFFICIENT",
+      "数据不足",
+      4
+    ],
+    [
+      "benchmark_type",
+      "DESIGN",
+      "设计值",
+      1
+    ],
+    [
+      "benchmark_type",
+      "SITE_TARGET",
+      "一厂一策目标",
+      2
+    ],
+    [
+      "benchmark_type",
+      "STANDARD",
+      "标准/规范",
+      3
+    ],
+    [
+      "benchmark_type",
+      "HISTORICAL_BEST",
+      "历史优秀期",
+      4
+    ],
+    [
+      "benchmark_type",
+      "PEER_BENCHMARK",
+      "同类对标",
+      5
+    ]
+  ],
+  "counts": {
+    "fields": 53,
+    "metrics": 25,
+    "benchmarks": 17,
+    "rules": 21,
+    "causes": 42,
+    "pageMappings": 20,
+    "testCases": 168,
+    "pilotItems": 22
+  }
+}

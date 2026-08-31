@@ -1,0 +1,2850 @@
+{
+  "$schema": "./mbbr-model.schema.json",
+  "modelCode": "MBBR",
+  "modelName": "MBBR填料区分析",
+  "version": "0.1.0",
+  "status": "DRAFT",
+  "objectScope": "UNIT",
+  "ownerDomain": "unit.mbbr",
+  "unitType": "MBBR_CARRIER_ZONE",
+  "timezone": "Asia/Shanghai",
+  "pages": [
+    "分析概览",
+    "数据与计算",
+    "偏差诊断",
+    "优化方案",
+    "效果跟踪"
+  ],
+  "processVariants": [
+    "好氧MBBR",
+    "混合工艺IFAS/MBBR可配置"
+  ],
+  "boundary": {
+    "owns": [
+      "填料区水力与载体配置",
+      "填料流化与拦截",
+      "载体状态与挂膜证据",
+      "局部氨氮/TN/COD负荷与效果",
+      "填料区能耗和优化验证"
+    ],
+    "references": [
+      "整体生化工艺诊断",
+      "进出水化验",
+      "曝气供气系统结果",
+      "设备状态与工单",
+      "安全限制"
+    ],
+    "forbids": [
+      "全厂氨氮/TN超标根因",
+      "污泥龄与活性污泥主诊断",
+      "全厂内外回流诊断",
+      "全厂碳源与碱度诊断",
+      "设备维修质量评价"
+    ]
+  },
+  "benchmarkResolution": {
+    "displayOrder": [
+      "DESIGN",
+      "SITE_TARGET",
+      "STANDARD",
+      "HISTORICAL_BEST",
+      "PEER_BENCHMARK"
+    ],
+    "allowUnconfirmedExperience": false,
+    "noMatchBehavior": "NO_APPLICABLE_BENCHMARK"
+  },
+  "evaluationStatuses": [
+    "NOT_APPLICABLE",
+    "DATA_INSUFFICIENT",
+    "NORMAL",
+    "TRIGGERED",
+    "SUPPRESSED"
+  ],
+  "registries": {
+    "functions": [
+      "minimumCarrierEvidenceMissing",
+      "samplesComparable",
+      "minimumFluidizationEvidenceMissing",
+      "localNh3RemovalAbnormal",
+      "carrierFluidizationCoverageLow",
+      "screenRetentionAbnormal",
+      "mixingPowerAbnormal",
+      "lowTemperatureCapacityRisk",
+      "optionalLocalTrendAbnormal"
+    ],
+    "modelReferences": [],
+    "benchmarkReferences": [
+      "siteCapacityRange",
+      "historicalComparableRange"
+    ]
+  },
+  "fields": [
+    {
+      "fieldCode": "site_id",
+      "group": "对象",
+      "name": "厂区ID",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "基础信息",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "unit_id",
+      "group": "对象",
+      "name": "单体ID",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "基础信息",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "analysis_period",
+      "group": "对象",
+      "name": "分析周期",
+      "dataType": "DATE_RANGE",
+      "unit": "—",
+      "source": "分析任务",
+      "cadence": "周期",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "model_version",
+      "group": "对象",
+      "name": "模型版本",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "模型中心",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "config_version",
+      "group": "对象",
+      "name": "单体配置版本",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "单体配置",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "mbbr_process_type",
+      "group": "适用性",
+      "name": "MBBR工艺类型",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "单体配置",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "design_flow",
+      "group": "设计",
+      "name": "设计处理水量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "设计文件",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "actual_flow",
+      "group": "运行",
+      "name": "实际处理水量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "流量计",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "minimum_design_temperature",
+      "group": "设计",
+      "name": "设计最低水温",
+      "dataType": "DECIMAL",
+      "unit": "℃",
+      "source": "设计文件",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "water_temperature",
+      "group": "运行",
+      "name": "实际水温",
+      "dataType": "DECIMAL",
+      "unit": "℃",
+      "source": "在线/化验",
+      "cadence": "小时",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "zone_volume",
+      "group": "构筑物",
+      "name": "填料区有效池容",
+      "dataType": "DECIMAL",
+      "unit": "m3",
+      "source": "设计/复核",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "zone_area",
+      "group": "构筑物",
+      "name": "填料区平面面积",
+      "dataType": "DECIMAL",
+      "unit": "m2",
+      "source": "设计文件",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "carrier_fill_volume",
+      "group": "填料",
+      "name": "投加填料总体积",
+      "dataType": "DECIMAL",
+      "unit": "m3",
+      "source": "设计/盘点",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "carrier_specific_area",
+      "group": "填料",
+      "name": "填料比表面积",
+      "dataType": "DECIMAL",
+      "unit": "m2/m3",
+      "source": "产品资料/检测",
+      "cadence": "批次",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "carrier_dry_weight",
+      "group": "填料",
+      "name": "单个填料干重",
+      "dataType": "DECIMAL",
+      "unit": "g/个",
+      "source": "检测",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "carrier_volume_each",
+      "group": "填料",
+      "name": "单个填料体积",
+      "dataType": "DECIMAL",
+      "unit": "cm3/个",
+      "source": "检测",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "carrier_sample_count",
+      "group": "填料",
+      "name": "挂膜填料检测个数",
+      "dataType": "INTEGER",
+      "unit": "个",
+      "source": "检测",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "carrier_sample_dry_mass",
+      "group": "填料",
+      "name": "挂膜填料检测总干量",
+      "dataType": "DECIMAL",
+      "unit": "g",
+      "source": "检测",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "carrier_loss_volume",
+      "group": "填料",
+      "name": "周期填料损失/补加量",
+      "dataType": "DECIMAL",
+      "unit": "m3",
+      "source": "盘点",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "fluidization_mode",
+      "group": "流化",
+      "name": "填料流化方式",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "单体配置",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "fluidization_air_flow",
+      "group": "流化",
+      "name": "填料流化风量",
+      "dataType": "DECIMAL",
+      "unit": "Nm3/min",
+      "source": "风量计",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "fluidization_power",
+      "group": "流化",
+      "name": "填料流化功率",
+      "dataType": "DECIMAL",
+      "unit": "kW",
+      "source": "电表",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "mixing_power",
+      "group": "流化",
+      "name": "填料区搅拌总功率",
+      "dataType": "DECIMAL",
+      "unit": "kW",
+      "source": "电表",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "screen_air_flow",
+      "group": "拦截",
+      "name": "筛网分离流化风量",
+      "dataType": "DECIMAL",
+      "unit": "Nm3/min",
+      "source": "风量计",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "screen_power",
+      "group": "拦截",
+      "name": "筛网分离流化功率",
+      "dataType": "DECIMAL",
+      "unit": "kW",
+      "source": "电表",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "screen_headloss",
+      "group": "拦截",
+      "name": "填料拦截筛网水头差",
+      "dataType": "DECIMAL",
+      "unit": "m",
+      "source": "液位/压差",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "screen_status",
+      "group": "拦截",
+      "name": "筛网与填料拦截状态",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "巡检",
+      "cadence": "班次",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "carrier_fluidization_state",
+      "group": "流化",
+      "name": "填料流化均匀性",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "巡检/视频",
+      "cadence": "班次",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "carrier_state",
+      "group": "填料",
+      "name": "填料磨损板结与挂膜状态",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "巡检/检测",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "zone_do",
+      "group": "局部效果",
+      "name": "填料区DO",
+      "dataType": "DECIMAL",
+      "unit": "mg/L",
+      "source": "在线",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "in_cod",
+      "group": "局部效果",
+      "name": "MBBR进水COD",
+      "dataType": "DECIMAL",
+      "unit": "mg/L",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "out_cod",
+      "group": "局部效果",
+      "name": "MBBR出水COD",
+      "dataType": "DECIMAL",
+      "unit": "mg/L",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "in_tn",
+      "group": "局部效果",
+      "name": "MBBR进水TN",
+      "dataType": "DECIMAL",
+      "unit": "mg/L",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "out_tn",
+      "group": "局部效果",
+      "name": "MBBR出水TN",
+      "dataType": "DECIMAL",
+      "unit": "mg/L",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "in_nh3",
+      "group": "局部效果",
+      "name": "MBBR进水NH3-N",
+      "dataType": "DECIMAL",
+      "unit": "mg/L",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "out_nh3",
+      "group": "局部效果",
+      "name": "MBBR出水NH3-N",
+      "dataType": "DECIMAL",
+      "unit": "mg/L",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "in_no3",
+      "group": "局部效果",
+      "name": "MBBR进水NO3-N",
+      "dataType": "DECIMAL",
+      "unit": "mg/L",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "out_no3",
+      "group": "局部效果",
+      "name": "MBBR出水NO3-N",
+      "dataType": "DECIMAL",
+      "unit": "mg/L",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "alkalinity_in",
+      "group": "局部效果",
+      "name": "MBBR进水碱度",
+      "dataType": "DECIMAL",
+      "unit": "mg/L",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "alkalinity_out",
+      "group": "局部效果",
+      "name": "MBBR出水碱度",
+      "dataType": "DECIMAL",
+      "unit": "mg/L",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "fluidization_energy",
+      "group": "能耗",
+      "name": "填料流化日电量",
+      "dataType": "DECIMAL",
+      "unit": "kWh/d",
+      "source": "电表",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "screen_energy",
+      "group": "能耗",
+      "name": "筛网分离日电量",
+      "dataType": "DECIMAL",
+      "unit": "kWh/d",
+      "source": "电表",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "mixing_energy",
+      "group": "能耗",
+      "name": "填料区搅拌日电量",
+      "dataType": "DECIMAL",
+      "unit": "kWh/d",
+      "source": "电表",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "samples_comparable",
+      "group": "数据",
+      "name": "前后样本可比",
+      "dataType": "BOOLEAN",
+      "unit": "—",
+      "source": "数据质量",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "carrier_inventory_date",
+      "group": "数据",
+      "name": "填料盘点日期",
+      "dataType": "DATE",
+      "unit": "—",
+      "source": "盘点",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "external_process_diagnosis_id",
+      "group": "外部",
+      "name": "整体生化诊断引用",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "工艺诊断",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    }
+  ],
+  "metrics": [
+    {
+      "metricCode": "FLOW_UTILIZATION",
+      "group": "能力",
+      "name": "MBBR能力利用率",
+      "formula": "actual_flow/design_flow",
+      "unit": "%",
+      "dependencies": [
+        "actual_flow",
+        "design_flow"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.flow_utilization.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "ZONE_HRT",
+      "group": "水力",
+      "name": "填料区停留时间",
+      "formula": "zone_volume/(actual_flow/24)",
+      "unit": "h",
+      "dependencies": [
+        "zone_volume",
+        "actual_flow"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.zone_hrt.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "FILL_RATIO",
+      "group": "填料",
+      "name": "填料填充率",
+      "formula": "carrier_fill_volume/zone_volume",
+      "unit": "%",
+      "dependencies": [
+        "carrier_fill_volume",
+        "zone_volume"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.fill_ratio.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "TOTAL_CARRIER_AREA",
+      "group": "填料",
+      "name": "填料总比表面积",
+      "formula": "carrier_fill_volume*carrier_specific_area",
+      "unit": "m2",
+      "dependencies": [
+        "carrier_fill_volume",
+        "carrier_specific_area"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.total_carrier_area.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CARRIER_BULK_DENSITY",
+      "group": "填料",
+      "name": "填料堆方容重",
+      "formula": "carrier_dry_weight/(carrier_volume_each/1000000)/1000",
+      "unit": "kg/m3",
+      "dependencies": [
+        "carrier_dry_weight",
+        "carrier_volume_each"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.carrier_bulk_density.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "BIOFILM_GAIN_RATIO",
+      "group": "填料",
+      "name": "填料挂膜增重比例",
+      "formula": "(carrier_sample_dry_mass/carrier_sample_count-carrier_dry_weight)/carrier_dry_weight",
+      "unit": "%",
+      "dependencies": [
+        "carrier_sample_dry_mass",
+        "carrier_sample_count",
+        "carrier_dry_weight"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.biofilm_gain_ratio.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "BIOFILM_MASS_PROXY",
+      "group": "填料",
+      "name": "挂膜生物量表征",
+      "formula": "carrier_fill_volume*CARRIER_BULK_DENSITY*BIOFILM_GAIN_RATIO/1000",
+      "unit": "t",
+      "dependencies": [
+        "carrier_fill_volume",
+        "CARRIER_BULK_DENSITY",
+        "BIOFILM_GAIN_RATIO"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.biofilm_mass_proxy.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "COD_LOAD_AREA",
+      "group": "负荷",
+      "name": "载体面积COD负荷",
+      "formula": "actual_flow*in_cod/1000/TOTAL_CARRIER_AREA",
+      "unit": "kg/(m2·d)",
+      "dependencies": [
+        "actual_flow",
+        "in_cod",
+        "TOTAL_CARRIER_AREA"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.cod_load_area.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "NH3_LOAD_AREA",
+      "group": "负荷",
+      "name": "载体面积氨氮负荷",
+      "formula": "actual_flow*in_nh3/1000/TOTAL_CARRIER_AREA",
+      "unit": "kg/(m2·d)",
+      "dependencies": [
+        "actual_flow",
+        "in_nh3",
+        "TOTAL_CARRIER_AREA"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.nh3_load_area.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "NH3_REMOVAL",
+      "group": "局部效果",
+      "name": "MBBR氨氮去除率",
+      "formula": "(in_nh3-out_nh3)/in_nh3",
+      "unit": "%",
+      "dependencies": [
+        "in_nh3",
+        "out_nh3"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.nh3_removal.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "只评价MBBR填料区局部效果",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "NH3_REMOVAL_LOAD_AREA",
+      "group": "局部效果",
+      "name": "载体面积氨氮去除负荷",
+      "formula": "actual_flow*(in_nh3-out_nh3)/1000/TOTAL_CARRIER_AREA",
+      "unit": "kg/(m2·d)",
+      "dependencies": [
+        "actual_flow",
+        "in_nh3",
+        "out_nh3",
+        "TOTAL_CARRIER_AREA"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.nh3_removal_load_area.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "只评价MBBR局部能力",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "TN_CHANGE",
+      "group": "局部效果",
+      "name": "MBBR TN变化率",
+      "formula": "(in_tn-out_tn)/in_tn",
+      "unit": "%",
+      "dependencies": [
+        "in_tn",
+        "out_tn"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.tn_change.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅作局部观察",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "COD_CHANGE",
+      "group": "局部效果",
+      "name": "MBBR COD变化率",
+      "formula": "(in_cod-out_cod)/in_cod",
+      "unit": "%",
+      "dependencies": [
+        "in_cod",
+        "out_cod"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.cod_change.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅作局部观察",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "ALKALINITY_CONSUMPTION",
+      "group": "局部效果",
+      "name": "MBBR碱度消耗",
+      "formula": "alkalinity_in-alkalinity_out",
+      "unit": "mg/L",
+      "dependencies": [
+        "alkalinity_in",
+        "alkalinity_out"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.alkalinity_consumption.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅作局部硝化证据",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "FLUIDIZATION_AIR_WATER",
+      "group": "流化",
+      "name": "流化气水比",
+      "formula": "fluidization_air_flow*60*24/actual_flow",
+      "unit": "—",
+      "dependencies": [
+        "fluidization_air_flow",
+        "actual_flow"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.fluidization_air_water.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "FLUIDIZATION_VOLUME_POWER",
+      "group": "流化",
+      "name": "流化容积功率",
+      "formula": "fluidization_power*1000/zone_volume",
+      "unit": "W/m3",
+      "dependencies": [
+        "fluidization_power",
+        "zone_volume"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.fluidization_volume_power.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "MIXING_VOLUME_POWER",
+      "group": "流化",
+      "name": "搅拌容积功率",
+      "formula": "mixing_power*1000/zone_volume",
+      "unit": "W/m3",
+      "dependencies": [
+        "mixing_power",
+        "zone_volume"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.mixing_volume_power.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "SCREEN_AIR_WATER",
+      "group": "拦截",
+      "name": "筛网分离气水比",
+      "formula": "screen_air_flow*60*24/actual_flow",
+      "unit": "—",
+      "dependencies": [
+        "screen_air_flow",
+        "actual_flow"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.screen_air_water.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "SCREEN_VOLUME_POWER",
+      "group": "拦截",
+      "name": "筛网分离容积功率",
+      "formula": "screen_power*1000/zone_volume",
+      "unit": "W/m3",
+      "dependencies": [
+        "screen_power",
+        "zone_volume"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.screen_volume_power.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "TOTAL_MBBR_ENERGY",
+      "group": "能耗",
+      "name": "MBBR单体日电量",
+      "formula": "fluidization_energy+screen_energy+mixing_energy",
+      "unit": "kWh/d",
+      "dependencies": [
+        "fluidization_energy",
+        "screen_energy",
+        "mixing_energy"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.total_mbbr_energy.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "MBBR_UNIT_ENERGY",
+      "group": "能耗",
+      "name": "MBBR吨水电耗",
+      "formula": "TOTAL_MBBR_ENERGY/actual_flow",
+      "unit": "kWh/m3",
+      "dependencies": [
+        "TOTAL_MBBR_ENERGY",
+        "actual_flow"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.mbbr_unit_energy.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "ENERGY_PER_NH3_REMOVED",
+      "group": "能耗",
+      "name": "单位氨氮去除电耗",
+      "formula": "TOTAL_MBBR_ENERGY/(actual_flow*(in_nh3-out_nh3)/1000)",
+      "unit": "kWh/kgN",
+      "dependencies": [
+        "TOTAL_MBBR_ENERGY",
+        "actual_flow",
+        "in_nh3",
+        "out_nh3"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.energy_per_nh3_removed.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "只在样本可比且去除量为正时",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CARRIER_LOSS_RATIO",
+      "group": "填料",
+      "name": "周期填料损失率",
+      "formula": "carrier_loss_volume/carrier_fill_volume",
+      "unit": "%",
+      "dependencies": [
+        "carrier_loss_volume",
+        "carrier_fill_volume"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.carrier_loss_ratio.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "SCREEN_HEADLOSS",
+      "group": "拦截",
+      "name": "筛网水头差",
+      "formula": "screen_headloss",
+      "unit": "m",
+      "dependencies": [
+        "screen_headloss"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "mbbr.screen_headloss.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    }
+  ],
+  "benchmarks": [
+    {
+      "benchmarkCode": "MBBR-BM-01",
+      "benchmarkType": "DESIGN",
+      "objectCode": "ZONE_HRT",
+      "name": "填料区停留时间",
+      "lower": "按设计版本",
+      "upper": "按设计版本",
+      "unit": "h",
+      "applicability": "对应工艺",
+      "source": "设计文件",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "MBBR-BM-02",
+      "benchmarkType": "DESIGN",
+      "objectCode": "FILL_RATIO",
+      "name": "填料填充率",
+      "lower": "按设计版本",
+      "upper": "按设计版本",
+      "unit": "%",
+      "applicability": "对应填料与池型",
+      "source": "设计文件",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "MBBR-BM-03",
+      "benchmarkType": "DESIGN",
+      "objectCode": "carrier_specific_area",
+      "name": "填料比表面积",
+      "lower": "按产品/检测",
+      "upper": "按产品/检测",
+      "unit": "m2/m3",
+      "applicability": "对应填料批次",
+      "source": "产品资料/检测",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "MBBR-BM-04",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "BIOFILM_GAIN_RATIO",
+      "name": "挂膜增重比例目标",
+      "lower": "待一厂一策",
+      "upper": "待一厂一策",
+      "unit": "%",
+      "applicability": "取样方法一致",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "MBBR-BM-05",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "NH3_LOAD_AREA",
+      "name": "载体面积氨氮负荷范围",
+      "lower": "待一厂一策",
+      "upper": "待一厂一策",
+      "unit": "kg/(m2·d)",
+      "applicability": "水温和填料可比",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "MBBR-BM-06",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "NH3_REMOVAL_LOAD_AREA",
+      "name": "载体面积氨氮去除负荷目标",
+      "lower": "待一厂一策",
+      "upper": null,
+      "unit": "kg/(m2·d)",
+      "applicability": "水温与样本可比",
+      "source": "历史优秀期/试点",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "MBBR-BM-07",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "zone_do",
+      "name": "填料区DO范围",
+      "lower": "待整体工艺下发",
+      "upper": "待整体工艺下发",
+      "unit": "mg/L",
+      "applicability": "整体诊断目标引用",
+      "source": "整体工艺目标",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "MBBR-BM-08",
+      "benchmarkType": "DESIGN",
+      "objectCode": "FLUIDIZATION_AIR_WATER",
+      "name": "填料流化气水比",
+      "lower": "按设计版本",
+      "upper": "按设计版本",
+      "unit": "—",
+      "applicability": "对应流化方式",
+      "source": "设计文件",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "MBBR-BM-09",
+      "benchmarkType": "DESIGN",
+      "objectCode": "FLUIDIZATION_VOLUME_POWER",
+      "name": "流化容积功率",
+      "lower": "按设计版本",
+      "upper": "按设计版本",
+      "unit": "W/m3",
+      "applicability": "对应流化方式",
+      "source": "设计文件",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "MBBR-BM-10",
+      "benchmarkType": "DESIGN",
+      "objectCode": "SCREEN_AIR_WATER",
+      "name": "筛网分离气水比",
+      "lower": "按设计版本",
+      "upper": "按设计版本",
+      "unit": "—",
+      "applicability": "气流化筛网",
+      "source": "设计文件",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "MBBR-BM-11",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "screen_headloss",
+      "name": "筛网水头差上限",
+      "lower": null,
+      "upper": "待一厂一策",
+      "unit": "m",
+      "applicability": "压差计已校核",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "MBBR-BM-12",
+      "benchmarkType": "HISTORICAL_BEST",
+      "objectCode": "MBBR_UNIT_ENERGY",
+      "name": "MBBR吨水电耗目标",
+      "lower": null,
+      "upper": "待历史确认",
+      "unit": "kWh/m3",
+      "applicability": "负荷水温与工艺可比",
+      "source": "历史优秀期",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "MBBR-BM-13",
+      "benchmarkType": "HISTORICAL_BEST",
+      "objectCode": "ENERGY_PER_NH3_REMOVED",
+      "name": "单位氨氮去除电耗目标",
+      "lower": null,
+      "upper": "待历史确认",
+      "unit": "kWh/kgN",
+      "applicability": "样本与水温可比",
+      "source": "历史优秀期",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "MBBR-BM-14",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "CARRIER_LOSS_RATIO",
+      "name": "填料损失率上限",
+      "lower": null,
+      "upper": "待一厂一策",
+      "unit": "%",
+      "applicability": "盘点口径一致",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "MBBR-BM-15",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "carrierFluidizationCoverage",
+      "name": "填料均匀流化覆盖率下限",
+      "lower": "待一厂一策",
+      "upper": null,
+      "unit": "%",
+      "applicability": "视频/巡检标准化",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "MBBR-BM-16",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "samples_comparable",
+      "name": "局部样本可比要求",
+      "lower": "1",
+      "upper": "1",
+      "unit": "BOOLEAN",
+      "applicability": "全部效果规则",
+      "source": "数据标准",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    }
+  ],
+  "rules": [
+    {
+      "ruleCode": "MBBR-DATA-01",
+      "group": "数据",
+      "name": "填料配置与盘点证据不足",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.8,
+      "condition": {
+        "op": "FUNCTION",
+        "function": "minimumCarrierEvidenceMissing"
+      },
+      "thresholdRef": "最低证据集",
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "覆盖率、来源、时间和版本",
+      "likelyCauses": [
+        "数据源未接入",
+        "时间或对象口径不完整"
+      ],
+      "recommendation": "补齐最低证据后重新分析",
+      "constraint": "只输出补数要求",
+      "recovery": "最低证据持续满足",
+      "boundary": "数据门槛，不生成业务偏差",
+      "suppresses": [
+        "MBBR-CARRIER-01",
+        "MBBR-CARRIER-02",
+        "MBBR-LOAD-01"
+      ],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "ruleCode": "MBBR-DATA-02",
+      "group": "数据",
+      "name": "MBBR前后样本不可比",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.8,
+      "condition": {
+        "op": "FUNCTION",
+        "function": "samplesComparable"
+      },
+      "thresholdRef": "最低证据集",
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "覆盖率、来源、时间和版本",
+      "likelyCauses": [
+        "数据源未接入",
+        "时间或对象口径不完整"
+      ],
+      "recommendation": "补齐最低证据后重新分析",
+      "constraint": "只输出补数要求",
+      "recovery": "最低证据持续满足",
+      "boundary": "数据门槛，不生成业务偏差",
+      "suppresses": [
+        "MBBR-EFF-01",
+        "MBBR-EFF-02",
+        "MBBR-ENERGY-02"
+      ],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "ruleCode": "MBBR-DATA-03",
+      "group": "数据",
+      "name": "流化与筛网证据不足",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.8,
+      "condition": {
+        "op": "FUNCTION",
+        "function": "minimumFluidizationEvidenceMissing"
+      },
+      "thresholdRef": "最低证据集",
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "覆盖率、来源、时间和版本",
+      "likelyCauses": [
+        "数据源未接入",
+        "时间或对象口径不完整"
+      ],
+      "recommendation": "补齐最低证据后重新分析",
+      "constraint": "只输出补数要求",
+      "recovery": "最低证据持续满足",
+      "boundary": "数据门槛，不生成业务偏差",
+      "suppresses": [
+        "MBBR-FLOW-01",
+        "MBBR-FLOW-02",
+        "MBBR-SCREEN-01",
+        "MBBR-ENERGY-01"
+      ],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "HYD-01",
+      "group": "水力",
+      "name": "填料区停留时间偏离",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "ZONE_HRT",
+        "benchmark": "MBBR-BM-01"
+      },
+      "thresholdRef": "MBBR-BM-01",
+      "persistence": {
+        "mode": "HOUR",
+        "count": 2
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "水量、池容、运行系列",
+      "likelyCauses": [
+        "水量或池容配置变化",
+        "运行系列不匹配"
+      ],
+      "recommendation": "核实有效池容并调整运行组合",
+      "constraint": "不判断整体生化HRT",
+      "recovery": "连续2小时回归",
+      "boundary": "只判断填料区水力",
+      "ruleCode": "MBBR-HYD-01",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "CARRIER-01",
+      "group": "填料",
+      "name": "填料填充率偏离设计",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "FILL_RATIO",
+        "benchmark": "MBBR-BM-02"
+      },
+      "thresholdRef": "MBBR-BM-02",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "池容、投加量、盘点",
+      "likelyCauses": [
+        "初始配置错误",
+        "填料损失或补加未记录"
+      ],
+      "recommendation": "完成盘点并恢复批准配置",
+      "constraint": "结构改动需审批",
+      "recovery": "连续盘点一致",
+      "boundary": "只评价填料配置",
+      "ruleCode": "MBBR-CARRIER-01",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "CARRIER-02",
+      "group": "填料",
+      "name": "挂膜状态异常",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "BIOFILM_GAIN_RATIO",
+        "benchmark": "MBBR-BM-04"
+      },
+      "thresholdRef": "MBBR-BM-04",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "统一方法的填料样本",
+      "likelyCauses": [
+        "挂膜不足/过厚",
+        "样本方法或清洗差异"
+      ],
+      "recommendation": "复核样本并结合流化和局部负荷核验",
+      "constraint": "不直接判断生物活性根因",
+      "recovery": "连续3组样本恢复",
+      "boundary": "只形成载体状态提示",
+      "ruleCode": "MBBR-CARRIER-02",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "CARRIER-03",
+      "group": "填料",
+      "name": "填料损失率偏高",
+      "condition": {
+        "op": "GT",
+        "metric": "CARRIER_LOSS_RATIO",
+        "benchmark": "MBBR-BM-14.upper"
+      },
+      "thresholdRef": "MBBR-BM-14.upper",
+      "persistence": {
+        "mode": "PERIOD",
+        "count": 2
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "盘点、补加、筛网状态",
+      "likelyCauses": [
+        "筛网拦截异常",
+        "盘点口径变化"
+      ],
+      "recommendation": "核验筛网和填料盘点",
+      "constraint": "设备故障由设备模块确认",
+      "recovery": "连续2周期恢复",
+      "boundary": "只评价填料库存",
+      "ruleCode": "MBBR-CARRIER-03",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "LOAD-01",
+      "group": "负荷",
+      "name": "载体面积氨氮负荷偏离",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "NH3_LOAD_AREA",
+        "benchmark": "MBBR-BM-05"
+      },
+      "thresholdRef": "MBBR-BM-05",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "水量、进水氨氮、载体面积、水温",
+      "likelyCauses": [
+        "整体负荷变化",
+        "填料面积配置错误"
+      ],
+      "recommendation": "引用整体诊断并核验填料能力",
+      "constraint": "不判断全厂氨氮原因",
+      "recovery": "连续3日回归",
+      "boundary": "只评价MBBR局部负荷",
+      "ruleCode": "MBBR-LOAD-01",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "EFF-01",
+      "group": "局部效果",
+      "name": "载体面积氨氮去除负荷偏低",
+      "condition": {
+        "op": "LT",
+        "metric": "NH3_REMOVAL_LOAD_AREA",
+        "benchmark": "MBBR-BM-06.lower"
+      },
+      "thresholdRef": "MBBR-BM-06.lower",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "可比前后样本、水温、DO、流化",
+      "likelyCauses": [
+        "流化或DO不匹配",
+        "挂膜状态变化"
+      ],
+      "recommendation": "按水力—流化—载体证据核验",
+      "constraint": "全厂氨氮主诊断归整体模块",
+      "recovery": "连续3组样本恢复",
+      "boundary": "只评价MBBR局部效果",
+      "ruleCode": "MBBR-EFF-01",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "EFF-02",
+      "group": "局部效果",
+      "name": "MBBR局部氨氮去除率异常",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "localNh3RemovalAbnormal"
+      },
+      "thresholdRef": "historicalComparableRange",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "可比NH3样本和负荷",
+      "likelyCauses": [
+        "样本时滞",
+        "局部负荷/水温变化"
+      ],
+      "recommendation": "复核样本并引用整体工艺结论",
+      "constraint": "不输出全厂超标原因",
+      "recovery": "连续3组样本恢复",
+      "boundary": "只形成局部观察",
+      "ruleCode": "MBBR-EFF-02",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "DO-01",
+      "group": "局部控制",
+      "name": "填料区DO偏离下发目标",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "field": "zone_do",
+        "benchmark": "MBBR-BM-07"
+      },
+      "thresholdRef": "MBBR-BM-07",
+      "persistence": {
+        "mode": "MINUTE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "DO、目标版本、风量和负荷",
+      "likelyCauses": [
+        "供气分配或控制偏差",
+        "仪表偏差"
+      ],
+      "recommendation": "按整体目标调整局部供气",
+      "constraint": "DO目标由整体工艺诊断下发",
+      "recovery": "连续30分钟回归",
+      "boundary": "不重做曝气需求判断",
+      "ruleCode": "MBBR-DO-01",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "FLOW-01",
+      "group": "流化",
+      "name": "填料流化气水比偏离",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "FLUIDIZATION_AIR_WATER",
+        "benchmark": "MBBR-BM-08"
+      },
+      "thresholdRef": "MBBR-BM-08",
+      "persistence": {
+        "mode": "MINUTE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "流化风量、水量、模式",
+      "likelyCauses": [
+        "风量设定偏差",
+        "计量或模式错误"
+      ],
+      "recommendation": "按设计范围小步校准",
+      "constraint": "保持填料均匀流化和能耗约束",
+      "recovery": "连续30分钟回归",
+      "boundary": "只评价填料流化",
+      "ruleCode": "MBBR-FLOW-01",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "FLOW-02",
+      "group": "流化",
+      "name": "流化不均匀",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "carrierFluidizationCoverageLow"
+      },
+      "thresholdRef": "MBBR-BM-15.lower",
+      "persistence": {
+        "mode": "MINUTE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "视频/巡检、风量、分区阀位",
+      "likelyCauses": [
+        "配气不均",
+        "局部堆积或构件影响"
+      ],
+      "recommendation": "先校核配气再转设备核验",
+      "constraint": "无现场证据不认定结构故障",
+      "recovery": "连续3次观察恢复",
+      "boundary": "只评价流化状态",
+      "ruleCode": "MBBR-FLOW-02",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "SCREEN-01",
+      "group": "拦截",
+      "name": "筛网水头差偏高",
+      "condition": {
+        "op": "GT",
+        "field": "screen_headloss",
+        "benchmark": "MBBR-BM-11.upper"
+      },
+      "thresholdRef": "MBBR-BM-11.upper",
+      "persistence": {
+        "mode": "MINUTE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "筛网压差、风量和状态",
+      "likelyCauses": [
+        "筛网堵塞",
+        "流化清洁不足"
+      ],
+      "recommendation": "调整筛网清洁/流化策略",
+      "constraint": "维修由设备模块负责",
+      "recovery": "连续30分钟恢复",
+      "boundary": "只评价筛网运行状态",
+      "ruleCode": "MBBR-SCREEN-01",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "SCREEN-02",
+      "group": "拦截",
+      "name": "填料拦截状态异常",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "screenRetentionAbnormal"
+      },
+      "thresholdRef": "approvedScreenState",
+      "persistence": {
+        "mode": "SHIFT",
+        "count": 2
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "筛网状态、填料损失、照片",
+      "likelyCauses": [
+        "筛网损坏/堵塞",
+        "巡检口径差异"
+      ],
+      "recommendation": "隔离风险并转设备模块核验",
+      "constraint": "不在本模块下维修结论",
+      "recovery": "连续2班正常",
+      "boundary": "只评价填料拦截风险",
+      "ruleCode": "MBBR-SCREEN-02",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "ENERGY-01",
+      "group": "能耗",
+      "name": "MBBR吨水电耗偏高",
+      "condition": {
+        "op": "GT",
+        "metric": "MBBR_UNIT_ENERGY",
+        "benchmark": "MBBR-BM-12.upper"
+      },
+      "thresholdRef": "MBBR-BM-12.upper",
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "流化、筛网、搅拌分项电量",
+      "likelyCauses": [
+        "过量流化",
+        "筛网阻力或设备组合不合理"
+      ],
+      "recommendation": "按分项贡献优化",
+      "constraint": "保持DO、流化和筛网保护",
+      "recovery": "连续7日节能且保护通过",
+      "boundary": "只评价MBBR局部能耗",
+      "ruleCode": "MBBR-ENERGY-01",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "ENERGY-02",
+      "group": "能耗",
+      "name": "单位氨氮去除电耗偏高",
+      "condition": {
+        "op": "GT",
+        "metric": "ENERGY_PER_NH3_REMOVED",
+        "benchmark": "MBBR-BM-13.upper"
+      },
+      "thresholdRef": "MBBR-BM-13.upper",
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "电量、可比氨氮去除量、温度",
+      "likelyCauses": [
+        "能耗过高",
+        "低负荷导致单位值放大"
+      ],
+      "recommendation": "在可比负荷下优化流化和供气",
+      "constraint": "不用于整体生化效率评价",
+      "recovery": "连续7日改善",
+      "boundary": "只评价MBBR局部效率",
+      "ruleCode": "MBBR-ENERGY-02",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "MIX-01",
+      "group": "流化",
+      "name": "搅拌容积功率异常",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "mixingPowerAbnormal"
+      },
+      "thresholdRef": "approvedMixingPowerRange",
+      "persistence": {
+        "mode": "HOUR",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "搅拌功率、流化状态、模式",
+      "likelyCauses": [
+        "搅拌器组合不当",
+        "填料流化方式变化"
+      ],
+      "recommendation": "按流化模式确认搅拌需求",
+      "constraint": "设备状态只引用",
+      "recovery": "连续3小时恢复",
+      "boundary": "只评价填料区搅拌",
+      "ruleCode": "MBBR-MIX-01",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "TEMP-01",
+      "group": "适用性",
+      "name": "低温能力风险",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "lowTemperatureCapacityRisk"
+      },
+      "thresholdRef": "approvedLowTemperatureRule",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "水温、负荷、局部去除能力",
+      "likelyCauses": [
+        "低于设计温度",
+        "负荷未同步调整"
+      ],
+      "recommendation": "引用整体冬季策略并核验载体能力",
+      "constraint": "不判断全厂氨氮超标原因",
+      "recovery": "连续3日风险解除",
+      "boundary": "只形成MBBR能力提示",
+      "ruleCode": "MBBR-TEMP-01",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "OBS-01",
+      "group": "局部观察",
+      "name": "COD/TN/碱度局部变化异常",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "optionalLocalTrendAbnormal"
+      },
+      "thresholdRef": "historicalComparableRange",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "可比COD/TN/碱度样本",
+      "likelyCauses": [
+        "样本时滞",
+        "整体负荷变化"
+      ],
+      "recommendation": "仅提示局部变化并引用整体诊断",
+      "constraint": "不输出全厂碳源碱度诊断",
+      "recovery": "连续3组样本恢复",
+      "boundary": "观察项",
+      "ruleCode": "MBBR-OBS-01",
+      "applicability": "好氧MBBR/混合工艺IFAS/MBBR可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    }
+  ],
+  "causes": [
+    {
+      "causeCode": "MBBR-DATA-01-01",
+      "ruleCode": "MBBR-DATA-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：数据源未接入",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-DATA-01-02",
+      "ruleCode": "MBBR-DATA-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：时间或对象口径不完整",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-DATA-02-01",
+      "ruleCode": "MBBR-DATA-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：数据源未接入",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-DATA-02-02",
+      "ruleCode": "MBBR-DATA-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：时间或对象口径不完整",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-DATA-03-01",
+      "ruleCode": "MBBR-DATA-03",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：数据源未接入",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-DATA-03-02",
+      "ruleCode": "MBBR-DATA-03",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：时间或对象口径不完整",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-HYD-01-01",
+      "ruleCode": "MBBR-HYD-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：水量或池容配置变化",
+      "requiredEvidence": "水量、池容、运行系列",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-HYD-01-02",
+      "ruleCode": "MBBR-HYD-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：运行系列不匹配",
+      "requiredEvidence": "水量、池容、运行系列",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-CARRIER-01-01",
+      "ruleCode": "MBBR-CARRIER-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：初始配置错误",
+      "requiredEvidence": "池容、投加量、盘点",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-CARRIER-01-02",
+      "ruleCode": "MBBR-CARRIER-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：填料损失或补加未记录",
+      "requiredEvidence": "池容、投加量、盘点",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-CARRIER-02-01",
+      "ruleCode": "MBBR-CARRIER-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：挂膜不足/过厚",
+      "requiredEvidence": "统一方法的填料样本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-CARRIER-02-02",
+      "ruleCode": "MBBR-CARRIER-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：样本方法或清洗差异",
+      "requiredEvidence": "统一方法的填料样本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-CARRIER-03-01",
+      "ruleCode": "MBBR-CARRIER-03",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：筛网拦截异常",
+      "requiredEvidence": "盘点、补加、筛网状态",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-CARRIER-03-02",
+      "ruleCode": "MBBR-CARRIER-03",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：盘点口径变化",
+      "requiredEvidence": "盘点、补加、筛网状态",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-LOAD-01-01",
+      "ruleCode": "MBBR-LOAD-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：整体负荷变化",
+      "requiredEvidence": "水量、进水氨氮、载体面积、水温",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-LOAD-01-02",
+      "ruleCode": "MBBR-LOAD-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：填料面积配置错误",
+      "requiredEvidence": "水量、进水氨氮、载体面积、水温",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-EFF-01-01",
+      "ruleCode": "MBBR-EFF-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：流化或DO不匹配",
+      "requiredEvidence": "可比前后样本、水温、DO、流化",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-EFF-01-02",
+      "ruleCode": "MBBR-EFF-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：挂膜状态变化",
+      "requiredEvidence": "可比前后样本、水温、DO、流化",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-EFF-02-01",
+      "ruleCode": "MBBR-EFF-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：样本时滞",
+      "requiredEvidence": "可比NH3样本和负荷",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-EFF-02-02",
+      "ruleCode": "MBBR-EFF-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：局部负荷/水温变化",
+      "requiredEvidence": "可比NH3样本和负荷",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-DO-01-01",
+      "ruleCode": "MBBR-DO-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：供气分配或控制偏差",
+      "requiredEvidence": "DO、目标版本、风量和负荷",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-DO-01-02",
+      "ruleCode": "MBBR-DO-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：仪表偏差",
+      "requiredEvidence": "DO、目标版本、风量和负荷",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-FLOW-01-01",
+      "ruleCode": "MBBR-FLOW-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：风量设定偏差",
+      "requiredEvidence": "流化风量、水量、模式",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-FLOW-01-02",
+      "ruleCode": "MBBR-FLOW-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：计量或模式错误",
+      "requiredEvidence": "流化风量、水量、模式",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-FLOW-02-01",
+      "ruleCode": "MBBR-FLOW-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：配气不均",
+      "requiredEvidence": "视频/巡检、风量、分区阀位",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-FLOW-02-02",
+      "ruleCode": "MBBR-FLOW-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：局部堆积或构件影响",
+      "requiredEvidence": "视频/巡检、风量、分区阀位",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-SCREEN-01-01",
+      "ruleCode": "MBBR-SCREEN-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：筛网堵塞",
+      "requiredEvidence": "筛网压差、风量和状态",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-SCREEN-01-02",
+      "ruleCode": "MBBR-SCREEN-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：流化清洁不足",
+      "requiredEvidence": "筛网压差、风量和状态",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-SCREEN-02-01",
+      "ruleCode": "MBBR-SCREEN-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：筛网损坏/堵塞",
+      "requiredEvidence": "筛网状态、填料损失、照片",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-SCREEN-02-02",
+      "ruleCode": "MBBR-SCREEN-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：巡检口径差异",
+      "requiredEvidence": "筛网状态、填料损失、照片",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-ENERGY-01-01",
+      "ruleCode": "MBBR-ENERGY-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：过量流化",
+      "requiredEvidence": "流化、筛网、搅拌分项电量",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-ENERGY-01-02",
+      "ruleCode": "MBBR-ENERGY-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：筛网阻力或设备组合不合理",
+      "requiredEvidence": "流化、筛网、搅拌分项电量",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-ENERGY-02-01",
+      "ruleCode": "MBBR-ENERGY-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：能耗过高",
+      "requiredEvidence": "电量、可比氨氮去除量、温度",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-ENERGY-02-02",
+      "ruleCode": "MBBR-ENERGY-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：低负荷导致单位值放大",
+      "requiredEvidence": "电量、可比氨氮去除量、温度",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-MIX-01-01",
+      "ruleCode": "MBBR-MIX-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：搅拌器组合不当",
+      "requiredEvidence": "搅拌功率、流化状态、模式",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-MIX-01-02",
+      "ruleCode": "MBBR-MIX-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：填料流化方式变化",
+      "requiredEvidence": "搅拌功率、流化状态、模式",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-TEMP-01-01",
+      "ruleCode": "MBBR-TEMP-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：低于设计温度",
+      "requiredEvidence": "水温、负荷、局部去除能力",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-TEMP-01-02",
+      "ruleCode": "MBBR-TEMP-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：负荷未同步调整",
+      "requiredEvidence": "水温、负荷、局部去除能力",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-OBS-01-01",
+      "ruleCode": "MBBR-OBS-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：样本时滞",
+      "requiredEvidence": "可比COD/TN/碱度样本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "MBBR-OBS-01-02",
+      "ruleCode": "MBBR-OBS-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：整体负荷变化",
+      "requiredEvidence": "可比COD/TN/碱度样本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    }
+  ],
+  "pageMappings": [
+    {
+      "componentCode": "MBBR-P1-01",
+      "page": "分析概览",
+      "componentType": "SUMMARY",
+      "name": "分析概览摘要",
+      "binding": "mbbr.1.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P1-02",
+      "page": "分析概览",
+      "componentType": "EVIDENCE",
+      "name": "分析概览证据",
+      "binding": "mbbr.1.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P1-03",
+      "page": "分析概览",
+      "componentType": "ACTION",
+      "name": "分析概览操作",
+      "binding": "mbbr.1.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P1-04",
+      "page": "分析概览",
+      "componentType": "BOUNDARY",
+      "name": "分析概览边界",
+      "binding": "mbbr.1.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P2-01",
+      "page": "数据与计算",
+      "componentType": "SUMMARY",
+      "name": "数据与计算摘要",
+      "binding": "mbbr.2.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P2-02",
+      "page": "数据与计算",
+      "componentType": "EVIDENCE",
+      "name": "数据与计算证据",
+      "binding": "mbbr.2.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P2-03",
+      "page": "数据与计算",
+      "componentType": "ACTION",
+      "name": "数据与计算操作",
+      "binding": "mbbr.2.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P2-04",
+      "page": "数据与计算",
+      "componentType": "BOUNDARY",
+      "name": "数据与计算边界",
+      "binding": "mbbr.2.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P3-01",
+      "page": "偏差诊断",
+      "componentType": "SUMMARY",
+      "name": "偏差诊断摘要",
+      "binding": "mbbr.3.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P3-02",
+      "page": "偏差诊断",
+      "componentType": "EVIDENCE",
+      "name": "偏差诊断证据",
+      "binding": "mbbr.3.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P3-03",
+      "page": "偏差诊断",
+      "componentType": "ACTION",
+      "name": "偏差诊断操作",
+      "binding": "mbbr.3.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P3-04",
+      "page": "偏差诊断",
+      "componentType": "BOUNDARY",
+      "name": "偏差诊断边界",
+      "binding": "mbbr.3.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P4-01",
+      "page": "优化方案",
+      "componentType": "SUMMARY",
+      "name": "优化方案摘要",
+      "binding": "mbbr.4.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P4-02",
+      "page": "优化方案",
+      "componentType": "EVIDENCE",
+      "name": "优化方案证据",
+      "binding": "mbbr.4.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P4-03",
+      "page": "优化方案",
+      "componentType": "ACTION",
+      "name": "优化方案操作",
+      "binding": "mbbr.4.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P4-04",
+      "page": "优化方案",
+      "componentType": "BOUNDARY",
+      "name": "优化方案边界",
+      "binding": "mbbr.4.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P5-01",
+      "page": "效果跟踪",
+      "componentType": "SUMMARY",
+      "name": "效果跟踪摘要",
+      "binding": "mbbr.5.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P5-02",
+      "page": "效果跟踪",
+      "componentType": "EVIDENCE",
+      "name": "效果跟踪证据",
+      "binding": "mbbr.5.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P5-03",
+      "page": "效果跟踪",
+      "componentType": "ACTION",
+      "name": "效果跟踪操作",
+      "binding": "mbbr.5.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "MBBR-P5-04",
+      "page": "效果跟踪",
+      "componentType": "BOUNDARY",
+      "name": "效果跟踪边界",
+      "binding": "mbbr.5.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    }
+  ],
+  "dictionaries": [
+    [
+      "evaluation_status",
+      "NOT_APPLICABLE",
+      "不适用",
+      1
+    ],
+    [
+      "evaluation_status",
+      "DATA_INSUFFICIENT",
+      "数据不足",
+      2
+    ],
+    [
+      "evaluation_status",
+      "NORMAL",
+      "正常",
+      3
+    ],
+    [
+      "evaluation_status",
+      "TRIGGERED",
+      "已触发",
+      4
+    ],
+    [
+      "evaluation_status",
+      "SUPPRESSED",
+      "已抑制",
+      5
+    ],
+    [
+      "conclusion_type",
+      "CONFIRMED_DEVIATION",
+      "已确认偏差",
+      1
+    ],
+    [
+      "conclusion_type",
+      "SUSPECTED_DEVIATION",
+      "疑似偏差",
+      2
+    ],
+    [
+      "conclusion_type",
+      "OPTIMIZATION_OPPORTUNITY",
+      "优化机会",
+      3
+    ],
+    [
+      "conclusion_type",
+      "DATA_INSUFFICIENT",
+      "数据不足",
+      4
+    ],
+    [
+      "benchmark_type",
+      "DESIGN",
+      "设计值",
+      1
+    ],
+    [
+      "benchmark_type",
+      "SITE_TARGET",
+      "一厂一策目标",
+      2
+    ],
+    [
+      "benchmark_type",
+      "STANDARD",
+      "标准/规范",
+      3
+    ],
+    [
+      "benchmark_type",
+      "HISTORICAL_BEST",
+      "历史优秀期",
+      4
+    ],
+    [
+      "benchmark_type",
+      "PEER_BENCHMARK",
+      "同类对标",
+      5
+    ]
+  ],
+  "counts": {
+    "fields": 46,
+    "metrics": 24,
+    "benchmarks": 16,
+    "rules": 20,
+    "causes": 40,
+    "pageMappings": 20,
+    "testCases": 160,
+    "pilotItems": 21
+  }
+}

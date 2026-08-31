@@ -1,0 +1,2411 @@
+{
+  "$schema": "./disinfection-model.schema.json",
+  "modelCode": "DIS",
+  "modelName": "消毒分析",
+  "version": "0.1.0",
+  "status": "DRAFT",
+  "objectScope": "UNIT",
+  "ownerDomain": "unit.disinfection",
+  "unitType": "DISINFECTION",
+  "timezone": "Asia/Shanghai",
+  "pages": [
+    "分析概览",
+    "数据与计算",
+    "偏差诊断",
+    "优化方案",
+    "效果跟踪"
+  ],
+  "processVariants": [
+    "次氯酸钠",
+    "预留紫外/臭氧扩展"
+  ],
+  "boundary": {
+    "owns": [
+      "消毒接触条件",
+      "有效氯投加与余氯",
+      "微生物局部灭活效果",
+      "药剂效率与成本",
+      "消毒优化验证"
+    ],
+    "references": [
+      "出水流量与水温",
+      "LIMS微生物结果",
+      "药剂批次有效成分",
+      "设备状态",
+      "全厂出水合规结论",
+      "安全限制"
+    ],
+    "forbids": [
+      "全厂出水综合合规评价",
+      "上游水质异常原因",
+      "药剂采购与验收评价",
+      "加药设备维修质量",
+      "危化品安全管理评价"
+    ]
+  },
+  "benchmarkResolution": {
+    "displayOrder": [
+      "DESIGN",
+      "SITE_TARGET",
+      "STANDARD",
+      "HISTORICAL_BEST",
+      "PEER_BENCHMARK"
+    ],
+    "allowUnconfirmedExperience": false,
+    "noMatchBehavior": "NO_APPLICABLE_BENCHMARK"
+  },
+  "evaluationStatuses": [
+    "NOT_APPLICABLE",
+    "DATA_INSUFFICIENT",
+    "NORMAL",
+    "TRIGGERED",
+    "SUPPRESSED"
+  ],
+  "registries": {
+    "functions": [
+      "minimumChemicalEvidenceMissing",
+      "microbialSamplesComparable",
+      "minimumCtEvidenceMissing",
+      "lowTemperatureProtectionInsufficient",
+      "unitEnergyAbnormal"
+    ],
+    "modelReferences": [],
+    "benchmarkReferences": [
+      "siteCapacityRange",
+      "historicalComparableRange"
+    ]
+  },
+  "fields": [
+    {
+      "fieldCode": "site_id",
+      "group": "对象",
+      "name": "厂区ID",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "基础信息",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "unit_id",
+      "group": "对象",
+      "name": "单体ID",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "基础信息",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "analysis_period",
+      "group": "对象",
+      "name": "分析周期",
+      "dataType": "DATE_RANGE",
+      "unit": "—",
+      "source": "分析任务",
+      "cadence": "周期",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "model_version",
+      "group": "对象",
+      "name": "模型版本",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "模型中心",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "config_version",
+      "group": "对象",
+      "name": "单体配置版本",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "单体配置",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "disinfection_type",
+      "group": "适用性",
+      "name": "消毒方式",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "单体配置",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "discharge_route",
+      "group": "适用性",
+      "name": "直接排放/回用",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "单体配置",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "design_capacity",
+      "group": "设计",
+      "name": "设计消毒水量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "设计文件",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "actual_flow",
+      "group": "运行",
+      "name": "实际消毒水量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "流量计",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "peak_hourly_flow",
+      "group": "运行",
+      "name": "峰值小时流量",
+      "dataType": "DECIMAL",
+      "unit": "m3/h",
+      "source": "流量计",
+      "cadence": "小时",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "effective_volume",
+      "group": "接触",
+      "name": "消毒池有效容积",
+      "dataType": "DECIMAL",
+      "unit": "m3",
+      "source": "设计/核验",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "short_circuit_factor",
+      "group": "接触",
+      "name": "短流修正系数",
+      "dataType": "DECIMAL",
+      "unit": "—",
+      "source": "示踪/确认基线",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "water_temperature",
+      "group": "环境",
+      "name": "消毒水温",
+      "dataType": "DECIMAL",
+      "unit": "℃",
+      "source": "在线/化验",
+      "cadence": "小时",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "ph",
+      "group": "环境",
+      "name": "消毒水pH",
+      "dataType": "DECIMAL",
+      "unit": "—",
+      "source": "在线/化验",
+      "cadence": "小时",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "influent_turbidity",
+      "group": "水质",
+      "name": "消毒前浊度",
+      "dataType": "DECIMAL",
+      "unit": "NTU",
+      "source": "在线/LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "effluent_turbidity",
+      "group": "水质",
+      "name": "消毒后浊度",
+      "dataType": "DECIMAL",
+      "unit": "NTU",
+      "source": "在线/LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "influent_fecal_coliform",
+      "group": "效果",
+      "name": "消毒前粪大肠菌群",
+      "dataType": "DECIMAL",
+      "unit": "MPN/L",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "effluent_fecal_coliform",
+      "group": "效果",
+      "name": "消毒后粪大肠菌群",
+      "dataType": "DECIMAL",
+      "unit": "MPN/L",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "product_mass",
+      "group": "药剂",
+      "name": "次氯酸钠商品量",
+      "dataType": "DECIMAL",
+      "unit": "kg/d",
+      "source": "加药记录/计量",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "次氯酸钠",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "active_chlorine_fraction",
+      "group": "药剂",
+      "name": "次氯酸钠有效氯质量分数",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "批次质检",
+      "cadence": "批次",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "次氯酸钠",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "product_density",
+      "group": "药剂",
+      "name": "次氯酸钠密度",
+      "dataType": "DECIMAL",
+      "unit": "kg/L",
+      "source": "批次质检",
+      "cadence": "批次",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "次氯酸钠",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "product_price",
+      "group": "成本",
+      "name": "次氯酸钠单价",
+      "dataType": "DECIMAL",
+      "unit": "CNY/t",
+      "source": "经营参数",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "次氯酸钠",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "dosing_pump_flow",
+      "group": "药剂",
+      "name": "加药泵实际流量",
+      "dataType": "DECIMAL",
+      "unit": "L/h",
+      "source": "流量计/标定",
+      "cadence": "小时",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "次氯酸钠",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "dosing_hours",
+      "group": "药剂",
+      "name": "日加药时长",
+      "dataType": "DECIMAL",
+      "unit": "h/d",
+      "source": "自控",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "次氯酸钠",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "residual_chlorine_contact_end",
+      "group": "效果",
+      "name": "接触池末端余氯",
+      "dataType": "DECIMAL",
+      "unit": "mg/L",
+      "source": "在线/化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "次氯酸钠",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "residual_chlorine_outlet",
+      "group": "效果",
+      "name": "最终排口余氯",
+      "dataType": "DECIMAL",
+      "unit": "mg/L",
+      "source": "在线/化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "次氯酸钠",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "chlorine_analyzer_status",
+      "group": "数据",
+      "name": "余氯仪状态",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "仪表状态",
+      "cadence": "小时",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "次氯酸钠",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "sample_point_before",
+      "group": "数据",
+      "name": "消毒前采样点",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "点位台账",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "sample_point_after",
+      "group": "数据",
+      "name": "消毒后采样点",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "点位台账",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "sample_time_before",
+      "group": "数据",
+      "name": "消毒前采样时间",
+      "dataType": "DATETIME",
+      "unit": "—",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "sample_time_after",
+      "group": "数据",
+      "name": "消毒后采样时间",
+      "dataType": "DATETIME",
+      "unit": "—",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "chemical_batch_id",
+      "group": "数据",
+      "name": "药剂批次ID",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "药剂台账",
+      "cadence": "批次",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "batch_test_status",
+      "group": "数据",
+      "name": "批次有效成分复核状态",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "质检",
+      "cadence": "批次",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "dosing_energy",
+      "group": "能耗",
+      "name": "消毒加药系统日电量",
+      "dataType": "DECIMAL",
+      "unit": "kWh/d",
+      "source": "电表",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "electricity_price",
+      "group": "成本",
+      "name": "电价",
+      "dataType": "DECIMAL",
+      "unit": "CNY/kWh",
+      "source": "经营参数",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "initial_residual_minutes",
+      "group": "运行",
+      "name": "投加调整后稳定等待时间",
+      "dataType": "DECIMAL",
+      "unit": "min",
+      "source": "运行记录",
+      "cadence": "事件",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "contact_basin_level",
+      "group": "接触",
+      "name": "接触池运行液位",
+      "dataType": "DECIMAL",
+      "unit": "m",
+      "source": "液位计",
+      "cadence": "小时",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    }
+  ],
+  "metrics": [
+    {
+      "metricCode": "CONTACT_TIME_AVG",
+      "group": "接触",
+      "name": "平均接触时间",
+      "formula": "effective_volume/actual_flow*24*60*short_circuit_factor",
+      "unit": "min",
+      "dependencies": [
+        "effective_volume",
+        "actual_flow",
+        "short_circuit_factor"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.contact_time_avg.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CONTACT_TIME_PEAK",
+      "group": "接触",
+      "name": "峰值有效接触时间",
+      "formula": "effective_volume/peak_hourly_flow*60*short_circuit_factor",
+      "unit": "min",
+      "dependencies": [
+        "effective_volume",
+        "peak_hourly_flow",
+        "short_circuit_factor"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.contact_time_peak.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "PRODUCT_DOSE",
+      "group": "药剂",
+      "name": "次氯酸钠商品投加浓度",
+      "formula": "product_mass*1000/actual_flow",
+      "unit": "mg/L",
+      "dependencies": [
+        "product_mass",
+        "actual_flow"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.product_dose.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "ACTIVE_CHLORINE_MASS",
+      "group": "药剂",
+      "name": "有效氯日投加量",
+      "formula": "product_mass*active_chlorine_fraction",
+      "unit": "kg/d",
+      "dependencies": [
+        "product_mass",
+        "active_chlorine_fraction"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.active_chlorine_mass.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "ACTIVE_CHLORINE_DOSE",
+      "group": "药剂",
+      "name": "有效氯投加浓度",
+      "formula": "ACTIVE_CHLORINE_MASS*1000/actual_flow",
+      "unit": "mg/L",
+      "dependencies": [
+        "ACTIVE_CHLORINE_MASS",
+        "actual_flow"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.active_chlorine_dose.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CHLORINE_DEMAND",
+      "group": "效果",
+      "name": "表观耗氯量",
+      "formula": "ACTIVE_CHLORINE_DOSE-residual_chlorine_contact_end",
+      "unit": "mg/L",
+      "dependencies": [
+        "ACTIVE_CHLORINE_DOSE",
+        "residual_chlorine_contact_end"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.chlorine_demand.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CT_CONTACT_END",
+      "group": "效果",
+      "name": "接触池末端CT值",
+      "formula": "residual_chlorine_contact_end*CONTACT_TIME_PEAK",
+      "unit": "mg·min/L",
+      "dependencies": [
+        "residual_chlorine_contact_end",
+        "CONTACT_TIME_PEAK"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.ct_contact_end.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CT_OUTLET",
+      "group": "效果",
+      "name": "排口余氯CT值",
+      "formula": "residual_chlorine_outlet*CONTACT_TIME_PEAK",
+      "unit": "mg·min/L",
+      "dependencies": [
+        "residual_chlorine_outlet",
+        "CONTACT_TIME_PEAK"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.ct_outlet.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "FECAL_REMOVAL",
+      "group": "效果",
+      "name": "粪大肠菌群去除率",
+      "formula": "(influent_fecal_coliform-effluent_fecal_coliform)/influent_fecal_coliform",
+      "unit": "%",
+      "dependencies": [
+        "influent_fecal_coliform",
+        "effluent_fecal_coliform"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.fecal_removal.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "FECAL_LOG_REMOVAL",
+      "group": "效果",
+      "name": "粪大肠菌群对数去除",
+      "formula": "LOG10(influent_fecal_coliform/effluent_fecal_coliform)",
+      "unit": "log",
+      "dependencies": [
+        "influent_fecal_coliform",
+        "effluent_fecal_coliform"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.fecal_log_removal.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CHEMICAL_COST_DAY",
+      "group": "成本",
+      "name": "次氯酸钠日成本",
+      "formula": "product_mass/1000*product_price",
+      "unit": "CNY/d",
+      "dependencies": [
+        "product_mass",
+        "product_price"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.chemical_cost_day.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CHEMICAL_COST_WATER",
+      "group": "成本",
+      "name": "消毒药剂吨水成本",
+      "formula": "CHEMICAL_COST_DAY/actual_flow",
+      "unit": "CNY/m3",
+      "dependencies": [
+        "CHEMICAL_COST_DAY",
+        "actual_flow"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.chemical_cost_water.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "ENERGY_COST_DAY",
+      "group": "成本",
+      "name": "消毒系统日电费",
+      "formula": "dosing_energy*electricity_price",
+      "unit": "CNY/d",
+      "dependencies": [
+        "dosing_energy",
+        "electricity_price"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.energy_cost_day.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "TOTAL_COST_WATER",
+      "group": "成本",
+      "name": "消毒吨水总成本",
+      "formula": "(CHEMICAL_COST_DAY+ENERGY_COST_DAY)/actual_flow",
+      "unit": "CNY/m3",
+      "dependencies": [
+        "CHEMICAL_COST_DAY",
+        "ENERGY_COST_DAY",
+        "actual_flow"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.total_cost_water.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "ACTIVE_CHLORINE_UTILIZATION",
+      "group": "效率",
+      "name": "有效氯利用表征",
+      "formula": "CHLORINE_DEMAND/ACTIVE_CHLORINE_DOSE",
+      "unit": "%",
+      "dependencies": [
+        "CHLORINE_DEMAND",
+        "ACTIVE_CHLORINE_DOSE"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.active_chlorine_utilization.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "DOSING_PUMP_CALC_MASS",
+      "group": "数据",
+      "name": "泵计量折算商品量",
+      "formula": "dosing_pump_flow*dosing_hours*product_density",
+      "unit": "kg/d",
+      "dependencies": [
+        "dosing_pump_flow",
+        "dosing_hours",
+        "product_density"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.dosing_pump_calc_mass.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "DOSING_MASS_DEVIATION",
+      "group": "数据",
+      "name": "加药计量链偏差",
+      "formula": "(product_mass-DOSING_PUMP_CALC_MASS)/product_mass",
+      "unit": "%",
+      "dependencies": [
+        "product_mass",
+        "DOSING_PUMP_CALC_MASS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.dosing_mass_deviation.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "UNIT_ENERGY",
+      "group": "能耗",
+      "name": "消毒吨水电耗",
+      "formula": "dosing_energy/actual_flow",
+      "unit": "kWh/m3",
+      "dependencies": [
+        "dosing_energy",
+        "actual_flow"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "disinfection.unit_energy.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    }
+  ],
+  "benchmarks": [
+    {
+      "benchmarkCode": "DIS-BM-01",
+      "benchmarkType": "DESIGN",
+      "objectCode": "CONTACT_TIME_PEAK",
+      "name": "峰值有效接触时间下限",
+      "lower": "待设计确认",
+      "upper": null,
+      "unit": "min",
+      "applicability": "对应接触池与排放路径",
+      "source": "设计文件",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DIS-BM-02",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "ACTIVE_CHLORINE_DOSE",
+      "name": "有效氯投加范围",
+      "lower": "待一厂一策",
+      "upper": "待一厂一策",
+      "unit": "mg/L",
+      "applicability": "次氯酸钠且水质可比",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DIS-BM-03",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "residual_chlorine_contact_end",
+      "name": "接触池末端余氯范围",
+      "lower": "待一厂一策",
+      "upper": "待一厂一策",
+      "unit": "mg/L",
+      "applicability": "对应排放路径",
+      "source": "运行控制标准",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DIS-BM-04",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "residual_chlorine_outlet",
+      "name": "排口余氯范围",
+      "lower": "待一厂一策",
+      "upper": "待一厂一策",
+      "unit": "mg/L",
+      "applicability": "对应排放/回用",
+      "source": "运行控制标准",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DIS-BM-05",
+      "benchmarkType": "STANDARD",
+      "objectCode": "CT_CONTACT_END",
+      "name": "CT控制参考",
+      "lower": "待适用规范确认",
+      "upper": "待适用规范确认",
+      "unit": "mg·min/L",
+      "applicability": "水温pH和微生物目标适用",
+      "source": "适用规范",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DIS-BM-06",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "effluent_fecal_coliform",
+      "name": "消毒后粪大肠菌控制值",
+      "lower": null,
+      "upper": "待批准目标",
+      "unit": "MPN/L",
+      "applicability": "点位与方法确认",
+      "source": "排放/回用控制标准",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DIS-BM-07",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "FECAL_LOG_REMOVAL",
+      "name": "对数去除目标",
+      "lower": "待试点确认",
+      "upper": null,
+      "unit": "log",
+      "applicability": "前后样本可比",
+      "source": "历史优秀期/试点",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DIS-BM-08",
+      "benchmarkType": "HISTORICAL_BEST",
+      "objectCode": "CHLORINE_DEMAND",
+      "name": "耗氯量可比区间",
+      "lower": "待历史确认",
+      "upper": "待历史确认",
+      "unit": "mg/L",
+      "applicability": "温度pH浊度可比",
+      "source": "历史优秀期",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DIS-BM-09",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "DOSING_MASS_DEVIATION",
+      "name": "加药计量允许偏差",
+      "lower": "待一厂一策",
+      "upper": "待一厂一策",
+      "unit": "%",
+      "applicability": "计量链已标定",
+      "source": "计量标准",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DIS-BM-10",
+      "benchmarkType": "HISTORICAL_BEST",
+      "objectCode": "CHEMICAL_COST_WATER",
+      "name": "吨水药剂成本目标",
+      "lower": null,
+      "upper": "待历史确认",
+      "unit": "CNY/m3",
+      "applicability": "药价和水质可比",
+      "source": "历史优秀期",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DIS-BM-11",
+      "benchmarkType": "HISTORICAL_BEST",
+      "objectCode": "TOTAL_COST_WATER",
+      "name": "吨水消毒总成本目标",
+      "lower": null,
+      "upper": "待历史确认",
+      "unit": "CNY/m3",
+      "applicability": "边界一致",
+      "source": "历史优秀期",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DIS-BM-12",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "influent_turbidity",
+      "name": "消毒前浊度适用上限",
+      "lower": null,
+      "upper": "待一厂一策",
+      "unit": "NTU",
+      "applicability": "消毒模型适用性",
+      "source": "运行控制标准",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DIS-BM-13",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "initial_residual_minutes",
+      "name": "调整后稳定观察时间",
+      "lower": "待一厂一策",
+      "upper": null,
+      "unit": "min",
+      "applicability": "加药调整事件",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    }
+  ],
+  "rules": [
+    {
+      "ruleCode": "DIS-DATA-01",
+      "group": "数据",
+      "name": "药剂计量证据不足",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.8,
+      "condition": {
+        "op": "FUNCTION",
+        "function": "minimumChemicalEvidenceMissing"
+      },
+      "thresholdRef": "最低证据集",
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "覆盖率、来源、时间和版本",
+      "likelyCauses": [
+        "数据源未接入",
+        "时间或对象口径不完整"
+      ],
+      "recommendation": "补齐最低证据后重新分析",
+      "constraint": "只输出补数要求",
+      "recovery": "最低证据持续满足",
+      "boundary": "数据门槛，不生成业务偏差",
+      "suppresses": [
+        "DIS-DOSE-01",
+        "DIS-DOSE-02",
+        "DIS-COST-01",
+        "DIS-METER-01"
+      ],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "ruleCode": "DIS-DATA-02",
+      "group": "数据",
+      "name": "微生物样本不可比",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.8,
+      "condition": {
+        "op": "FUNCTION",
+        "function": "microbialSamplesComparable"
+      },
+      "thresholdRef": "最低证据集",
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "覆盖率、来源、时间和版本",
+      "likelyCauses": [
+        "数据源未接入",
+        "时间或对象口径不完整"
+      ],
+      "recommendation": "补齐最低证据后重新分析",
+      "constraint": "只输出补数要求",
+      "recovery": "最低证据持续满足",
+      "boundary": "数据门槛，不生成业务偏差",
+      "suppresses": [
+        "DIS-EFF-01",
+        "DIS-EFF-02"
+      ],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "ruleCode": "DIS-DATA-03",
+      "group": "数据",
+      "name": "接触与余氯证据不足",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.8,
+      "condition": {
+        "op": "FUNCTION",
+        "function": "minimumCtEvidenceMissing"
+      },
+      "thresholdRef": "最低证据集",
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "覆盖率、来源、时间和版本",
+      "likelyCauses": [
+        "数据源未接入",
+        "时间或对象口径不完整"
+      ],
+      "recommendation": "补齐最低证据后重新分析",
+      "constraint": "只输出补数要求",
+      "recovery": "最低证据持续满足",
+      "boundary": "数据门槛，不生成业务偏差",
+      "suppresses": [
+        "DIS-CT-01",
+        "DIS-CT-02",
+        "DIS-RES-01"
+      ],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "CT-01",
+      "group": "接触",
+      "name": "峰值有效接触时间不足",
+      "condition": {
+        "op": "LT",
+        "metric": "CONTACT_TIME_PEAK",
+        "benchmark": "DIS-BM-01.lower"
+      },
+      "thresholdRef": "DIS-BM-01.lower",
+      "persistence": {
+        "mode": "HOUR",
+        "count": 2
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "峰值流量、有效容积、短流系数",
+      "likelyCauses": [
+        "峰值流量过高",
+        "有效容积或短流系数配置错误"
+      ],
+      "recommendation": "核验水力条件并优化运行水位/流量分配",
+      "constraint": "不得以加大药量替代水力核验",
+      "recovery": "连续2小时恢复",
+      "boundary": "只判断消毒接触单体",
+      "ruleCode": "DIS-CT-01",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "CT-02",
+      "group": "接触",
+      "name": "CT值偏离控制范围",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "CT_CONTACT_END",
+        "benchmark": "DIS-BM-05"
+      },
+      "thresholdRef": "DIS-BM-05",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "末端余氯、接触时间、水温pH",
+      "likelyCauses": [
+        "接触不足",
+        "余氯或仪表偏差"
+      ],
+      "recommendation": "先核验水力和余氯证据再调整药量",
+      "constraint": "CT参考必须适用当前水温pH",
+      "recovery": "连续3组样本恢复",
+      "boundary": "不替代全厂合规结论",
+      "ruleCode": "DIS-CT-02",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "DOSE-01",
+      "group": "药剂",
+      "name": "有效氯投加偏高",
+      "condition": {
+        "op": "GT",
+        "metric": "ACTIVE_CHLORINE_DOSE",
+        "benchmark": "DIS-BM-02.upper"
+      },
+      "thresholdRef": "DIS-BM-02.upper",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "商品量、有效成分、水量、效果",
+      "likelyCauses": [
+        "安全余量过大",
+        "批次浓度或计量偏差"
+      ],
+      "recommendation": "在微生物和余氯保护下阶梯减量",
+      "constraint": "必须设置停止和回退条件",
+      "recovery": "连续7日保护指标通过",
+      "boundary": "只形成消毒投加优化",
+      "ruleCode": "DIS-DOSE-01",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "DOSE-02",
+      "group": "药剂",
+      "name": "有效氯投加偏低",
+      "condition": {
+        "op": "LT",
+        "metric": "ACTIVE_CHLORINE_DOSE",
+        "benchmark": "DIS-BM-02.lower"
+      },
+      "thresholdRef": "DIS-BM-02.lower",
+      "persistence": {
+        "mode": "DAY",
+        "count": 2
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "有效成分、水量、泵计量",
+      "likelyCauses": [
+        "投加不足",
+        "药剂衰减或计量偏差"
+      ],
+      "recommendation": "校核批次和泵计量后调整",
+      "constraint": "不得忽略接触条件",
+      "recovery": "连续2日恢复",
+      "boundary": "只判断投加参数",
+      "ruleCode": "DIS-DOSE-02",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "RES-01",
+      "group": "效果",
+      "name": "排口余氯偏离",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "field": "residual_chlorine_outlet",
+        "benchmark": "DIS-BM-04"
+      },
+      "thresholdRef": "DIS-BM-04",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "排口余氯、时间、水温、流量",
+      "likelyCauses": [
+        "投加或耗氯变化",
+        "采样/仪表偏差"
+      ],
+      "recommendation": "校核趋势并小步调整投加",
+      "constraint": "遵守排放/回用控制边界",
+      "recovery": "连续3组样本恢复",
+      "boundary": "只形成消毒局部控制结论",
+      "ruleCode": "DIS-RES-01",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "EFF-01",
+      "group": "效果",
+      "name": "消毒后微生物高于单体目标",
+      "condition": {
+        "op": "GT",
+        "field": "effluent_fecal_coliform",
+        "benchmark": "DIS-BM-06.upper"
+      },
+      "thresholdRef": "DIS-BM-06.upper",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 2
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "可比微生物样本、CT、浊度",
+      "likelyCauses": [
+        "接触/剂量不足",
+        "前端浊度或采样影响"
+      ],
+      "recommendation": "按接触—余氯—水质顺序核验",
+      "constraint": "全厂合规主结论由水质模块负责",
+      "recovery": "连续2组样本恢复",
+      "boundary": "只形成消毒单体效果结论",
+      "ruleCode": "DIS-EFF-01",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "EFF-02",
+      "group": "效果",
+      "name": "微生物对数去除不足",
+      "condition": {
+        "op": "LT",
+        "metric": "FECAL_LOG_REMOVAL",
+        "benchmark": "DIS-BM-07.lower"
+      },
+      "thresholdRef": "DIS-BM-07.lower",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "前后微生物可比样本",
+      "likelyCauses": [
+        "样本不可比",
+        "消毒条件不足"
+      ],
+      "recommendation": "复核样本后核验CT和剂量",
+      "constraint": "不使用单点结果认定原因",
+      "recovery": "连续3组样本恢复",
+      "boundary": "只评价局部灭活效果",
+      "ruleCode": "DIS-EFF-02",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "WQ-01",
+      "group": "适用性",
+      "name": "消毒前浊度超出模型适用范围",
+      "condition": {
+        "op": "GT",
+        "field": "influent_turbidity",
+        "benchmark": "DIS-BM-12.upper"
+      },
+      "thresholdRef": "DIS-BM-12.upper",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "消毒前浊度、上游结论引用",
+      "likelyCauses": [
+        "颗粒屏蔽效应",
+        "上游波动"
+      ],
+      "recommendation": "引用上游诊断并提高消毒验证频次",
+      "constraint": "不在本模块判断上游原因",
+      "recovery": "连续3组样本回归",
+      "boundary": "只提示消毒适用性风险",
+      "ruleCode": "DIS-WQ-01",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "COST-01",
+      "group": "成本",
+      "name": "吨水药剂成本偏高",
+      "condition": {
+        "op": "GT",
+        "metric": "CHEMICAL_COST_WATER",
+        "benchmark": "DIS-BM-10.upper"
+      },
+      "thresholdRef": "DIS-BM-10.upper",
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "药量、药价、水量、效果",
+      "likelyCauses": [
+        "投加偏高",
+        "药价或有效成分变化"
+      ],
+      "recommendation": "优先优化有效氯利用而非单看商品量",
+      "constraint": "采购评价不属于本模块",
+      "recovery": "连续7日节省且效果通过",
+      "boundary": "只评价消毒药剂效率",
+      "ruleCode": "DIS-COST-01",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "COST-02",
+      "group": "成本",
+      "name": "吨水消毒总成本偏高",
+      "condition": {
+        "op": "GT",
+        "metric": "TOTAL_COST_WATER",
+        "benchmark": "DIS-BM-11.upper"
+      },
+      "thresholdRef": "DIS-BM-11.upper",
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "药剂与电量分项",
+      "likelyCauses": [
+        "药剂主导",
+        "加药系统长时低效运行"
+      ],
+      "recommendation": "按成本构成排序优化",
+      "constraint": "不形成全厂成本主结论",
+      "recovery": "连续7日收益通过",
+      "boundary": "只评价消毒单体成本",
+      "ruleCode": "DIS-COST-02",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "METER-01",
+      "group": "数据",
+      "name": "加药计量链偏差",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "DOSING_MASS_DEVIATION",
+        "benchmark": "DIS-BM-09"
+      },
+      "thresholdRef": "DIS-BM-09",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "库存/称量与泵流量时长折算",
+      "likelyCauses": [
+        "泵标定偏差",
+        "密度或记录口径错误"
+      ],
+      "recommendation": "完成加药泵标定和批次参数复核",
+      "constraint": "不评价药剂验收履职",
+      "recovery": "连续3日一致",
+      "boundary": "只形成计量一致性提示",
+      "ruleCode": "DIS-METER-01",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "TEMP-01",
+      "group": "环境",
+      "name": "低温下消毒保护不足",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "lowTemperatureProtectionInsufficient"
+      },
+      "thresholdRef": "approvedTemperatureStrategy",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "水温、接触时间、余氯和效果",
+      "likelyCauses": [
+        "低温策略未启用",
+        "接触时间不足"
+      ],
+      "recommendation": "按批准低温策略提高接触保护",
+      "constraint": "禁止无证据直接加药",
+      "recovery": "连续3日保护指标通过",
+      "boundary": "只判断低温消毒策略",
+      "ruleCode": "DIS-TEMP-01",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "STABLE-01",
+      "group": "运行",
+      "name": "调整后稳定观察不足",
+      "condition": {
+        "op": "LT",
+        "field": "initial_residual_minutes",
+        "benchmark": "DIS-BM-13.lower"
+      },
+      "thresholdRef": "DIS-BM-13.lower",
+      "persistence": {
+        "mode": "EVENT",
+        "count": 2
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "调药事件与余氯趋势",
+      "likelyCauses": [
+        "调整过快",
+        "观察窗口不足"
+      ],
+      "recommendation": "延长稳定观察后再继续调整",
+      "constraint": "避免连续大步调药",
+      "recovery": "连续2次事件满足",
+      "boundary": "只判断操作节奏",
+      "ruleCode": "DIS-STABLE-01",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "ENERGY-01",
+      "group": "能耗",
+      "name": "消毒吨水电耗异常",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "unitEnergyAbnormal"
+      },
+      "thresholdRef": "historicalComparableEnergy",
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "加药分项电量和水量",
+      "likelyCauses": [
+        "设备空转",
+        "低负荷组合不合理"
+      ],
+      "recommendation": "优化加药泵运行组合",
+      "constraint": "设备维修由设备模块负责",
+      "recovery": "连续7日节能且效果通过",
+      "boundary": "只评价消毒局部能耗",
+      "ruleCode": "DIS-ENERGY-01",
+      "applicability": "次氯酸钠/预留紫外/臭氧扩展",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    }
+  ],
+  "causes": [
+    {
+      "causeCode": "DIS-DATA-01-01",
+      "ruleCode": "DIS-DATA-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：数据源未接入",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-DATA-01-02",
+      "ruleCode": "DIS-DATA-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：时间或对象口径不完整",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-DATA-02-01",
+      "ruleCode": "DIS-DATA-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：数据源未接入",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-DATA-02-02",
+      "ruleCode": "DIS-DATA-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：时间或对象口径不完整",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-DATA-03-01",
+      "ruleCode": "DIS-DATA-03",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：数据源未接入",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-DATA-03-02",
+      "ruleCode": "DIS-DATA-03",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：时间或对象口径不完整",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-CT-01-01",
+      "ruleCode": "DIS-CT-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：峰值流量过高",
+      "requiredEvidence": "峰值流量、有效容积、短流系数",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-CT-01-02",
+      "ruleCode": "DIS-CT-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：有效容积或短流系数配置错误",
+      "requiredEvidence": "峰值流量、有效容积、短流系数",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-CT-02-01",
+      "ruleCode": "DIS-CT-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：接触不足",
+      "requiredEvidence": "末端余氯、接触时间、水温pH",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-CT-02-02",
+      "ruleCode": "DIS-CT-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：余氯或仪表偏差",
+      "requiredEvidence": "末端余氯、接触时间、水温pH",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-DOSE-01-01",
+      "ruleCode": "DIS-DOSE-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：安全余量过大",
+      "requiredEvidence": "商品量、有效成分、水量、效果",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-DOSE-01-02",
+      "ruleCode": "DIS-DOSE-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：批次浓度或计量偏差",
+      "requiredEvidence": "商品量、有效成分、水量、效果",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-DOSE-02-01",
+      "ruleCode": "DIS-DOSE-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：投加不足",
+      "requiredEvidence": "有效成分、水量、泵计量",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-DOSE-02-02",
+      "ruleCode": "DIS-DOSE-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：药剂衰减或计量偏差",
+      "requiredEvidence": "有效成分、水量、泵计量",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-RES-01-01",
+      "ruleCode": "DIS-RES-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：投加或耗氯变化",
+      "requiredEvidence": "排口余氯、时间、水温、流量",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-RES-01-02",
+      "ruleCode": "DIS-RES-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：采样/仪表偏差",
+      "requiredEvidence": "排口余氯、时间、水温、流量",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-EFF-01-01",
+      "ruleCode": "DIS-EFF-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：接触/剂量不足",
+      "requiredEvidence": "可比微生物样本、CT、浊度",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-EFF-01-02",
+      "ruleCode": "DIS-EFF-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：前端浊度或采样影响",
+      "requiredEvidence": "可比微生物样本、CT、浊度",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-EFF-02-01",
+      "ruleCode": "DIS-EFF-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：样本不可比",
+      "requiredEvidence": "前后微生物可比样本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-EFF-02-02",
+      "ruleCode": "DIS-EFF-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：消毒条件不足",
+      "requiredEvidence": "前后微生物可比样本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-WQ-01-01",
+      "ruleCode": "DIS-WQ-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：颗粒屏蔽效应",
+      "requiredEvidence": "消毒前浊度、上游结论引用",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-WQ-01-02",
+      "ruleCode": "DIS-WQ-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：上游波动",
+      "requiredEvidence": "消毒前浊度、上游结论引用",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-COST-01-01",
+      "ruleCode": "DIS-COST-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：投加偏高",
+      "requiredEvidence": "药量、药价、水量、效果",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-COST-01-02",
+      "ruleCode": "DIS-COST-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：药价或有效成分变化",
+      "requiredEvidence": "药量、药价、水量、效果",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-COST-02-01",
+      "ruleCode": "DIS-COST-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：药剂主导",
+      "requiredEvidence": "药剂与电量分项",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-COST-02-02",
+      "ruleCode": "DIS-COST-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：加药系统长时低效运行",
+      "requiredEvidence": "药剂与电量分项",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-METER-01-01",
+      "ruleCode": "DIS-METER-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：泵标定偏差",
+      "requiredEvidence": "库存/称量与泵流量时长折算",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-METER-01-02",
+      "ruleCode": "DIS-METER-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：密度或记录口径错误",
+      "requiredEvidence": "库存/称量与泵流量时长折算",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-TEMP-01-01",
+      "ruleCode": "DIS-TEMP-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：低温策略未启用",
+      "requiredEvidence": "水温、接触时间、余氯和效果",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-TEMP-01-02",
+      "ruleCode": "DIS-TEMP-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：接触时间不足",
+      "requiredEvidence": "水温、接触时间、余氯和效果",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-STABLE-01-01",
+      "ruleCode": "DIS-STABLE-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：调整过快",
+      "requiredEvidence": "调药事件与余氯趋势",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-STABLE-01-02",
+      "ruleCode": "DIS-STABLE-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：观察窗口不足",
+      "requiredEvidence": "调药事件与余氯趋势",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-ENERGY-01-01",
+      "ruleCode": "DIS-ENERGY-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：设备空转",
+      "requiredEvidence": "加药分项电量和水量",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DIS-ENERGY-01-02",
+      "ruleCode": "DIS-ENERGY-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：低负荷组合不合理",
+      "requiredEvidence": "加药分项电量和水量",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    }
+  ],
+  "pageMappings": [
+    {
+      "componentCode": "DIS-P1-01",
+      "page": "分析概览",
+      "componentType": "SUMMARY",
+      "name": "分析概览摘要",
+      "binding": "disinfection.1.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P1-02",
+      "page": "分析概览",
+      "componentType": "EVIDENCE",
+      "name": "分析概览证据",
+      "binding": "disinfection.1.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P1-03",
+      "page": "分析概览",
+      "componentType": "ACTION",
+      "name": "分析概览操作",
+      "binding": "disinfection.1.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P1-04",
+      "page": "分析概览",
+      "componentType": "BOUNDARY",
+      "name": "分析概览边界",
+      "binding": "disinfection.1.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P2-01",
+      "page": "数据与计算",
+      "componentType": "SUMMARY",
+      "name": "数据与计算摘要",
+      "binding": "disinfection.2.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P2-02",
+      "page": "数据与计算",
+      "componentType": "EVIDENCE",
+      "name": "数据与计算证据",
+      "binding": "disinfection.2.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P2-03",
+      "page": "数据与计算",
+      "componentType": "ACTION",
+      "name": "数据与计算操作",
+      "binding": "disinfection.2.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P2-04",
+      "page": "数据与计算",
+      "componentType": "BOUNDARY",
+      "name": "数据与计算边界",
+      "binding": "disinfection.2.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P3-01",
+      "page": "偏差诊断",
+      "componentType": "SUMMARY",
+      "name": "偏差诊断摘要",
+      "binding": "disinfection.3.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P3-02",
+      "page": "偏差诊断",
+      "componentType": "EVIDENCE",
+      "name": "偏差诊断证据",
+      "binding": "disinfection.3.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P3-03",
+      "page": "偏差诊断",
+      "componentType": "ACTION",
+      "name": "偏差诊断操作",
+      "binding": "disinfection.3.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P3-04",
+      "page": "偏差诊断",
+      "componentType": "BOUNDARY",
+      "name": "偏差诊断边界",
+      "binding": "disinfection.3.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P4-01",
+      "page": "优化方案",
+      "componentType": "SUMMARY",
+      "name": "优化方案摘要",
+      "binding": "disinfection.4.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P4-02",
+      "page": "优化方案",
+      "componentType": "EVIDENCE",
+      "name": "优化方案证据",
+      "binding": "disinfection.4.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P4-03",
+      "page": "优化方案",
+      "componentType": "ACTION",
+      "name": "优化方案操作",
+      "binding": "disinfection.4.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P4-04",
+      "page": "优化方案",
+      "componentType": "BOUNDARY",
+      "name": "优化方案边界",
+      "binding": "disinfection.4.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P5-01",
+      "page": "效果跟踪",
+      "componentType": "SUMMARY",
+      "name": "效果跟踪摘要",
+      "binding": "disinfection.5.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P5-02",
+      "page": "效果跟踪",
+      "componentType": "EVIDENCE",
+      "name": "效果跟踪证据",
+      "binding": "disinfection.5.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P5-03",
+      "page": "效果跟踪",
+      "componentType": "ACTION",
+      "name": "效果跟踪操作",
+      "binding": "disinfection.5.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DIS-P5-04",
+      "page": "效果跟踪",
+      "componentType": "BOUNDARY",
+      "name": "效果跟踪边界",
+      "binding": "disinfection.5.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    }
+  ],
+  "dictionaries": [
+    [
+      "evaluation_status",
+      "NOT_APPLICABLE",
+      "不适用",
+      1
+    ],
+    [
+      "evaluation_status",
+      "DATA_INSUFFICIENT",
+      "数据不足",
+      2
+    ],
+    [
+      "evaluation_status",
+      "NORMAL",
+      "正常",
+      3
+    ],
+    [
+      "evaluation_status",
+      "TRIGGERED",
+      "已触发",
+      4
+    ],
+    [
+      "evaluation_status",
+      "SUPPRESSED",
+      "已抑制",
+      5
+    ],
+    [
+      "conclusion_type",
+      "CONFIRMED_DEVIATION",
+      "已确认偏差",
+      1
+    ],
+    [
+      "conclusion_type",
+      "SUSPECTED_DEVIATION",
+      "疑似偏差",
+      2
+    ],
+    [
+      "conclusion_type",
+      "OPTIMIZATION_OPPORTUNITY",
+      "优化机会",
+      3
+    ],
+    [
+      "conclusion_type",
+      "DATA_INSUFFICIENT",
+      "数据不足",
+      4
+    ],
+    [
+      "benchmark_type",
+      "DESIGN",
+      "设计值",
+      1
+    ],
+    [
+      "benchmark_type",
+      "SITE_TARGET",
+      "一厂一策目标",
+      2
+    ],
+    [
+      "benchmark_type",
+      "STANDARD",
+      "标准/规范",
+      3
+    ],
+    [
+      "benchmark_type",
+      "HISTORICAL_BEST",
+      "历史优秀期",
+      4
+    ],
+    [
+      "benchmark_type",
+      "PEER_BENCHMARK",
+      "同类对标",
+      5
+    ]
+  ],
+  "counts": {
+    "fields": 37,
+    "metrics": 18,
+    "benchmarks": 13,
+    "rules": 17,
+    "causes": 34,
+    "pageMappings": 20,
+    "testCases": 136,
+    "pilotItems": 18
+  }
+}

@@ -1,0 +1,2777 @@
+{
+  "$schema": "./sludge_balance-model.schema.json",
+  "modelCode": "SLG",
+  "modelName": "排泥与污泥浓缩分析",
+  "version": "0.1.0",
+  "status": "DRAFT",
+  "objectScope": "UNIT",
+  "ownerDomain": "unit.sludge_balance",
+  "unitType": "SLUDGE_BALANCE_THICKENING",
+  "timezone": "Asia/Shanghai",
+  "pages": [
+    "分析概览",
+    "数据与计算",
+    "偏差诊断",
+    "优化方案",
+    "效果跟踪"
+  ],
+  "processVariants": [
+    "连续浓缩",
+    "序批式浓缩",
+    "重力/机械浓缩可配置"
+  ],
+  "boundary": {
+    "owns": [
+      "多源排泥干固体归集",
+      "浓缩与上清液固体回流",
+      "污泥库存变化",
+      "泥量平衡闭合",
+      "有效排泥率",
+      "浓缩运行与优化验证"
+    ],
+    "references": [
+      "生化池/二沉池排泥事实",
+      "高效沉淀池排泥事实",
+      "滤池反洗排泥事实",
+      "脱水产泥与滤液事实",
+      "设备状态与工单",
+      "全厂工艺诊断"
+    ],
+    "forbids": [
+      "重新诊断各源单体产泥原因",
+      "生化泥龄与活性污泥主诊断",
+      "脱水设备效率主结论",
+      "污泥运输处置合规评价",
+      "设备维修质量评价"
+    ]
+  },
+  "benchmarkResolution": {
+    "displayOrder": [
+      "DESIGN",
+      "SITE_TARGET",
+      "STANDARD",
+      "HISTORICAL_BEST",
+      "PEER_BENCHMARK"
+    ],
+    "allowUnconfirmedExperience": false,
+    "noMatchBehavior": "NO_APPLICABLE_BENCHMARK"
+  },
+  "evaluationStatuses": [
+    "NOT_APPLICABLE",
+    "DATA_INSUFFICIENT",
+    "NORMAL",
+    "TRIGGERED",
+    "SUPPRESSED"
+  ],
+  "registries": {
+    "functions": [
+      "minimumSourceSludgeEvidenceMissing",
+      "minimumSolidsCoverageMissing",
+      "inventoryShipmentEvidenceMissing",
+      "storageAccumulationAbnormal",
+      "sourceSludgeShiftAbnormal",
+      "cakeShipmentMismatch"
+    ],
+    "modelReferences": [],
+    "benchmarkReferences": [
+      "siteCapacityRange",
+      "historicalComparableRange"
+    ]
+  },
+  "fields": [
+    {
+      "fieldCode": "site_id",
+      "group": "对象",
+      "name": "厂区ID",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "基础信息",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "unit_id",
+      "group": "对象",
+      "name": "单体ID",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "基础信息",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "analysis_period",
+      "group": "对象",
+      "name": "分析周期",
+      "dataType": "DATE_RANGE",
+      "unit": "—",
+      "source": "分析任务",
+      "cadence": "周期",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "model_version",
+      "group": "对象",
+      "name": "模型版本",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "模型中心",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "config_version",
+      "group": "对象",
+      "name": "单体配置版本",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "单体配置",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "thickening_type",
+      "group": "适用性",
+      "name": "浓缩方式",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "单体配置",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "analysis_days",
+      "group": "对象",
+      "name": "统计天数",
+      "dataType": "INTEGER",
+      "unit": "d",
+      "source": "分析任务",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "bio_sludge_volume",
+      "group": "源端",
+      "name": "生化/二沉排泥量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "外部单体引用",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "bio_sludge_solids",
+      "group": "源端",
+      "name": "生化/二沉排泥含固率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "hsc_sludge_volume",
+      "group": "源端",
+      "name": "高效池排泥量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "HSC引用",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "hsc_sludge_solids",
+      "group": "源端",
+      "name": "高效池排泥含固率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "vf_sludge_volume",
+      "group": "源端",
+      "name": "滤池排泥/反洗废水量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "VF引用",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "vf_sludge_solids",
+      "group": "源端",
+      "name": "滤池排泥含固率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "primary_sludge_volume",
+      "group": "源端",
+      "name": "初沉排泥量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "PRE引用",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "primary_sludge_solids",
+      "group": "源端",
+      "name": "初沉排泥含固率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "other_sludge_ds",
+      "group": "源端",
+      "name": "其他进入干固体量",
+      "dataType": "DECIMAL",
+      "unit": "tDS/d",
+      "source": "记录",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "thickener_feed_volume",
+      "group": "浓缩",
+      "name": "浓缩池进泥量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "流量计",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "thickener_feed_solids",
+      "group": "浓缩",
+      "name": "浓缩池进泥含固率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "thickener_underflow_volume",
+      "group": "浓缩",
+      "name": "浓缩污泥量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "流量计",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "thickener_underflow_solids",
+      "group": "浓缩",
+      "name": "浓缩污泥含固率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "supernatant_volume",
+      "group": "回流",
+      "name": "上清液回流量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "流量计",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "supernatant_solids",
+      "group": "回流",
+      "name": "上清液含固率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "conditioning_overflow_volume",
+      "group": "回流",
+      "name": "调理溢流液量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "记录",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "conditioning_overflow_solids",
+      "group": "回流",
+      "name": "调理溢流液含固率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "dewatering_filtrate_volume",
+      "group": "回流",
+      "name": "脱水滤液量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "DWT引用",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "dewatering_filtrate_solids",
+      "group": "回流",
+      "name": "脱水滤液含固率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "conditioning_chemical_ds",
+      "group": "药剂",
+      "name": "调理药剂干固体量",
+      "dataType": "DECIMAL",
+      "unit": "t/d",
+      "source": "加药核算",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "dewatering_chemical_ds",
+      "group": "药剂",
+      "name": "脱水药剂干固体量",
+      "dataType": "DECIMAL",
+      "unit": "t/d",
+      "source": "DWT引用",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "cake_wet_mass",
+      "group": "产出",
+      "name": "脱水湿泥产量",
+      "dataType": "DECIMAL",
+      "unit": "t/d",
+      "source": "称量",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "cake_moisture",
+      "group": "产出",
+      "name": "湿泥含水率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "shipped_wet_mass",
+      "group": "产出",
+      "name": "污泥外运湿重",
+      "dataType": "DECIMAL",
+      "unit": "t/d",
+      "source": "地磅",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "shipped_moisture",
+      "group": "产出",
+      "name": "外运污泥含水率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "storage_begin_ds",
+      "group": "库存",
+      "name": "期初库存干固体",
+      "dataType": "DECIMAL",
+      "unit": "tDS",
+      "source": "盘点",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "storage_end_ds",
+      "group": "库存",
+      "name": "期末库存干固体",
+      "dataType": "DECIMAL",
+      "unit": "tDS",
+      "source": "盘点",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "thickener_volume",
+      "group": "浓缩",
+      "name": "浓缩池有效容积",
+      "dataType": "DECIMAL",
+      "unit": "m3",
+      "source": "设计文件",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "batch_fill_volume",
+      "group": "序批浓缩",
+      "name": "单批进泥量",
+      "dataType": "DECIMAL",
+      "unit": "m3/批",
+      "source": "程序/记录",
+      "cadence": "事件",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "序批式浓缩",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "batch_settle_minutes",
+      "group": "序批浓缩",
+      "name": "单批静置时间",
+      "dataType": "DECIMAL",
+      "unit": "min",
+      "source": "程序/记录",
+      "cadence": "事件",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "序批式浓缩",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "batch_decant_volume",
+      "group": "序批浓缩",
+      "name": "单批排上清液量",
+      "dataType": "DECIMAL",
+      "unit": "m3/批",
+      "source": "记录",
+      "cadence": "事件",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "序批式浓缩",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "batch_discharge_volume",
+      "group": "序批浓缩",
+      "name": "单批排浓缩泥量",
+      "dataType": "DECIMAL",
+      "unit": "m3/批",
+      "source": "记录",
+      "cadence": "事件",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "序批式浓缩",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "batch_cycle_minutes",
+      "group": "序批浓缩",
+      "name": "单批周期",
+      "dataType": "DECIMAL",
+      "unit": "min",
+      "source": "事件日志",
+      "cadence": "事件",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "序批式浓缩",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "batch_count_daily",
+      "group": "序批浓缩",
+      "name": "日批次数",
+      "dataType": "DECIMAL",
+      "unit": "批/d",
+      "source": "事件日志",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "序批式浓缩",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "thickening_energy",
+      "group": "能耗",
+      "name": "浓缩与输送日电量",
+      "dataType": "DECIMAL",
+      "unit": "kWh/d",
+      "source": "电表",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "electricity_price",
+      "group": "成本",
+      "name": "电价",
+      "dataType": "DECIMAL",
+      "unit": "CNY/kWh",
+      "source": "经营参数",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "return_point",
+      "group": "回流",
+      "name": "上清/滤液回流点",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "单体配置",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "flow_meter_coverage",
+      "group": "数据",
+      "name": "排泥流量计覆盖率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "数据质量",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "solids_sample_coverage",
+      "group": "数据",
+      "name": "含固率样本覆盖率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "数据质量",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "source_snapshot_ids",
+      "group": "数据",
+      "name": "源单体快照引用",
+      "dataType": "JSON",
+      "unit": "—",
+      "source": "外部引用",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    }
+  ],
+  "metrics": [
+    {
+      "metricCode": "BIO_DS",
+      "group": "源端",
+      "name": "生化/二沉排泥干固体",
+      "formula": "bio_sludge_volume*bio_sludge_solids",
+      "unit": "tDS/d",
+      "dependencies": [
+        "bio_sludge_volume",
+        "bio_sludge_solids"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.bio_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "HSC_DS",
+      "group": "源端",
+      "name": "高效池排泥干固体",
+      "formula": "hsc_sludge_volume*hsc_sludge_solids",
+      "unit": "tDS/d",
+      "dependencies": [
+        "hsc_sludge_volume",
+        "hsc_sludge_solids"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.hsc_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "VF_DS",
+      "group": "源端",
+      "name": "滤池排泥干固体",
+      "formula": "vf_sludge_volume*vf_sludge_solids",
+      "unit": "tDS/d",
+      "dependencies": [
+        "vf_sludge_volume",
+        "vf_sludge_solids"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.vf_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "PRIMARY_DS",
+      "group": "源端",
+      "name": "初沉排泥干固体",
+      "formula": "primary_sludge_volume*primary_sludge_solids",
+      "unit": "tDS/d",
+      "dependencies": [
+        "primary_sludge_volume",
+        "primary_sludge_solids"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.primary_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "TOTAL_INCOMING_DS",
+      "group": "平衡",
+      "name": "进入系统总干固体",
+      "formula": "BIO_DS+HSC_DS+VF_DS+PRIMARY_DS+other_sludge_ds",
+      "unit": "tDS/d",
+      "dependencies": [
+        "BIO_DS",
+        "HSC_DS",
+        "VF_DS",
+        "PRIMARY_DS",
+        "other_sludge_ds"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.total_incoming_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "THICKENER_FEED_DS",
+      "group": "浓缩",
+      "name": "浓缩进泥干固体",
+      "formula": "thickener_feed_volume*thickener_feed_solids",
+      "unit": "tDS/d",
+      "dependencies": [
+        "thickener_feed_volume",
+        "thickener_feed_solids"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.thickener_feed_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "THICKENER_UNDERFLOW_DS",
+      "group": "浓缩",
+      "name": "浓缩泥干固体",
+      "formula": "thickener_underflow_volume*thickener_underflow_solids",
+      "unit": "tDS/d",
+      "dependencies": [
+        "thickener_underflow_volume",
+        "thickener_underflow_solids"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.thickener_underflow_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "SUPERNATANT_DS",
+      "group": "回流",
+      "name": "上清液回流干固体",
+      "formula": "supernatant_volume*supernatant_solids",
+      "unit": "tDS/d",
+      "dependencies": [
+        "supernatant_volume",
+        "supernatant_solids"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.supernatant_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CONDITIONING_OVERFLOW_DS",
+      "group": "回流",
+      "name": "调理溢流干固体",
+      "formula": "conditioning_overflow_volume*conditioning_overflow_solids",
+      "unit": "tDS/d",
+      "dependencies": [
+        "conditioning_overflow_volume",
+        "conditioning_overflow_solids"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.conditioning_overflow_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "FILTRATE_DS",
+      "group": "回流",
+      "name": "脱水滤液干固体",
+      "formula": "dewatering_filtrate_volume*dewatering_filtrate_solids",
+      "unit": "tDS/d",
+      "dependencies": [
+        "dewatering_filtrate_volume",
+        "dewatering_filtrate_solids"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.filtrate_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "RETURN_DS",
+      "group": "回流",
+      "name": "合计回流干固体",
+      "formula": "SUPERNATANT_DS+CONDITIONING_OVERFLOW_DS+FILTRATE_DS",
+      "unit": "tDS/d",
+      "dependencies": [
+        "SUPERNATANT_DS",
+        "CONDITIONING_OVERFLOW_DS",
+        "FILTRATE_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.return_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CAKE_DS",
+      "group": "产出",
+      "name": "脱水泥饼干固体",
+      "formula": "cake_wet_mass*(1-cake_moisture)",
+      "unit": "tDS/d",
+      "dependencies": [
+        "cake_wet_mass",
+        "cake_moisture"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.cake_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "SHIPPED_DS",
+      "group": "产出",
+      "name": "外运污泥干固体",
+      "formula": "shipped_wet_mass*(1-shipped_moisture)",
+      "unit": "tDS/d",
+      "dependencies": [
+        "shipped_wet_mass",
+        "shipped_moisture"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.shipped_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "STORAGE_CHANGE_DS",
+      "group": "库存",
+      "name": "日均库存干固体变化",
+      "formula": "(storage_end_ds-storage_begin_ds)/analysis_days",
+      "unit": "tDS/d",
+      "dependencies": [
+        "storage_end_ds",
+        "storage_begin_ds",
+        "analysis_days"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.storage_change_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "BALANCE_INPUT",
+      "group": "平衡",
+      "name": "平衡输入干固体",
+      "formula": "TOTAL_INCOMING_DS+conditioning_chemical_ds+dewatering_chemical_ds",
+      "unit": "tDS/d",
+      "dependencies": [
+        "TOTAL_INCOMING_DS",
+        "conditioning_chemical_ds",
+        "dewatering_chemical_ds"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.balance_input.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "BALANCE_OUTPUT",
+      "group": "平衡",
+      "name": "平衡输出干固体",
+      "formula": "SHIPPED_DS+RETURN_DS+STORAGE_CHANGE_DS",
+      "unit": "tDS/d",
+      "dependencies": [
+        "SHIPPED_DS",
+        "RETURN_DS",
+        "STORAGE_CHANGE_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.balance_output.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "BALANCE_CLOSURE",
+      "group": "平衡",
+      "name": "泥量平衡闭合率",
+      "formula": "BALANCE_OUTPUT/BALANCE_INPUT",
+      "unit": "%",
+      "dependencies": [
+        "BALANCE_OUTPUT",
+        "BALANCE_INPUT"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.balance_closure.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "EFFECTIVE_SLUDGE_REMOVAL",
+      "group": "平衡",
+      "name": "有效排泥率",
+      "formula": "SHIPPED_DS/TOTAL_INCOMING_DS",
+      "unit": "%",
+      "dependencies": [
+        "SHIPPED_DS",
+        "TOTAL_INCOMING_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.effective_sludge_removal.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "RETURN_SOLIDS_RATIO",
+      "group": "回流",
+      "name": "回流固体比",
+      "formula": "RETURN_DS/TOTAL_INCOMING_DS",
+      "unit": "%",
+      "dependencies": [
+        "RETURN_DS",
+        "TOTAL_INCOMING_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.return_solids_ratio.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "THICKENING_FACTOR",
+      "group": "浓缩",
+      "name": "浓缩倍数",
+      "formula": "thickener_underflow_solids/thickener_feed_solids",
+      "unit": "倍",
+      "dependencies": [
+        "thickener_underflow_solids",
+        "thickener_feed_solids"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.thickening_factor.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "THICKENER_CAPTURE",
+      "group": "浓缩",
+      "name": "浓缩固体捕获率",
+      "formula": "THICKENER_UNDERFLOW_DS/THICKENER_FEED_DS",
+      "unit": "%",
+      "dependencies": [
+        "THICKENER_UNDERFLOW_DS",
+        "THICKENER_FEED_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.thickener_capture.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "BATCH_PRODUCTIVITY",
+      "group": "序批浓缩",
+      "name": "序批日处理能力",
+      "formula": "batch_discharge_volume*batch_count_daily",
+      "unit": "m3/d",
+      "dependencies": [
+        "batch_discharge_volume",
+        "batch_count_daily"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.batch_productivity.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "SLG_UNIT_ENERGY",
+      "group": "能耗",
+      "name": "吨进入干固体电耗",
+      "formula": "thickening_energy/TOTAL_INCOMING_DS",
+      "unit": "kWh/tDS",
+      "dependencies": [
+        "thickening_energy",
+        "TOTAL_INCOMING_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "sludge_balance.slg_unit_energy.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    }
+  ],
+  "benchmarks": [
+    {
+      "benchmarkCode": "SLG-BM-01",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "BALANCE_CLOSURE",
+      "name": "泥量平衡闭合范围",
+      "lower": "待一厂一策",
+      "upper": "待一厂一策",
+      "unit": "%",
+      "applicability": "统计周期与库存完整",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "SLG-BM-02",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "EFFECTIVE_SLUDGE_REMOVAL",
+      "name": "有效排泥率下限",
+      "lower": "待一厂一策",
+      "upper": null,
+      "unit": "%",
+      "applicability": "源端与外运可比",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "SLG-BM-03",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "RETURN_SOLIDS_RATIO",
+      "name": "回流固体比上限",
+      "lower": null,
+      "upper": "待一厂一策",
+      "unit": "%",
+      "applicability": "回流计量完整",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "SLG-BM-04",
+      "benchmarkType": "DESIGN",
+      "objectCode": "thickener_feed_solids",
+      "name": "浓缩进泥含固率范围",
+      "lower": "按设计版本",
+      "upper": "按设计版本",
+      "unit": "%",
+      "applicability": "对应浓缩方式",
+      "source": "设计文件",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "SLG-BM-05",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "thickener_underflow_solids",
+      "name": "浓缩泥含固率目标",
+      "lower": "待一厂一策",
+      "upper": "待一厂一策",
+      "unit": "%",
+      "applicability": "对应浓缩方式",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "SLG-BM-06",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "THICKENING_FACTOR",
+      "name": "浓缩倍数目标",
+      "lower": "待一厂一策",
+      "upper": null,
+      "unit": "倍",
+      "applicability": "进出样本可比",
+      "source": "历史优秀期/试点",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "SLG-BM-07",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "THICKENER_CAPTURE",
+      "name": "浓缩捕获率下限",
+      "lower": "待一厂一策",
+      "upper": null,
+      "unit": "%",
+      "applicability": "进出固体同步",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "SLG-BM-08",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "supernatant_solids",
+      "name": "上清液含固率上限",
+      "lower": null,
+      "upper": "待一厂一策",
+      "unit": "%",
+      "applicability": "样本点确认",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "SLG-BM-09",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "dewatering_filtrate_solids",
+      "name": "滤液含固率上限",
+      "lower": null,
+      "upper": "待一厂一策",
+      "unit": "%",
+      "applicability": "DWT输出引用",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "SLG-BM-10",
+      "benchmarkType": "DESIGN",
+      "objectCode": "batch_cycle_minutes",
+      "name": "序批浓缩周期",
+      "lower": "按程序版本",
+      "upper": "按程序版本",
+      "unit": "min",
+      "applicability": "序批式浓缩",
+      "source": "批准程序",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "SLG-BM-11",
+      "benchmarkType": "DESIGN",
+      "objectCode": "batch_settle_minutes",
+      "name": "序批静置时间",
+      "lower": "按程序版本",
+      "upper": "按程序版本",
+      "unit": "min",
+      "applicability": "序批式浓缩",
+      "source": "批准程序",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "SLG-BM-12",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "BATCH_PRODUCTIVITY",
+      "name": "序批日处理能力下限",
+      "lower": "待一厂一策",
+      "upper": null,
+      "unit": "m3/d",
+      "applicability": "序批式浓缩",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "SLG-BM-13",
+      "benchmarkType": "HISTORICAL_BEST",
+      "objectCode": "SLG_UNIT_ENERGY",
+      "name": "浓缩吨干固体电耗上限",
+      "lower": null,
+      "upper": "待历史确认",
+      "unit": "kWh/tDS",
+      "applicability": "泥质与工艺可比",
+      "source": "历史优秀期",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "SLG-BM-14",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "flow_meter_coverage",
+      "name": "排泥流量覆盖率下限",
+      "lower": "待一厂一策",
+      "upper": null,
+      "unit": "%",
+      "applicability": "全部源端",
+      "source": "数据标准",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "SLG-BM-15",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "solids_sample_coverage",
+      "name": "含固率样本覆盖率下限",
+      "lower": "待一厂一策",
+      "upper": null,
+      "unit": "%",
+      "applicability": "全部关键流",
+      "source": "数据标准",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    }
+  ],
+  "rules": [
+    {
+      "ruleCode": "SLG-DATA-01",
+      "group": "数据",
+      "name": "源端排泥证据不足",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.8,
+      "condition": {
+        "op": "FUNCTION",
+        "function": "minimumSourceSludgeEvidenceMissing"
+      },
+      "thresholdRef": "最低证据集",
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "覆盖率、来源、时间和版本",
+      "likelyCauses": [
+        "数据源未接入",
+        "时间或对象口径不完整"
+      ],
+      "recommendation": "补齐最低证据后重新分析",
+      "constraint": "只输出补数要求",
+      "recovery": "最低证据持续满足",
+      "boundary": "数据门槛，不生成业务偏差",
+      "suppresses": [
+        "SLG-BAL-01",
+        "SLG-BAL-02",
+        "SLG-SOURCE-01"
+      ],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "ruleCode": "SLG-DATA-02",
+      "group": "数据",
+      "name": "含固率样本覆盖不足",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.8,
+      "condition": {
+        "op": "FUNCTION",
+        "function": "minimumSolidsCoverageMissing"
+      },
+      "thresholdRef": "最低证据集",
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "覆盖率、来源、时间和版本",
+      "likelyCauses": [
+        "数据源未接入",
+        "时间或对象口径不完整"
+      ],
+      "recommendation": "补齐最低证据后重新分析",
+      "constraint": "只输出补数要求",
+      "recovery": "最低证据持续满足",
+      "boundary": "数据门槛，不生成业务偏差",
+      "suppresses": [
+        "SLG-THK-01",
+        "SLG-THK-02",
+        "SLG-RETURN-01"
+      ],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "ruleCode": "SLG-DATA-03",
+      "group": "数据",
+      "name": "库存与外运口径不完整",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.8,
+      "condition": {
+        "op": "FUNCTION",
+        "function": "inventoryShipmentEvidenceMissing"
+      },
+      "thresholdRef": "最低证据集",
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "覆盖率、来源、时间和版本",
+      "likelyCauses": [
+        "数据源未接入",
+        "时间或对象口径不完整"
+      ],
+      "recommendation": "补齐最低证据后重新分析",
+      "constraint": "只输出补数要求",
+      "recovery": "最低证据持续满足",
+      "boundary": "数据门槛，不生成业务偏差",
+      "suppresses": [
+        "SLG-BAL-01",
+        "SLG-BAL-03"
+      ],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "BAL-01",
+      "group": "平衡",
+      "name": "泥量平衡不闭合",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "BALANCE_CLOSURE",
+        "benchmark": "SLG-BM-01"
+      },
+      "thresholdRef": "SLG-BM-01",
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "源端、回流、外运、库存和药剂干固体",
+      "likelyCauses": [
+        "流量/含固率口径缺失",
+        "库存或旁路未计入"
+      ],
+      "recommendation": "先补齐平衡边界再定位差额",
+      "constraint": "不直接认定积泥或偷排",
+      "recovery": "连续7日闭合",
+      "boundary": "只形成污泥系统平衡结论",
+      "ruleCode": "SLG-BAL-01",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "BAL-02",
+      "group": "平衡",
+      "name": "有效排泥率偏低",
+      "condition": {
+        "op": "LT",
+        "metric": "EFFECTIVE_SLUDGE_REMOVAL",
+        "benchmark": "SLG-BM-02.lower"
+      },
+      "thresholdRef": "SLG-BM-02.lower",
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "源端干固体、外运干固体、库存",
+      "likelyCauses": [
+        "库存累积",
+        "回流固体高或外运滞后"
+      ],
+      "recommendation": "核验库存和回流后优化排泥链",
+      "constraint": "不重做生化泥龄诊断",
+      "recovery": "连续7日恢复",
+      "boundary": "只判断排泥链效率",
+      "ruleCode": "SLG-BAL-02",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "BAL-03",
+      "group": "平衡",
+      "name": "库存异常累积",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "storageAccumulationAbnormal"
+      },
+      "thresholdRef": "approvedStorageChangeRange",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "期初期末库存、产出和外运",
+      "likelyCauses": [
+        "脱水能力不足",
+        "外运节奏不匹配"
+      ],
+      "recommendation": "协调浓缩脱水与外运计划",
+      "constraint": "运输处置合规由所属模块负责",
+      "recovery": "连续3日不累积",
+      "boundary": "只判断库存变化",
+      "ruleCode": "SLG-BAL-03",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "SOURCE-01",
+      "group": "源端",
+      "name": "源端排泥量突变",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "sourceSludgeShiftAbnormal"
+      },
+      "thresholdRef": "sourceHistoricalRange",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "各源单体快照与干固体",
+      "likelyCauses": [
+        "源端工况变化",
+        "计量口径变化"
+      ],
+      "recommendation": "回到源单体查看其已形成结论",
+      "constraint": "本模块不重判源端工艺原因",
+      "recovery": "连续3日稳定",
+      "boundary": "只做多源归集提示",
+      "ruleCode": "SLG-SOURCE-01",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "THK-01",
+      "group": "浓缩",
+      "name": "浓缩泥含固率偏低",
+      "condition": {
+        "op": "LT",
+        "field": "thickener_underflow_solids",
+        "benchmark": "SLG-BM-05.lower"
+      },
+      "thresholdRef": "SLG-BM-05.lower",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "进出含固率、停留和上清液",
+      "likelyCauses": [
+        "进泥过稀",
+        "浓缩时间不足或扰动"
+      ],
+      "recommendation": "优化进泥和浓缩周期",
+      "constraint": "设备原因需转设备模块核验",
+      "recovery": "连续3组样本恢复",
+      "boundary": "只评价浓缩效果",
+      "ruleCode": "SLG-THK-01",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "THK-02",
+      "group": "浓缩",
+      "name": "浓缩捕获率偏低",
+      "condition": {
+        "op": "LT",
+        "metric": "THICKENER_CAPTURE",
+        "benchmark": "SLG-BM-07.lower"
+      },
+      "thresholdRef": "SLG-BM-07.lower",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "同步进出固体与上清液",
+      "likelyCauses": [
+        "上清液带泥",
+        "取样不同步"
+      ],
+      "recommendation": "核验样本后调整静置/排上清液",
+      "constraint": "不得仅凭单点认定跑泥",
+      "recovery": "连续3组样本恢复",
+      "boundary": "只评价浓缩单体",
+      "ruleCode": "SLG-THK-02",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "THK-03",
+      "group": "浓缩",
+      "name": "浓缩倍数不足",
+      "condition": {
+        "op": "LT",
+        "metric": "THICKENING_FACTOR",
+        "benchmark": "SLG-BM-06.lower"
+      },
+      "thresholdRef": "SLG-BM-06.lower",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "进出含固率、周期和负荷",
+      "likelyCauses": [
+        "停留不足",
+        "进泥节奏不合理"
+      ],
+      "recommendation": "优化浓缩周期与批次负荷",
+      "constraint": "保持捕获率和后续脱水稳定",
+      "recovery": "连续7日改善",
+      "boundary": "只形成浓缩优化机会",
+      "ruleCode": "SLG-THK-03",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "RETURN-01",
+      "group": "回流",
+      "name": "回流固体比偏高",
+      "condition": {
+        "op": "GT",
+        "metric": "RETURN_SOLIDS_RATIO",
+        "benchmark": "SLG-BM-03.upper"
+      },
+      "thresholdRef": "SLG-BM-03.upper",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "上清、溢流、滤液干固体",
+      "likelyCauses": [
+        "浓缩/脱水捕获不足",
+        "回流计量异常"
+      ],
+      "recommendation": "按贡献排序核验回流来源",
+      "constraint": "回流对生化影响由整体诊断判断",
+      "recovery": "连续3日恢复",
+      "boundary": "只评价回流负荷事实",
+      "ruleCode": "SLG-RETURN-01",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "RETURN-02",
+      "group": "回流",
+      "name": "上清液含固率偏高",
+      "condition": {
+        "op": "GT",
+        "field": "supernatant_solids",
+        "benchmark": "SLG-BM-08.upper"
+      },
+      "thresholdRef": "SLG-BM-08.upper",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "上清液含固率、排放时点",
+      "likelyCauses": [
+        "静置不足",
+        "排上清液位置/时机不当"
+      ],
+      "recommendation": "调整静置与排放窗口",
+      "constraint": "保持处理能力和库存约束",
+      "recovery": "连续3组样本恢复",
+      "boundary": "只评价浓缩上清液",
+      "ruleCode": "SLG-RETURN-02",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "RETURN-03",
+      "group": "回流",
+      "name": "脱水滤液含固率偏高",
+      "condition": {
+        "op": "GT",
+        "field": "dewatering_filtrate_solids",
+        "benchmark": "SLG-BM-09.upper"
+      },
+      "thresholdRef": "SLG-BM-09.upper",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "DWT滤液结果引用",
+      "likelyCauses": [
+        "脱水捕获率下降",
+        "样本异常"
+      ],
+      "recommendation": "转污泥脱水模块核验",
+      "constraint": "不在本模块诊断脱水设备",
+      "recovery": "连续3组样本恢复",
+      "boundary": "只显示回流负荷引用",
+      "ruleCode": "SLG-RETURN-03",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "BATCH-01",
+      "group": "序批浓缩",
+      "name": "序批周期偏离",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "field": "batch_cycle_minutes",
+        "benchmark": "SLG-BM-10"
+      },
+      "thresholdRef": "SLG-BM-10",
+      "persistence": {
+        "mode": "EVENT",
+        "count": 2
+      },
+      "severity": "GENERAL",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "步骤事件与程序版本",
+      "likelyCauses": [
+        "程序版本错误",
+        "步骤延时/中断"
+      ],
+      "recommendation": "校准批准程序并验证处理量",
+      "constraint": "仅序批式适用",
+      "recovery": "连续2批回归",
+      "boundary": "只判断序批程序",
+      "ruleCode": "SLG-BATCH-01",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "BATCH-02",
+      "group": "序批浓缩",
+      "name": "序批处理能力不足",
+      "condition": {
+        "op": "LT",
+        "metric": "BATCH_PRODUCTIVITY",
+        "benchmark": "SLG-BM-12.lower"
+      },
+      "thresholdRef": "SLG-BM-12.lower",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "批次数、单批排泥量、库存",
+      "likelyCauses": [
+        "周期过长",
+        "批次负荷不足"
+      ],
+      "recommendation": "优化交错时序和单批负荷",
+      "constraint": "保持浓缩效果与库存安全",
+      "recovery": "连续3日恢复",
+      "boundary": "只适用于序批浓缩",
+      "ruleCode": "SLG-BATCH-02",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "OUT-01",
+      "group": "产出",
+      "name": "产泥与外运干固体偏差",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "cakeShipmentMismatch"
+      },
+      "thresholdRef": "approvedCakeShipmentTolerance",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "泥饼产量、外运、库存",
+      "likelyCauses": [
+        "地磅/含水率口径",
+        "临时库存"
+      ],
+      "recommendation": "核对库存和称量口径",
+      "constraint": "不评价运输处置履职",
+      "recovery": "连续3日一致",
+      "boundary": "只形成产出一致性提示",
+      "ruleCode": "SLG-OUT-01",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "ENERGY-01",
+      "group": "能耗",
+      "name": "浓缩吨干固体电耗偏高",
+      "condition": {
+        "op": "GT",
+        "metric": "SLG_UNIT_ENERGY",
+        "benchmark": "SLG-BM-13.upper"
+      },
+      "thresholdRef": "SLG-BM-13.upper",
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "浓缩分项电量、进入干固体",
+      "likelyCauses": [
+        "低负荷长时运行",
+        "批次衔接不合理"
+      ],
+      "recommendation": "优化设备组合和批次时序",
+      "constraint": "设备维修质量由设备模块负责",
+      "recovery": "连续7日节能且效果通过",
+      "boundary": "只评价浓缩局部能耗",
+      "ruleCode": "SLG-ENERGY-01",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "DATA-04",
+      "group": "数据",
+      "name": "排泥流量覆盖不足",
+      "condition": {
+        "op": "LT",
+        "field": "flow_meter_coverage",
+        "benchmark": "SLG-BM-14.lower"
+      },
+      "thresholdRef": "SLG-BM-14.lower",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "源端流量覆盖率",
+      "likelyCauses": [
+        "人工估算多",
+        "流量计未贯通"
+      ],
+      "recommendation": "补齐关键排泥流计量",
+      "constraint": "只输出补数要求",
+      "recovery": "覆盖率连续3日达标",
+      "boundary": "不形成业务偏差",
+      "ruleCode": "SLG-DATA-04",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "DATA-05",
+      "group": "数据",
+      "name": "含固率覆盖不足",
+      "condition": {
+        "op": "LT",
+        "field": "solids_sample_coverage",
+        "benchmark": "SLG-BM-15.lower"
+      },
+      "thresholdRef": "SLG-BM-15.lower",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "关键流含固率样本",
+      "likelyCauses": [
+        "采样频次不足",
+        "点位不明确"
+      ],
+      "recommendation": "补齐同步含固率样本",
+      "constraint": "只输出补数要求",
+      "recovery": "覆盖率连续3日达标",
+      "boundary": "不形成业务偏差",
+      "ruleCode": "SLG-DATA-05",
+      "applicability": "连续浓缩/序批式浓缩/重力/机械浓缩可配置",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    }
+  ],
+  "causes": [
+    {
+      "causeCode": "SLG-DATA-01-01",
+      "ruleCode": "SLG-DATA-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：数据源未接入",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-DATA-01-02",
+      "ruleCode": "SLG-DATA-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：时间或对象口径不完整",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-DATA-02-01",
+      "ruleCode": "SLG-DATA-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：数据源未接入",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-DATA-02-02",
+      "ruleCode": "SLG-DATA-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：时间或对象口径不完整",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-DATA-03-01",
+      "ruleCode": "SLG-DATA-03",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：数据源未接入",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-DATA-03-02",
+      "ruleCode": "SLG-DATA-03",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：时间或对象口径不完整",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-BAL-01-01",
+      "ruleCode": "SLG-BAL-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：流量/含固率口径缺失",
+      "requiredEvidence": "源端、回流、外运、库存和药剂干固体",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-BAL-01-02",
+      "ruleCode": "SLG-BAL-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：库存或旁路未计入",
+      "requiredEvidence": "源端、回流、外运、库存和药剂干固体",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-BAL-02-01",
+      "ruleCode": "SLG-BAL-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：库存累积",
+      "requiredEvidence": "源端干固体、外运干固体、库存",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-BAL-02-02",
+      "ruleCode": "SLG-BAL-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：回流固体高或外运滞后",
+      "requiredEvidence": "源端干固体、外运干固体、库存",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-BAL-03-01",
+      "ruleCode": "SLG-BAL-03",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：脱水能力不足",
+      "requiredEvidence": "期初期末库存、产出和外运",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-BAL-03-02",
+      "ruleCode": "SLG-BAL-03",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：外运节奏不匹配",
+      "requiredEvidence": "期初期末库存、产出和外运",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-SOURCE-01-01",
+      "ruleCode": "SLG-SOURCE-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：源端工况变化",
+      "requiredEvidence": "各源单体快照与干固体",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-SOURCE-01-02",
+      "ruleCode": "SLG-SOURCE-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：计量口径变化",
+      "requiredEvidence": "各源单体快照与干固体",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-THK-01-01",
+      "ruleCode": "SLG-THK-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：进泥过稀",
+      "requiredEvidence": "进出含固率、停留和上清液",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-THK-01-02",
+      "ruleCode": "SLG-THK-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：浓缩时间不足或扰动",
+      "requiredEvidence": "进出含固率、停留和上清液",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-THK-02-01",
+      "ruleCode": "SLG-THK-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：上清液带泥",
+      "requiredEvidence": "同步进出固体与上清液",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-THK-02-02",
+      "ruleCode": "SLG-THK-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：取样不同步",
+      "requiredEvidence": "同步进出固体与上清液",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-THK-03-01",
+      "ruleCode": "SLG-THK-03",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：停留不足",
+      "requiredEvidence": "进出含固率、周期和负荷",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-THK-03-02",
+      "ruleCode": "SLG-THK-03",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：进泥节奏不合理",
+      "requiredEvidence": "进出含固率、周期和负荷",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-RETURN-01-01",
+      "ruleCode": "SLG-RETURN-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：浓缩/脱水捕获不足",
+      "requiredEvidence": "上清、溢流、滤液干固体",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-RETURN-01-02",
+      "ruleCode": "SLG-RETURN-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：回流计量异常",
+      "requiredEvidence": "上清、溢流、滤液干固体",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-RETURN-02-01",
+      "ruleCode": "SLG-RETURN-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：静置不足",
+      "requiredEvidence": "上清液含固率、排放时点",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-RETURN-02-02",
+      "ruleCode": "SLG-RETURN-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：排上清液位置/时机不当",
+      "requiredEvidence": "上清液含固率、排放时点",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-RETURN-03-01",
+      "ruleCode": "SLG-RETURN-03",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：脱水捕获率下降",
+      "requiredEvidence": "DWT滤液结果引用",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-RETURN-03-02",
+      "ruleCode": "SLG-RETURN-03",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：样本异常",
+      "requiredEvidence": "DWT滤液结果引用",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-BATCH-01-01",
+      "ruleCode": "SLG-BATCH-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：程序版本错误",
+      "requiredEvidence": "步骤事件与程序版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-BATCH-01-02",
+      "ruleCode": "SLG-BATCH-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：步骤延时/中断",
+      "requiredEvidence": "步骤事件与程序版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-BATCH-02-01",
+      "ruleCode": "SLG-BATCH-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：周期过长",
+      "requiredEvidence": "批次数、单批排泥量、库存",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-BATCH-02-02",
+      "ruleCode": "SLG-BATCH-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：批次负荷不足",
+      "requiredEvidence": "批次数、单批排泥量、库存",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-OUT-01-01",
+      "ruleCode": "SLG-OUT-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：地磅/含水率口径",
+      "requiredEvidence": "泥饼产量、外运、库存",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-OUT-01-02",
+      "ruleCode": "SLG-OUT-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：临时库存",
+      "requiredEvidence": "泥饼产量、外运、库存",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-ENERGY-01-01",
+      "ruleCode": "SLG-ENERGY-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：低负荷长时运行",
+      "requiredEvidence": "浓缩分项电量、进入干固体",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-ENERGY-01-02",
+      "ruleCode": "SLG-ENERGY-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：批次衔接不合理",
+      "requiredEvidence": "浓缩分项电量、进入干固体",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-DATA-04-01",
+      "ruleCode": "SLG-DATA-04",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：人工估算多",
+      "requiredEvidence": "源端流量覆盖率",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-DATA-04-02",
+      "ruleCode": "SLG-DATA-04",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：流量计未贯通",
+      "requiredEvidence": "源端流量覆盖率",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-DATA-05-01",
+      "ruleCode": "SLG-DATA-05",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：采样频次不足",
+      "requiredEvidence": "关键流含固率样本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "SLG-DATA-05-02",
+      "ruleCode": "SLG-DATA-05",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：点位不明确",
+      "requiredEvidence": "关键流含固率样本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    }
+  ],
+  "pageMappings": [
+    {
+      "componentCode": "SLG-P1-01",
+      "page": "分析概览",
+      "componentType": "SUMMARY",
+      "name": "分析概览摘要",
+      "binding": "sludge_balance.1.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P1-02",
+      "page": "分析概览",
+      "componentType": "EVIDENCE",
+      "name": "分析概览证据",
+      "binding": "sludge_balance.1.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P1-03",
+      "page": "分析概览",
+      "componentType": "ACTION",
+      "name": "分析概览操作",
+      "binding": "sludge_balance.1.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P1-04",
+      "page": "分析概览",
+      "componentType": "BOUNDARY",
+      "name": "分析概览边界",
+      "binding": "sludge_balance.1.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P2-01",
+      "page": "数据与计算",
+      "componentType": "SUMMARY",
+      "name": "数据与计算摘要",
+      "binding": "sludge_balance.2.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P2-02",
+      "page": "数据与计算",
+      "componentType": "EVIDENCE",
+      "name": "数据与计算证据",
+      "binding": "sludge_balance.2.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P2-03",
+      "page": "数据与计算",
+      "componentType": "ACTION",
+      "name": "数据与计算操作",
+      "binding": "sludge_balance.2.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P2-04",
+      "page": "数据与计算",
+      "componentType": "BOUNDARY",
+      "name": "数据与计算边界",
+      "binding": "sludge_balance.2.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P3-01",
+      "page": "偏差诊断",
+      "componentType": "SUMMARY",
+      "name": "偏差诊断摘要",
+      "binding": "sludge_balance.3.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P3-02",
+      "page": "偏差诊断",
+      "componentType": "EVIDENCE",
+      "name": "偏差诊断证据",
+      "binding": "sludge_balance.3.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P3-03",
+      "page": "偏差诊断",
+      "componentType": "ACTION",
+      "name": "偏差诊断操作",
+      "binding": "sludge_balance.3.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P3-04",
+      "page": "偏差诊断",
+      "componentType": "BOUNDARY",
+      "name": "偏差诊断边界",
+      "binding": "sludge_balance.3.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P4-01",
+      "page": "优化方案",
+      "componentType": "SUMMARY",
+      "name": "优化方案摘要",
+      "binding": "sludge_balance.4.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P4-02",
+      "page": "优化方案",
+      "componentType": "EVIDENCE",
+      "name": "优化方案证据",
+      "binding": "sludge_balance.4.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P4-03",
+      "page": "优化方案",
+      "componentType": "ACTION",
+      "name": "优化方案操作",
+      "binding": "sludge_balance.4.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P4-04",
+      "page": "优化方案",
+      "componentType": "BOUNDARY",
+      "name": "优化方案边界",
+      "binding": "sludge_balance.4.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P5-01",
+      "page": "效果跟踪",
+      "componentType": "SUMMARY",
+      "name": "效果跟踪摘要",
+      "binding": "sludge_balance.5.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P5-02",
+      "page": "效果跟踪",
+      "componentType": "EVIDENCE",
+      "name": "效果跟踪证据",
+      "binding": "sludge_balance.5.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P5-03",
+      "page": "效果跟踪",
+      "componentType": "ACTION",
+      "name": "效果跟踪操作",
+      "binding": "sludge_balance.5.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "SLG-P5-04",
+      "page": "效果跟踪",
+      "componentType": "BOUNDARY",
+      "name": "效果跟踪边界",
+      "binding": "sludge_balance.5.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    }
+  ],
+  "dictionaries": [
+    [
+      "evaluation_status",
+      "NOT_APPLICABLE",
+      "不适用",
+      1
+    ],
+    [
+      "evaluation_status",
+      "DATA_INSUFFICIENT",
+      "数据不足",
+      2
+    ],
+    [
+      "evaluation_status",
+      "NORMAL",
+      "正常",
+      3
+    ],
+    [
+      "evaluation_status",
+      "TRIGGERED",
+      "已触发",
+      4
+    ],
+    [
+      "evaluation_status",
+      "SUPPRESSED",
+      "已抑制",
+      5
+    ],
+    [
+      "conclusion_type",
+      "CONFIRMED_DEVIATION",
+      "已确认偏差",
+      1
+    ],
+    [
+      "conclusion_type",
+      "SUSPECTED_DEVIATION",
+      "疑似偏差",
+      2
+    ],
+    [
+      "conclusion_type",
+      "OPTIMIZATION_OPPORTUNITY",
+      "优化机会",
+      3
+    ],
+    [
+      "conclusion_type",
+      "DATA_INSUFFICIENT",
+      "数据不足",
+      4
+    ],
+    [
+      "benchmark_type",
+      "DESIGN",
+      "设计值",
+      1
+    ],
+    [
+      "benchmark_type",
+      "SITE_TARGET",
+      "一厂一策目标",
+      2
+    ],
+    [
+      "benchmark_type",
+      "STANDARD",
+      "标准/规范",
+      3
+    ],
+    [
+      "benchmark_type",
+      "HISTORICAL_BEST",
+      "历史优秀期",
+      4
+    ],
+    [
+      "benchmark_type",
+      "PEER_BENCHMARK",
+      "同类对标",
+      5
+    ]
+  ],
+  "counts": {
+    "fields": 47,
+    "metrics": 23,
+    "benchmarks": 15,
+    "rules": 19,
+    "causes": 38,
+    "pageMappings": 20,
+    "testCases": 152,
+    "pilotItems": 20
+  }
+}

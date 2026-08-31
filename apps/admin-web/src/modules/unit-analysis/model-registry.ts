@@ -1,5 +1,11 @@
 import rawHscModel from '../high-efficiency-sedimentation/hsc-model-0.1.0.json'
 import rawVfModel from '../v-filter-analysis/vf-model-0.1.0.json'
+import rawPretreatmentModel from './pretreatment-model-0.1.0.json'
+import rawDisinfectionModel from './disinfection-model-0.1.0.json'
+import rawSludgeBalanceModel from './sludge-balance-model-0.1.0.json'
+import rawDewateringModel from './dewatering-model-0.1.0.json'
+import rawMbbrModel from './mbbr-model-0.1.0.json'
+import rawAerationAirModel from './aeration-air-model-0.1.0.json'
 
 export interface UnitModelField {
   fieldCode: string
@@ -9,6 +15,8 @@ export interface UnitModelField {
   unit: string | null
   source: string
   requiredMode: string
+  cadence: string
+  applicability: string
   boundary: string
 }
 
@@ -17,6 +25,7 @@ export interface UnitModelMetric {
   group: string
   name: string
   formula: string
+  dependencies: string[]
   unit: string
   precision: string
   minimumCoverage: number
@@ -31,6 +40,11 @@ export interface UnitModelBenchmark {
   status: string
   publishable: boolean
   source: string
+  lower: string | number | null
+  upper: string | number | null
+  unit: string
+  applicability: string
+  note: string
 }
 
 export interface UnitModelRule {
@@ -47,6 +61,8 @@ export interface UnitModelRule {
   recovery: string
   boundary: string
   suppresses: string[]
+  applicability: string
+  thresholdRef: string
 }
 
 export interface UnitModelCause {
@@ -56,6 +72,8 @@ export interface UnitModelCause {
   question: string
   requiredEvidence: string
   confirmationCriteria: string
+  evidenceSource?: string
+  priority?: string
 }
 
 export interface UnitMachineModel {
@@ -90,6 +108,8 @@ function normalizeModel(raw: RawRecord): UnitMachineModel {
       unit: item.unit === '—' ? null : item.unit,
       source: item.source ?? item.primarySource ?? '未配置',
       requiredMode: item.requiredMode,
+      cadence: item.cadence ?? '',
+      applicability: item.applicability ?? '全部',
       boundary: item.boundary ?? item.boundaryNote ?? ''
     })),
     metrics: raw.metrics.map((item: RawRecord) => ({
@@ -97,6 +117,7 @@ function normalizeModel(raw: RawRecord): UnitMachineModel {
       group: item.group,
       name: item.name,
       formula: item.formula ?? item.formulaDisplay ?? '',
+      dependencies: item.dependencies ?? [],
       unit: item.unit ?? '',
       precision: item.precision ?? '2',
       minimumCoverage: item.minimumCoverage ?? 0.8,
@@ -109,7 +130,12 @@ function normalizeModel(raw: RawRecord): UnitMachineModel {
       name: item.name,
       status: item.status,
       publishable: Boolean(item.publishable),
-      source: item.source ?? ''
+      source: item.source ?? '',
+      lower: item.lower ?? null,
+      upper: item.upper ?? null,
+      unit: item.unit ?? '',
+      applicability: item.applicability ?? '全部',
+      note: item.note ?? ''
     })),
     rules: raw.rules.map((item: RawRecord) => ({
       ruleCode: item.ruleCode,
@@ -124,7 +150,9 @@ function normalizeModel(raw: RawRecord): UnitMachineModel {
       constraint: item.constraint ?? '',
       recovery: item.recovery ?? item.recoveryDescription ?? '',
       boundary: item.boundary ?? item.boundaryNote ?? '',
-      suppresses: item.suppresses ?? []
+      suppresses: item.suppresses ?? [],
+      applicability: item.applicability ?? '全部',
+      thresholdRef: item.thresholdRef ?? ''
     })),
     causes: raw.causes,
     boundary: raw.boundary,
@@ -153,6 +181,14 @@ export function getHscModelVersion(versionNo: string) {
 
 export const hscRegisteredModel = registerImprovementModel(rawHscModel as RawRecord)
 export const vfRegisteredModel = registerImprovementModel(rawVfModel as RawRecord)
+export const remainingRegisteredModels = [
+  rawPretreatmentModel,
+  rawDisinfectionModel,
+  rawSludgeBalanceModel,
+  rawDewateringModel,
+  rawMbbrModel,
+  rawAerationAirModel
+].map(item => registerImprovementModel(item as RawRecord))
 
 export function registeredModelCodes() {
   return Array.from(new Set(Array.from(modelRegistry.values()).map(item => item.modelCode)))
