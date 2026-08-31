@@ -10,6 +10,8 @@ import ProcessEvaluationPage from './modules/process-evaluation/ProcessEvaluatio
 import { isProcessEvaluationPageId } from './modules/process-evaluation/rules'
 import type { ProcessEvaluationPageId } from './modules/process-evaluation/types'
 import LabRawRecordsPage from './modules/lab-raw-records/LabRawRecordsPage.vue'
+import HighEfficiencySedimentationPage from './modules/high-efficiency-sedimentation/HighEfficiencySedimentationPage.vue'
+import VFilterAnalysisPage from './modules/v-filter-analysis/VFilterAnalysisPage.vue'
 
 const api = new ApiClient()
 const token = ref(sessionStorage.getItem('accessToken') || '')
@@ -110,7 +112,7 @@ const plannedPages = {
   improvementAnalysis: { module:'改进提升', title:'改进分析', stage:'A', description:'分析问题结构、关闭效率和复发趋势，支持持续改进。', capabilities:['问题趋势','关闭周期','复发分析','改进成效'] }
 } as const
 type PlannedPageId = keyof typeof plannedPages
-type AppPage = 'platform' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education' | PlannedPageId | QualityPageId | ProcessEvaluationPageId
+type AppPage = 'platform' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'highEfficiencySedimentation' | 'vFilterAnalysis' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education' | PlannedPageId | QualityPageId | ProcessEvaluationPageId
 const active = ref<AppPage>('platform')
 const currentPlannedPage = computed(()=>plannedPages[active.value as PlannedPageId])
 const currentQualityPage = computed(()=>isQualityPageId(active.value) ? active.value : null)
@@ -1352,7 +1354,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
         </section>
         <section class="nav-group">
           <button class="nav-group-title" @click="toggleModule('efficiency')"><span class="nav-icon">♻</span><span>提质增效</span><i :class="{open:expandedModules.efficiency}">›</i></button>
-          <div v-show="expandedModules.efficiency" class="nav-children"><button disabled>能耗计量 <small>规划中</small></button><button disabled>能效分析 <small>规划中</small></button></div>
+          <div v-show="expandedModules.efficiency" class="nav-children"><button :class="{selected:active==='highEfficiencySedimentation'}" @click="active='highEfficiencySedimentation'">高效沉淀池分析</button><button :class="{selected:active==='vFilterAnalysis'}" @click="active='vFilterAnalysis'">V型滤池分析</button><button disabled>能耗计量 <small>规划中</small></button><button disabled>能效分析 <small>规划中</small></button></div>
         </section>
         <section class="nav-group">
           <button class="nav-group-title" @click="toggleModule('evaluation')"><span class="nav-icon">✓</span><span>过程评价</span><i :class="{open:expandedModules.evaluation}">›</i></button>
@@ -1384,6 +1386,8 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
           </section>
         </template>
         <ProcessEvaluationPage v-else-if="currentProcessEvaluationPage" :active-page="currentProcessEvaluationPage" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" @update:active-page="openProcessEvaluationPage" @navigate:app="handleProcessEvaluationNavigate" />
+        <HighEfficiencySedimentationPage v-else-if="active==='highEfficiencySedimentation'" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" />
+        <VFilterAnalysisPage v-else-if="active==='vFilterAnalysis'" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" />
         <template v-else-if="currentPlannedPage">
           <section class="module-skeleton-head">
             <div><p class="eyebrow">{{currentPlannedPage.module}} · {{currentSite?.code||'CURRENT SITE'}}</p><h1>{{currentPlannedPage.title}}</h1><p>{{currentPlannedPage.description}}</p></div>
