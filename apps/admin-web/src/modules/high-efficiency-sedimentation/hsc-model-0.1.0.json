@@ -1,0 +1,3760 @@
+{
+  "$schema": "./hsc-model.schema.json",
+  "modelCode": "HSC",
+  "modelName": "高效沉淀池分析",
+  "version": "0.1.0",
+  "status": "DRAFT",
+  "objectScope": "UNIT",
+  "ownerDomain": "unit.hsc",
+  "timezone": "Asia/Shanghai",
+  "processTypes": [
+    "常规高效沉淀",
+    "磁混凝",
+    "微砂",
+    "其他"
+  ],
+  "pages": [
+    "分析概览",
+    "数据与计算",
+    "偏差诊断",
+    "优化方案",
+    "效果跟踪"
+  ],
+  "boundary": {
+    "owns": [
+      "高效池水力能力",
+      "混合絮凝",
+      "沉淀效果",
+      "单体药剂效率",
+      "单体回流排泥",
+      "单体能耗成本",
+      "优化验证"
+    ],
+    "references": [
+      "全厂工艺诊断",
+      "化验结果与复核状态",
+      "设备状态与工单",
+      "药剂批次质检",
+      "安全限制"
+    ],
+    "forbids": [
+      "全厂TP超标系统原因",
+      "生物除磷和泥龄诊断",
+      "设备维修质量评价",
+      "化验管理评价",
+      "采购管理评价",
+      "安全管理评价"
+    ]
+  },
+  "benchmarkResolution": {
+    "displayOrder": [
+      "DESIGN",
+      "SITE_TARGET",
+      "STANDARD",
+      "HISTORICAL_BEST",
+      "PEER_BENCHMARK"
+    ],
+    "allowUnconfirmedExperience": false,
+    "noMatchBehavior": "NO_APPLICABLE_BENCHMARK"
+  },
+  "evaluationStatuses": [
+    "NOT_APPLICABLE",
+    "DATA_INSUFFICIENT",
+    "NORMAL",
+    "TRIGGERED",
+    "SUPPRESSED"
+  ],
+  "registries": {
+    "functions": [
+      "ABS",
+      "sameLoadEffectDeteriorated",
+      "unitEffectInsufficient",
+      "flocculantRatioAbnormal",
+      "unitEffluentStable",
+      "influentComparable",
+      "returnSludgeCombinationAbnormal",
+      "chemicalMinimumEvidenceSatisfied",
+      "influentEffluentComparable"
+    ],
+    "benchmarkReferences": [
+      "APPLICABLE_CAPACITY_UPPER",
+      "APPLICABLE_UPPER",
+      "APPLICABLE_LOWER",
+      "APPLICABLE_RANGE",
+      "SITE_TARGET_UPPER",
+      "SITE_TARGET_LOWER",
+      "ALLOWED_DEVIATION",
+      "NEGATIVE_ALLOWED_DEVIATION",
+      "HISTORICAL_OR_SITE_TARGET_UPPER",
+      "SITE_TARGET_OR_HISTORICAL_UPPER",
+      "APPLICABLE_COAG_TARGET"
+    ],
+    "modelReferences": [
+      "chemicalStoichiometry",
+      "sludgeStoichiometry"
+    ],
+    "contextReferences": [
+      "beforeTotalCostPerWater",
+      "comparableDaysPerYear"
+    ]
+  },
+  "fields": [
+    {
+      "fieldCode": "site_id",
+      "group": "对象标识",
+      "name": "厂区",
+      "description": "分析对象所属厂区",
+      "dataType": "REFERENCE",
+      "unit": null,
+      "updateFrequency": "初始化",
+      "inputMode": "系统带出",
+      "primarySource": "基础资料",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": "必须存在且有权限",
+      "defaultPage": "全部",
+      "boundaryNote": "不在单体内维护厂区主数据"
+    },
+    {
+      "fieldCode": "unit_id",
+      "group": "对象标识",
+      "name": "高效沉淀池实例",
+      "description": "厂区内实际单体唯一标识",
+      "dataType": "REFERENCE",
+      "unit": null,
+      "updateFrequency": "初始化",
+      "inputMode": "系统带出",
+      "primarySource": "工艺单元主数据",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": "厂区内唯一",
+      "defaultPage": "全部",
+      "boundaryNote": "同一单体不按月份复制"
+    },
+    {
+      "fieldCode": "analysis_period",
+      "group": "对象标识",
+      "name": "分析周期",
+      "description": "本次分析的开始和结束日期",
+      "dataType": "DATE_RANGE",
+      "unit": null,
+      "updateFrequency": "每次分析",
+      "inputMode": "选择",
+      "primarySource": "分析任务",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": "结束日期不得早于开始日期",
+      "defaultPage": "全部",
+      "boundaryNote": "周期数据均绑定本周期"
+    },
+    {
+      "fieldCode": "model_version",
+      "group": "对象标识",
+      "name": "模型版本",
+      "description": "本次计算和诊断使用的模型版本",
+      "dataType": "VERSION",
+      "unit": null,
+      "updateFrequency": "每次分析",
+      "inputMode": "系统带出",
+      "primarySource": "模型版本",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": "已发布版本",
+      "defaultPage": "全部",
+      "boundaryNote": "历史分析不可被新版本覆盖"
+    },
+    {
+      "fieldCode": "process_type",
+      "group": "适用配置",
+      "name": "工艺类型",
+      "description": "常规高效沉淀、磁混凝、微砂等",
+      "dataType": "ENUM",
+      "unit": null,
+      "updateFrequency": "初始化",
+      "inputMode": "选择",
+      "primarySource": "设计资料",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": "引用工艺类型字典",
+      "defaultPage": "概览",
+      "boundaryNote": "控制专用字段和规则"
+    },
+    {
+      "fieldCode": "design_capacity",
+      "group": "设计基线",
+      "name": "设计处理规模",
+      "description": "单体设计日处理规模",
+      "dataType": "NUMBER",
+      "unit": "m³/d",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "设计文件",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "必须保存设计来源"
+    },
+    {
+      "fieldCode": "design_peak_flow",
+      "group": "设计基线",
+      "name": "设计峰值小时流量",
+      "description": "适用设计峰值工况",
+      "dataType": "NUMBER",
+      "unit": "m³/h",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "设计文件",
+      "requiredMode": "OPTIONAL",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "没有时允许为空"
+    },
+    {
+      "fieldCode": "mix_group_count",
+      "group": "构筑物",
+      "name": "混合区设计组数",
+      "description": "混合区并联组数",
+      "dataType": "INTEGER",
+      "unit": "组",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "竣工图",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=1",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "floc_group_count",
+      "group": "构筑物",
+      "name": "絮凝区设计组数",
+      "description": "絮凝区并联组数",
+      "dataType": "INTEGER",
+      "unit": "组",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "竣工图",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=1",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "settle_group_count",
+      "group": "构筑物",
+      "name": "沉淀区设计组数",
+      "description": "沉淀区并联组数",
+      "dataType": "INTEGER",
+      "unit": "组",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "竣工图",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=1",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "mix_volume",
+      "group": "构筑物",
+      "name": "混合区有效容积",
+      "description": "全部适用混合区有效容积",
+      "dataType": "NUMBER",
+      "unit": "m³",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "竣工图",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "按运行组数折算"
+    },
+    {
+      "fieldCode": "floc_volume",
+      "group": "构筑物",
+      "name": "絮凝区有效容积",
+      "description": "全部适用絮凝区有效容积",
+      "dataType": "NUMBER",
+      "unit": "m³",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "竣工图",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "按运行组数折算"
+    },
+    {
+      "fieldCode": "settle_volume",
+      "group": "构筑物",
+      "name": "沉淀区有效容积",
+      "description": "全部适用沉淀区有效容积",
+      "dataType": "NUMBER",
+      "unit": "m³",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "竣工图",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "按运行组数折算"
+    },
+    {
+      "fieldCode": "settle_area",
+      "group": "构筑物",
+      "name": "沉淀区有效面积",
+      "description": "设计可用沉淀面积",
+      "dataType": "NUMBER",
+      "unit": "㎡",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "竣工图",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "需扣除不可用面积"
+    },
+    {
+      "fieldCode": "lamella_angle",
+      "group": "构筑物",
+      "name": "斜管倾角",
+      "description": "斜管或斜板安装倾角",
+      "dataType": "NUMBER",
+      "unit": "°",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "设计文件",
+      "requiredMode": "OPTIONAL",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.lamella"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "斜管/斜板",
+      "validationDescription": "0—90",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "lamella_length",
+      "group": "构筑物",
+      "name": "斜管长度",
+      "description": "斜管或斜板有效长度",
+      "dataType": "NUMBER",
+      "unit": "m",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "设计文件",
+      "requiredMode": "OPTIONAL",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.lamella"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "斜管/斜板",
+      "validationDescription": ">0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "design_surface_load_min",
+      "group": "设计基线",
+      "name": "设计表面负荷下限",
+      "description": "设计文件规定的表面负荷下限",
+      "dataType": "NUMBER",
+      "unit": "m³/(㎡·h)",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "设计文件",
+      "requiredMode": "OPTIONAL",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "优先于经验值"
+    },
+    {
+      "fieldCode": "design_surface_load_max",
+      "group": "设计基线",
+      "name": "设计表面负荷上限",
+      "description": "设计文件规定的表面负荷上限",
+      "dataType": "NUMBER",
+      "unit": "m³/(㎡·h)",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "设计文件",
+      "requiredMode": "OPTIONAL",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">下限",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "优先于经验值"
+    },
+    {
+      "fieldCode": "mixer_rated_power",
+      "group": "设备基线",
+      "name": "混合搅拌器额定功率",
+      "description": "单台额定功率",
+      "dataType": "NUMBER",
+      "unit": "kW",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "设备台账",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "mixer_rated_speed",
+      "group": "设备基线",
+      "name": "混合搅拌器额定转速",
+      "description": "设备额定或最大转速",
+      "dataType": "NUMBER",
+      "unit": "rpm",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "设备台账",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "floc_rated_power",
+      "group": "设备基线",
+      "name": "絮凝搅拌器额定功率",
+      "description": "单台额定功率",
+      "dataType": "NUMBER",
+      "unit": "kW",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "设备台账",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "floc_rated_speed",
+      "group": "设备基线",
+      "name": "絮凝搅拌器额定转速",
+      "description": "设备额定或最大转速",
+      "dataType": "NUMBER",
+      "unit": "rpm",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "设备台账",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "return_pump_rated_flow",
+      "group": "设备基线",
+      "name": "回流泵额定流量",
+      "description": "单台额定流量",
+      "dataType": "NUMBER",
+      "unit": "m³/h",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "设备台账",
+      "requiredMode": "OPTIONAL",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.sludgeReturn"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "配置污泥回流",
+      "validationDescription": ">0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "waste_pump_rated_flow",
+      "group": "设备基线",
+      "name": "排泥泵额定流量",
+      "description": "单台额定流量",
+      "dataType": "NUMBER",
+      "unit": "m³/h",
+      "updateFrequency": "初始化",
+      "inputMode": "人工录入",
+      "primarySource": "设备台账",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "coagulant_name",
+      "group": "药剂基线",
+      "name": "混凝剂名称",
+      "description": "当前使用的商品混凝剂",
+      "dataType": "ENUM",
+      "unit": null,
+      "updateFrequency": "药剂变更",
+      "inputMode": "选择",
+      "primarySource": "药剂主数据",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": "引用药剂字典",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "coagulant_active_component",
+      "group": "药剂基线",
+      "name": "混凝剂有效成分",
+      "description": "Fe、FeCl3、Al2O3等核算口径",
+      "dataType": "ENUM",
+      "unit": null,
+      "updateFrequency": "药剂变更",
+      "inputMode": "系统带出",
+      "primarySource": "药剂主数据",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": "与药剂匹配",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "理论核算必须使用"
+    },
+    {
+      "fieldCode": "coagulant_active_content",
+      "group": "药剂基线",
+      "name": "混凝剂有效成分占比",
+      "description": "检测或合格证确认的有效成分",
+      "dataType": "PERCENT",
+      "unit": "%",
+      "updateFrequency": "批次/周期",
+      "inputMode": "系统带出",
+      "primarySource": "药剂质检",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": "0—100%",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "缺失时药耗诊断降置信度"
+    },
+    {
+      "fieldCode": "coagulant_density",
+      "group": "药剂基线",
+      "name": "混凝剂密度",
+      "description": "体积投加换算质量投加所需",
+      "dataType": "NUMBER",
+      "unit": "kg/L",
+      "updateFrequency": "批次/周期",
+      "inputMode": "系统带出",
+      "primarySource": "药剂质检",
+      "requiredMode": "CONDITIONAL",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.coagulantMetering"
+        },
+        "right": "VOLUME"
+      },
+      "applicabilityDescription": "体积计量",
+      "validationDescription": ">0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "质量计量时可不填"
+    },
+    {
+      "fieldCode": "coagulant_price",
+      "group": "成本基线",
+      "name": "混凝剂单价",
+      "description": "含税或不含税口径需明确",
+      "dataType": "NUMBER",
+      "unit": "元/t",
+      "updateFrequency": "价格变更",
+      "inputMode": "人工录入",
+      "primarySource": "采购合同",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "保存生效日期"
+    },
+    {
+      "fieldCode": "flocculant_name",
+      "group": "药剂基线",
+      "name": "絮凝剂名称",
+      "description": "当前使用的絮凝剂",
+      "dataType": "ENUM",
+      "unit": null,
+      "updateFrequency": "药剂变更",
+      "inputMode": "选择",
+      "primarySource": "药剂主数据",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": "引用药剂字典",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "flocculant_price",
+      "group": "成本基线",
+      "name": "絮凝剂单价",
+      "description": "絮凝剂商品单价",
+      "dataType": "NUMBER",
+      "unit": "元/t",
+      "updateFrequency": "价格变更",
+      "inputMode": "人工录入",
+      "primarySource": "采购合同",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "保存生效日期"
+    },
+    {
+      "fieldCode": "actual_daily_flow",
+      "group": "周期运行",
+      "name": "实际日均处理水量",
+      "description": "分析周期内有效日均水量",
+      "dataType": "NUMBER",
+      "unit": "m³/d",
+      "updateFrequency": "每日/周期",
+      "inputMode": "接口优先",
+      "primarySource": "流量计",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "概览",
+      "boundaryNote": "需记录覆盖率"
+    },
+    {
+      "fieldCode": "peak_hourly_flow",
+      "group": "周期运行",
+      "name": "峰值小时流量",
+      "description": "分析周期内有效峰值小时流量",
+      "dataType": "NUMBER",
+      "unit": "m³/h",
+      "updateFrequency": "每日/周期",
+      "inputMode": "接口优先",
+      "primarySource": "流量计",
+      "requiredMode": "OPTIONAL",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "峰值能力诊断使用"
+    },
+    {
+      "fieldCode": "running_settle_groups",
+      "group": "周期运行",
+      "name": "沉淀区运行组数",
+      "description": "分析周期内主要运行组数",
+      "dataType": "INTEGER",
+      "unit": "组",
+      "updateFrequency": "每日/周期",
+      "inputMode": "接口/人工",
+      "primarySource": "运行记录",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": "1—设计组数",
+      "defaultPage": "概览",
+      "boundaryNote": "负荷计算分母"
+    },
+    {
+      "fieldCode": "influent_cod",
+      "group": "水质",
+      "name": "单元进水COD",
+      "description": "高效池入口COD周期代表值",
+      "dataType": "NUMBER",
+      "unit": "mg/L",
+      "updateFrequency": "按计划",
+      "inputMode": "接口优先",
+      "primarySource": "化验结果",
+      "requiredMode": "OPTIONAL",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "采样需按水力时滞匹配"
+    },
+    {
+      "fieldCode": "effluent_cod",
+      "group": "水质",
+      "name": "单元出水COD",
+      "description": "高效池出口COD周期代表值",
+      "dataType": "NUMBER",
+      "unit": "mg/L",
+      "updateFrequency": "按计划",
+      "inputMode": "接口优先",
+      "primarySource": "化验结果",
+      "requiredMode": "OPTIONAL",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "influent_ss",
+      "group": "水质",
+      "name": "单元进水SS",
+      "description": "高效池入口SS周期代表值",
+      "dataType": "NUMBER",
+      "unit": "mg/L",
+      "updateFrequency": "按计划",
+      "inputMode": "接口优先",
+      "primarySource": "化验结果",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "概览",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "effluent_ss",
+      "group": "水质",
+      "name": "单元出水SS",
+      "description": "高效池出口SS周期代表值",
+      "dataType": "NUMBER",
+      "unit": "mg/L",
+      "updateFrequency": "按计划",
+      "inputMode": "接口优先",
+      "primarySource": "化验结果",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "概览",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "influent_tp",
+      "group": "水质",
+      "name": "单元进水TP",
+      "description": "高效池入口TP周期代表值",
+      "dataType": "NUMBER",
+      "unit": "mg/L",
+      "updateFrequency": "按计划",
+      "inputMode": "接口优先",
+      "primarySource": "化验结果",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "概览",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "effluent_tp",
+      "group": "水质",
+      "name": "单元出水TP",
+      "description": "高效池出口TP周期代表值",
+      "dataType": "NUMBER",
+      "unit": "mg/L",
+      "updateFrequency": "按计划",
+      "inputMode": "接口优先",
+      "primarySource": "化验结果",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "概览",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "influent_ortho_p",
+      "group": "水质",
+      "name": "单元进水正磷酸盐",
+      "description": "高效池入口正磷酸盐周期代表值",
+      "dataType": "NUMBER",
+      "unit": "mg/L",
+      "updateFrequency": "按计划",
+      "inputMode": "接口优先",
+      "primarySource": "化验结果",
+      "requiredMode": "OPTIONAL",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.chemicalPhosphorusRemoval"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "化学除磷",
+      "validationDescription": ">=0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "effluent_ortho_p",
+      "group": "水质",
+      "name": "单元出水正磷酸盐",
+      "description": "高效池出口正磷酸盐周期代表值",
+      "dataType": "NUMBER",
+      "unit": "mg/L",
+      "updateFrequency": "按计划",
+      "inputMode": "接口优先",
+      "primarySource": "化验结果",
+      "requiredMode": "OPTIONAL",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.chemicalPhosphorusRemoval"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "化学除磷",
+      "validationDescription": ">=0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "coagulant_daily_mass",
+      "group": "周期运行",
+      "name": "混凝剂日投加量",
+      "description": "商品药剂质量投加量",
+      "dataType": "NUMBER",
+      "unit": "kg/d",
+      "updateFrequency": "每日/周期",
+      "inputMode": "接口优先",
+      "primarySource": "加药记录",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "概览",
+      "boundaryNote": "体积计量需换算"
+    },
+    {
+      "fieldCode": "flocculant_daily_mass",
+      "group": "周期运行",
+      "name": "絮凝剂日投加量",
+      "description": "商品药剂质量投加量",
+      "dataType": "NUMBER",
+      "unit": "kg/d",
+      "updateFrequency": "每日/周期",
+      "inputMode": "接口优先",
+      "primarySource": "加药记录",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "概览",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "mixer_actual_speed",
+      "group": "运行控制",
+      "name": "混合搅拌实际转速",
+      "description": "分析周期主要运行转速",
+      "dataType": "NUMBER",
+      "unit": "rpm",
+      "updateFrequency": "每日/周期",
+      "inputMode": "接口/人工",
+      "primarySource": "设备运行数据",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "概览",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "mixer_actual_power",
+      "group": "运行控制",
+      "name": "混合搅拌实际功率",
+      "description": "运行状态实际功率",
+      "dataType": "NUMBER",
+      "unit": "kW",
+      "updateFrequency": "每日/周期",
+      "inputMode": "接口/估算",
+      "primarySource": "电力仪表",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "估算需标识"
+    },
+    {
+      "fieldCode": "floc_actual_speed",
+      "group": "运行控制",
+      "name": "絮凝搅拌实际转速",
+      "description": "分析周期主要运行转速",
+      "dataType": "NUMBER",
+      "unit": "rpm",
+      "updateFrequency": "每日/周期",
+      "inputMode": "接口/人工",
+      "primarySource": "设备运行数据",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "概览",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "floc_actual_power",
+      "group": "运行控制",
+      "name": "絮凝搅拌实际功率",
+      "description": "运行状态实际功率",
+      "dataType": "NUMBER",
+      "unit": "kW",
+      "updateFrequency": "每日/周期",
+      "inputMode": "接口/估算",
+      "primarySource": "电力仪表",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "估算需标识"
+    },
+    {
+      "fieldCode": "sludge_level",
+      "group": "污泥控制",
+      "name": "控制泥位",
+      "description": "沉淀池污泥层高度周期代表值",
+      "dataType": "NUMBER",
+      "unit": "m",
+      "updateFrequency": "连续/周期",
+      "inputMode": "接口优先",
+      "primarySource": "泥位仪",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "概览",
+      "boundaryNote": "需记录校验状态"
+    },
+    {
+      "fieldCode": "return_sludge_flow",
+      "group": "污泥控制",
+      "name": "污泥回流流量",
+      "description": "回流泵实际总流量",
+      "dataType": "NUMBER",
+      "unit": "m³/h",
+      "updateFrequency": "每日/周期",
+      "inputMode": "接口/估算",
+      "primarySource": "流量计/泵曲线",
+      "requiredMode": "CONDITIONAL",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.sludgeReturn"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "配置污泥回流",
+      "validationDescription": ">=0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "估算需标识"
+    },
+    {
+      "fieldCode": "return_sludge_hours",
+      "group": "污泥控制",
+      "name": "污泥回流运行时长",
+      "description": "每日回流泵运行时长",
+      "dataType": "NUMBER",
+      "unit": "h/d",
+      "updateFrequency": "每日/周期",
+      "inputMode": "接口优先",
+      "primarySource": "设备运行数据",
+      "requiredMode": "CONDITIONAL",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.sludgeReturn"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "配置污泥回流",
+      "validationDescription": "0—24",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "return_sludge_concentration",
+      "group": "污泥控制",
+      "name": "回流污泥浓度",
+      "description": "回流污泥含固浓度",
+      "dataType": "NUMBER",
+      "unit": "mg/L",
+      "updateFrequency": "按计划",
+      "inputMode": "接口优先",
+      "primarySource": "化验结果",
+      "requiredMode": "CONDITIONAL",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.sludgeReturn"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "配置污泥回流",
+      "validationDescription": ">=0",
+      "defaultPage": "概览",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "waste_sludge_flow",
+      "group": "污泥控制",
+      "name": "排泥泵实际流量",
+      "description": "剩余污泥排放流量",
+      "dataType": "NUMBER",
+      "unit": "m³/h",
+      "updateFrequency": "每日/周期",
+      "inputMode": "接口/估算",
+      "primarySource": "流量计/容积法",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "waste_sludge_hours",
+      "group": "污泥控制",
+      "name": "排泥运行时长",
+      "description": "每日排泥泵累计运行时长",
+      "dataType": "NUMBER",
+      "unit": "h/d",
+      "updateFrequency": "每日/周期",
+      "inputMode": "接口优先",
+      "primarySource": "设备运行数据",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": "0—24",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "waste_sludge_concentration",
+      "group": "污泥控制",
+      "name": "排泥污泥浓度",
+      "description": "剩余污泥排放浓度",
+      "dataType": "NUMBER",
+      "unit": "mg/L",
+      "updateFrequency": "按计划",
+      "inputMode": "接口优先",
+      "primarySource": "化验结果",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "概览",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "unit_energy",
+      "group": "能耗成本",
+      "name": "高效池日耗电量",
+      "description": "搅拌、回流、排泥等适用设备日耗电量",
+      "dataType": "NUMBER",
+      "unit": "kWh/d",
+      "updateFrequency": "每日/周期",
+      "inputMode": "接口优先",
+      "primarySource": "电力仪表",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "概览",
+      "boundaryNote": "优先分项计量"
+    },
+    {
+      "fieldCode": "electricity_price",
+      "group": "能耗成本",
+      "name": "综合电价",
+      "description": "分析周期适用综合电价",
+      "dataType": "NUMBER",
+      "unit": "元/kWh",
+      "updateFrequency": "价格变更",
+      "inputMode": "人工录入",
+      "primarySource": "财务/合同",
+      "requiredMode": "REQUIRED",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": ">=0",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "fieldCode": "floc_state",
+      "group": "现场观察",
+      "name": "矾花状态",
+      "description": "絮体大小、完整性和沉降表现",
+      "dataType": "ENUM",
+      "unit": null,
+      "updateFrequency": "巡检/周期",
+      "inputMode": "选择",
+      "primarySource": "运行观察",
+      "requiredMode": "OPTIONAL",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": "引用矾花状态字典",
+      "defaultPage": "偏差诊断",
+      "boundaryNote": "辅助证据"
+    },
+    {
+      "fieldCode": "lamella_state",
+      "group": "现场观察",
+      "name": "斜管状态",
+      "description": "畅通、堵塞、结垢或藻类状态",
+      "dataType": "ENUM",
+      "unit": null,
+      "updateFrequency": "巡检/周期",
+      "inputMode": "选择",
+      "primarySource": "运行观察",
+      "requiredMode": "OPTIONAL",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.lamella"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "斜管/斜板",
+      "validationDescription": "引用斜管状态字典",
+      "defaultPage": "偏差诊断",
+      "boundaryNote": "辅助证据"
+    },
+    {
+      "fieldCode": "effluent_clarity",
+      "group": "现场观察",
+      "name": "出水外观",
+      "description": "清澈、轻微浑浊、明显浑浊",
+      "dataType": "ENUM",
+      "unit": null,
+      "updateFrequency": "巡检/周期",
+      "inputMode": "选择",
+      "primarySource": "运行观察",
+      "requiredMode": "OPTIONAL",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "validationDescription": "引用出水外观字典",
+      "defaultPage": "偏差诊断",
+      "boundaryNote": "辅助证据"
+    }
+  ],
+  "metrics": [
+    {
+      "metricCode": "LOAD_RATE",
+      "group": "能力",
+      "name": "处理负荷率",
+      "formulaDisplay": "actual_daily_flow/design_capacity",
+      "implementationKey": "hsc.metric.load_rate.v1",
+      "unit": "%",
+      "direction": "适中",
+      "dependencies": [
+        "actual_daily_flow",
+        "design_capacity"
+      ],
+      "sourceDependencyDescription": "actual_daily_flow,design_capacity",
+      "benchmarkPriority": "设计值",
+      "minimumCoverage": 0.9,
+      "precision": "1位",
+      "defaultPage": "分析概览",
+      "boundaryNote": "低负荷与高负荷分别解释"
+    },
+    {
+      "metricCode": "ACT_SURFACE_LOAD",
+      "group": "能力",
+      "name": "实际表面负荷",
+      "formulaDisplay": "actual_daily_flow/24/(settle_area×running_settle_groups/settle_group_count)",
+      "implementationKey": "hsc.metric.act_surface_load.v1",
+      "unit": "m³/(㎡·h)",
+      "direction": "适中",
+      "dependencies": [
+        "actual_daily_flow",
+        "settle_area",
+        "running_settle_groups",
+        "settle_group_count"
+      ],
+      "sourceDependencyDescription": "actual_daily_flow,settle_area,running_settle_groups,settle_group_count",
+      "benchmarkPriority": "设计范围",
+      "minimumCoverage": 0.9,
+      "precision": "1位",
+      "defaultPage": "分析概览",
+      "boundaryNote": "按实际运行面积计算"
+    },
+    {
+      "metricCode": "PEAK_MARGIN",
+      "group": "能力",
+      "name": "峰值能力裕量",
+      "formulaDisplay": "适用能力上限/peak_hourly_flow-1",
+      "implementationKey": "hsc.metric.peak_margin.v1",
+      "unit": "%",
+      "direction": "越高越好",
+      "dependencies": [
+        "peak_hourly_flow",
+        "@benchmark.APPLICABLE_CAPACITY_UPPER"
+      ],
+      "sourceDependencyDescription": "peak_hourly_flow,适用能力上限",
+      "benchmarkPriority": "设计/确认基线",
+      "minimumCoverage": 0.8,
+      "precision": "1位",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "无峰值数据时不计算"
+    },
+    {
+      "metricCode": "MIX_HRT",
+      "group": "控制",
+      "name": "混合区实际HRT",
+      "formulaDisplay": "运行混合池容/(actual_daily_flow/24)×60",
+      "implementationKey": "hsc.metric.mix_hrt.v1",
+      "unit": "min",
+      "direction": "适中",
+      "dependencies": [
+        "mix_volume",
+        "running_settle_groups",
+        "mix_group_count",
+        "actual_daily_flow"
+      ],
+      "sourceDependencyDescription": "mix_volume,running_settle_groups,mix_group_count,actual_daily_flow",
+      "benchmarkPriority": "设计范围",
+      "minimumCoverage": 0.9,
+      "precision": "1位",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "FLOC_HRT",
+      "group": "控制",
+      "name": "絮凝区实际HRT",
+      "formulaDisplay": "运行絮凝池容/(actual_daily_flow/24)×60",
+      "implementationKey": "hsc.metric.floc_hrt.v1",
+      "unit": "min",
+      "direction": "适中",
+      "dependencies": [
+        "floc_volume",
+        "running_settle_groups",
+        "floc_group_count",
+        "actual_daily_flow"
+      ],
+      "sourceDependencyDescription": "floc_volume,running_settle_groups,floc_group_count,actual_daily_flow",
+      "benchmarkPriority": "设计范围",
+      "minimumCoverage": 0.9,
+      "precision": "1位",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "SETTLE_HRT",
+      "group": "控制",
+      "name": "沉淀区实际HRT",
+      "formulaDisplay": "运行沉淀池容/(actual_daily_flow/24)×60",
+      "implementationKey": "hsc.metric.settle_hrt.v1",
+      "unit": "min",
+      "direction": "适中",
+      "dependencies": [
+        "settle_volume",
+        "running_settle_groups",
+        "settle_group_count",
+        "actual_daily_flow"
+      ],
+      "sourceDependencyDescription": "settle_volume,running_settle_groups,settle_group_count,actual_daily_flow",
+      "benchmarkPriority": "设计范围",
+      "minimumCoverage": 0.9,
+      "precision": "1位",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "COD_REMOVAL",
+      "group": "效果",
+      "name": "COD去除率",
+      "formulaDisplay": "(influent_cod-effluent_cod)/influent_cod",
+      "implementationKey": "hsc.metric.cod_removal.v1",
+      "unit": "%",
+      "direction": "越高越好",
+      "dependencies": [
+        "influent_cod",
+        "effluent_cod"
+      ],
+      "sourceDependencyDescription": "influent_cod,effluent_cod",
+      "benchmarkPriority": "目标/历史",
+      "minimumCoverage": 0.8,
+      "precision": "1位",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "低进水浓度时同时看去除量"
+    },
+    {
+      "metricCode": "SS_REMOVAL",
+      "group": "效果",
+      "name": "SS去除率",
+      "formulaDisplay": "(influent_ss-effluent_ss)/influent_ss",
+      "implementationKey": "hsc.metric.ss_removal.v1",
+      "unit": "%",
+      "direction": "越高越好",
+      "dependencies": [
+        "influent_ss",
+        "effluent_ss"
+      ],
+      "sourceDependencyDescription": "influent_ss,effluent_ss",
+      "benchmarkPriority": "目标/历史",
+      "minimumCoverage": 0.9,
+      "precision": "1位",
+      "defaultPage": "分析概览",
+      "boundaryNote": "低进水浓度时同时看出水值"
+    },
+    {
+      "metricCode": "TP_REMOVAL",
+      "group": "效果",
+      "name": "TP去除率",
+      "formulaDisplay": "(influent_tp-effluent_tp)/influent_tp",
+      "implementationKey": "hsc.metric.tp_removal.v1",
+      "unit": "%",
+      "direction": "越高越好",
+      "dependencies": [
+        "influent_tp",
+        "effluent_tp"
+      ],
+      "sourceDependencyDescription": "influent_tp,effluent_tp",
+      "benchmarkPriority": "目标/历史",
+      "minimumCoverage": 0.9,
+      "precision": "1位",
+      "defaultPage": "分析概览",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "ORTHO_P_REMOVAL",
+      "group": "效果",
+      "name": "正磷酸盐去除率",
+      "formulaDisplay": "(influent_ortho_p-effluent_ortho_p)/influent_ortho_p",
+      "implementationKey": "hsc.metric.ortho_p_removal.v1",
+      "unit": "%",
+      "direction": "越高越好",
+      "dependencies": [
+        "influent_ortho_p",
+        "effluent_ortho_p"
+      ],
+      "sourceDependencyDescription": "influent_ortho_p,effluent_ortho_p",
+      "benchmarkPriority": "目标/历史",
+      "minimumCoverage": 0.8,
+      "precision": "1位",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "MIX_POWER_DENSITY",
+      "group": "控制",
+      "name": "混合区单位容积功率",
+      "formulaDisplay": "mixer_actual_power×1000/运行混合池容",
+      "implementationKey": "hsc.metric.mix_power_density.v1",
+      "unit": "W/m³",
+      "direction": "适中",
+      "dependencies": [
+        "mixer_actual_power",
+        "mix_volume",
+        "running_settle_groups",
+        "mix_group_count"
+      ],
+      "sourceDependencyDescription": "mixer_actual_power,运行混合池容",
+      "benchmarkPriority": "适用规范/目标",
+      "minimumCoverage": 0.8,
+      "precision": "1位",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "FLOC_POWER_DENSITY",
+      "group": "控制",
+      "name": "絮凝区单位容积功率",
+      "formulaDisplay": "floc_actual_power×1000/运行絮凝池容",
+      "implementationKey": "hsc.metric.floc_power_density.v1",
+      "unit": "W/m³",
+      "direction": "适中",
+      "dependencies": [
+        "floc_actual_power",
+        "floc_volume",
+        "running_settle_groups",
+        "floc_group_count"
+      ],
+      "sourceDependencyDescription": "floc_actual_power,运行絮凝池容",
+      "benchmarkPriority": "适用规范/目标",
+      "minimumCoverage": 0.8,
+      "precision": "1位",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "COAG_DOSAGE",
+      "group": "效率",
+      "name": "混凝剂商品单耗",
+      "formulaDisplay": "coagulant_daily_mass×1000/actual_daily_flow",
+      "implementationKey": "hsc.metric.coag_dosage.v1",
+      "unit": "mg/L",
+      "direction": "约束下越低越好",
+      "dependencies": [
+        "coagulant_daily_mass",
+        "actual_daily_flow"
+      ],
+      "sourceDependencyDescription": "coagulant_daily_mass,actual_daily_flow",
+      "benchmarkPriority": "一厂一策/历史",
+      "minimumCoverage": 0.9,
+      "precision": "1位",
+      "defaultPage": "分析概览",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "COAG_ACTIVE_DOSAGE",
+      "group": "效率",
+      "name": "混凝剂有效成分单耗",
+      "formulaDisplay": "COAG_DOSAGE×coagulant_active_content",
+      "implementationKey": "hsc.metric.coag_active_dosage.v1",
+      "unit": "mg/L",
+      "direction": "约束下越低越好",
+      "dependencies": [
+        "COAG_DOSAGE",
+        "coagulant_active_content"
+      ],
+      "sourceDependencyDescription": "COAG_DOSAGE,coagulant_active_content",
+      "benchmarkPriority": "理论/历史",
+      "minimumCoverage": 0.8,
+      "precision": "1位",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "THEORETICAL_COAG",
+      "group": "效率",
+      "name": "理论混凝剂投加量",
+      "formulaDisplay": "TP去除量×化学计量系数×需用系数/有效成分占比",
+      "implementationKey": "hsc.metric.theoretical_coag.v1",
+      "unit": "mg/L",
+      "direction": "参考",
+      "dependencies": [
+        "actual_daily_flow",
+        "influent_tp",
+        "effluent_tp",
+        "coagulant_active_component",
+        "coagulant_active_content",
+        "@model.chemicalStoichiometry"
+      ],
+      "sourceDependencyDescription": "TP去除量,药剂分子信息,需用系数,有效成分",
+      "benchmarkPriority": "理论模型",
+      "minimumCoverage": 0.8,
+      "precision": "1位",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "不得作为自动控制值"
+    },
+    {
+      "metricCode": "COAG_DEVIATION",
+      "group": "效率",
+      "name": "混凝剂投加偏差率",
+      "formulaDisplay": "(COAG_DOSAGE-目标或理论投加量)/目标或理论投加量",
+      "implementationKey": "hsc.metric.coag_deviation.v1",
+      "unit": "%",
+      "direction": "接近0",
+      "dependencies": [
+        "COAG_DOSAGE",
+        "@benchmark.APPLICABLE_COAG_TARGET"
+      ],
+      "sourceDependencyDescription": "COAG_DOSAGE,适用目标",
+      "benchmarkPriority": "一厂一策/理论",
+      "minimumCoverage": 0.9,
+      "precision": "1位",
+      "defaultPage": "分析概览",
+      "boundaryNote": "目标来源必须展示"
+    },
+    {
+      "metricCode": "METAL_P_MOLAR_RATIO",
+      "group": "效率",
+      "name": "金属/P实际摩尔比",
+      "formulaDisplay": "有效金属离子摩尔量/实际去除P摩尔量",
+      "implementationKey": "hsc.metric.metal_p_molar_ratio.v1",
+      "unit": "mol/mol",
+      "direction": "适中",
+      "dependencies": [
+        "coagulant_daily_mass",
+        "coagulant_active_component",
+        "coagulant_active_content",
+        "actual_daily_flow",
+        "influent_tp",
+        "effluent_tp"
+      ],
+      "sourceDependencyDescription": "药剂有效成分,投加量,TP去除量",
+      "benchmarkPriority": "理论/目标",
+      "minimumCoverage": 0.8,
+      "precision": "2位",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "用于反向核算"
+    },
+    {
+      "metricCode": "FLOC_DOSAGE",
+      "group": "效率",
+      "name": "絮凝剂商品单耗",
+      "formulaDisplay": "flocculant_daily_mass×1000/actual_daily_flow",
+      "implementationKey": "hsc.metric.floc_dosage.v1",
+      "unit": "mg/L",
+      "direction": "约束下越低越好",
+      "dependencies": [
+        "flocculant_daily_mass",
+        "actual_daily_flow"
+      ],
+      "sourceDependencyDescription": "flocculant_daily_mass,actual_daily_flow",
+      "benchmarkPriority": "一厂一策/历史",
+      "minimumCoverage": 0.9,
+      "precision": "2位",
+      "defaultPage": "分析概览",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "RETURN_RATIO",
+      "group": "控制",
+      "name": "污泥回流比",
+      "formulaDisplay": "return_sludge_flow×return_sludge_hours/actual_daily_flow",
+      "implementationKey": "hsc.metric.return_ratio.v1",
+      "unit": "%",
+      "direction": "适中",
+      "dependencies": [
+        "return_sludge_flow",
+        "return_sludge_hours",
+        "actual_daily_flow"
+      ],
+      "sourceDependencyDescription": "return_sludge_flow,return_sludge_hours,actual_daily_flow",
+      "benchmarkPriority": "目标范围",
+      "minimumCoverage": 0.8,
+      "precision": "1位",
+      "defaultPage": "分析概览",
+      "boundaryNote": "配置回流时适用"
+    },
+    {
+      "metricCode": "ACT_WASTE_VOLUME",
+      "group": "污泥",
+      "name": "实际排泥量",
+      "formulaDisplay": "waste_sludge_flow×waste_sludge_hours",
+      "implementationKey": "hsc.metric.act_waste_volume.v1",
+      "unit": "m³/d",
+      "direction": "参考",
+      "dependencies": [
+        "waste_sludge_flow",
+        "waste_sludge_hours"
+      ],
+      "sourceDependencyDescription": "waste_sludge_flow,waste_sludge_hours",
+      "benchmarkPriority": "泥量平衡",
+      "minimumCoverage": 0.9,
+      "precision": "1位",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "ACT_WASTE_DS",
+      "group": "污泥",
+      "name": "实际排泥干固体量",
+      "formulaDisplay": "ACT_WASTE_VOLUME×waste_sludge_concentration/1000",
+      "implementationKey": "hsc.metric.act_waste_ds.v1",
+      "unit": "kgDS/d",
+      "direction": "参考",
+      "dependencies": [
+        "ACT_WASTE_VOLUME",
+        "waste_sludge_concentration"
+      ],
+      "sourceDependencyDescription": "ACT_WASTE_VOLUME,waste_sludge_concentration",
+      "benchmarkPriority": "泥量平衡",
+      "minimumCoverage": 0.9,
+      "precision": "0位",
+      "defaultPage": "分析概览",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "THEORY_SLUDGE_DS",
+      "group": "污泥",
+      "name": "理论产泥干固体量",
+      "formulaDisplay": "SS去除量+化学除磷产泥量",
+      "implementationKey": "hsc.metric.theory_sludge_ds.v1",
+      "unit": "kgDS/d",
+      "direction": "参考",
+      "dependencies": [
+        "actual_daily_flow",
+        "influent_ss",
+        "effluent_ss",
+        "coagulant_daily_mass",
+        "coagulant_active_component",
+        "coagulant_active_content",
+        "@model.sludgeStoichiometry"
+      ],
+      "sourceDependencyDescription": "水量,SS去除量,药剂产泥模型",
+      "benchmarkPriority": "理论模型",
+      "minimumCoverage": 0.8,
+      "precision": "0位",
+      "defaultPage": "数据与计算",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "SLUDGE_BALANCE_DEV",
+      "group": "污泥",
+      "name": "排泥平衡偏差率",
+      "formulaDisplay": "(ACT_WASTE_DS-THEORY_SLUDGE_DS)/THEORY_SLUDGE_DS",
+      "implementationKey": "hsc.metric.sludge_balance_dev.v1",
+      "unit": "%",
+      "direction": "接近0",
+      "dependencies": [
+        "ACT_WASTE_DS",
+        "THEORY_SLUDGE_DS"
+      ],
+      "sourceDependencyDescription": "ACT_WASTE_DS,THEORY_SLUDGE_DS",
+      "benchmarkPriority": "允许偏差",
+      "minimumCoverage": 0.8,
+      "precision": "1位",
+      "defaultPage": "偏差诊断",
+      "boundaryNote": "先排除数据误差"
+    },
+    {
+      "metricCode": "UNIT_ENERGY_INTENSITY",
+      "group": "能耗",
+      "name": "高效池吨水电耗",
+      "formulaDisplay": "unit_energy/actual_daily_flow",
+      "implementationKey": "hsc.metric.unit_energy_intensity.v1",
+      "unit": "kWh/m³",
+      "direction": "越低越好",
+      "dependencies": [
+        "unit_energy",
+        "actual_daily_flow"
+      ],
+      "sourceDependencyDescription": "unit_energy,actual_daily_flow",
+      "benchmarkPriority": "一厂一策/历史",
+      "minimumCoverage": 0.9,
+      "precision": "4位",
+      "defaultPage": "分析概览",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "COAG_COST_PER_WATER",
+      "group": "成本",
+      "name": "混凝剂吨水成本",
+      "formulaDisplay": "coagulant_daily_mass×coagulant_price/1000/actual_daily_flow",
+      "implementationKey": "hsc.metric.coag_cost_per_water.v1",
+      "unit": "元/m³",
+      "direction": "越低越好",
+      "dependencies": [
+        "coagulant_daily_mass",
+        "coagulant_price",
+        "actual_daily_flow"
+      ],
+      "sourceDependencyDescription": "coagulant_daily_mass,coagulant_price,actual_daily_flow",
+      "benchmarkPriority": "一厂一策/历史",
+      "minimumCoverage": 0.9,
+      "precision": "4位",
+      "defaultPage": "分析概览",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "FLOC_COST_PER_WATER",
+      "group": "成本",
+      "name": "絮凝剂吨水成本",
+      "formulaDisplay": "flocculant_daily_mass×flocculant_price/1000/actual_daily_flow",
+      "implementationKey": "hsc.metric.floc_cost_per_water.v1",
+      "unit": "元/m³",
+      "direction": "越低越好",
+      "dependencies": [
+        "flocculant_daily_mass",
+        "flocculant_price",
+        "actual_daily_flow"
+      ],
+      "sourceDependencyDescription": "flocculant_daily_mass,flocculant_price,actual_daily_flow",
+      "benchmarkPriority": "一厂一策/历史",
+      "minimumCoverage": 0.9,
+      "precision": "4位",
+      "defaultPage": "分析概览",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "ENERGY_COST_PER_WATER",
+      "group": "成本",
+      "name": "电费吨水成本",
+      "formulaDisplay": "unit_energy×electricity_price/actual_daily_flow",
+      "implementationKey": "hsc.metric.energy_cost_per_water.v1",
+      "unit": "元/m³",
+      "direction": "越低越好",
+      "dependencies": [
+        "unit_energy",
+        "electricity_price",
+        "actual_daily_flow"
+      ],
+      "sourceDependencyDescription": "unit_energy,electricity_price,actual_daily_flow",
+      "benchmarkPriority": "一厂一策/历史",
+      "minimumCoverage": 0.9,
+      "precision": "4位",
+      "defaultPage": "分析概览",
+      "boundaryNote": "—"
+    },
+    {
+      "metricCode": "TOTAL_COST_PER_WATER",
+      "group": "成本",
+      "name": "高效池总吨水运行成本",
+      "formulaDisplay": "COAG_COST_PER_WATER+FLOC_COST_PER_WATER+ENERGY_COST_PER_WATER",
+      "implementationKey": "hsc.metric.total_cost_per_water.v1",
+      "unit": "元/m³",
+      "direction": "约束下越低越好",
+      "dependencies": [
+        "COAG_COST_PER_WATER",
+        "FLOC_COST_PER_WATER",
+        "ENERGY_COST_PER_WATER"
+      ],
+      "sourceDependencyDescription": "三项成本",
+      "benchmarkPriority": "一厂一策/历史",
+      "minimumCoverage": 0.9,
+      "precision": "4位",
+      "defaultPage": "分析概览",
+      "boundaryNote": "污泥处置成本后续扩展"
+    },
+    {
+      "metricCode": "ANNUAL_SAVING",
+      "group": "收益",
+      "name": "预计年化节约",
+      "formulaDisplay": "优化前后吨水成本差×可比水量×365",
+      "implementationKey": "hsc.metric.annual_saving.v1",
+      "unit": "元/年",
+      "direction": "越高越好",
+      "dependencies": [
+        "TOTAL_COST_PER_WATER",
+        "actual_daily_flow",
+        "@context.beforeTotalCostPerWater",
+        "@context.comparableDaysPerYear"
+      ],
+      "sourceDependencyDescription": "优化前后成本,可比水量",
+      "benchmarkPriority": "方案测算",
+      "minimumCoverage": 0.9,
+      "precision": "0位",
+      "defaultPage": "优化方案",
+      "boundaryNote": "未验证时标记预计"
+    }
+  ],
+  "benchmarks": [
+    {
+      "benchmarkCode": "BM-DESIGN-SL",
+      "benchmarkType": "设计基线",
+      "objectCode": "ACT_SURFACE_LOAD",
+      "name": "设计文件表面负荷范围",
+      "lowerOrSource": "按单体配置",
+      "upperOrSource": "按单体配置",
+      "unit": "m³/(㎡·h)",
+      "applicabilityDescription": "全部",
+      "source": "设计文件",
+      "status": "CONFIRMED",
+      "note": "最高优先级",
+      "publishable": true
+    },
+    {
+      "benchmarkCode": "BM-EXP-SL",
+      "benchmarkType": "企业经验",
+      "objectCode": "ACT_SURFACE_LOAD",
+      "name": "Excel示例运行范围",
+      "lowerOrSource": 6,
+      "upperOrSource": 9,
+      "unit": "m³/(㎡·h)",
+      "applicabilityDescription": "当前模型示例",
+      "source": "星级模型",
+      "status": "PENDING_BUSINESS_CONFIRMATION",
+      "note": "不得作为所有项目通用标准",
+      "publishable": false
+    },
+    {
+      "benchmarkCode": "BM-EXP-LEVEL",
+      "benchmarkType": "企业经验",
+      "objectCode": "sludge_level",
+      "name": "Excel示例控制泥位",
+      "lowerOrSource": 0.4,
+      "upperOrSource": 0.7,
+      "unit": "m",
+      "applicabilityDescription": "当前模型示例",
+      "source": "星级模型",
+      "status": "PENDING_BUSINESS_CONFIRMATION",
+      "note": "应按池型和泥位测点校核",
+      "publishable": false
+    },
+    {
+      "benchmarkCode": "BM-EXP-RETURN-SS",
+      "benchmarkType": "企业经验",
+      "objectCode": "return_sludge_concentration",
+      "name": "Excel示例回流污泥浓度",
+      "lowerOrSource": 20000,
+      "upperOrSource": 40000,
+      "unit": "mg/L",
+      "applicabilityDescription": "配置污泥回流",
+      "source": "星级模型",
+      "status": "PENDING_BUSINESS_CONFIRMATION",
+      "note": "—",
+      "publishable": false
+    },
+    {
+      "benchmarkCode": "BM-EXP-WASTE-SS",
+      "benchmarkType": "企业经验",
+      "objectCode": "waste_sludge_concentration",
+      "name": "Excel示例剩余污泥浓度",
+      "lowerOrSource": 15000,
+      "upperOrSource": 25000,
+      "unit": "mg/L",
+      "applicabilityDescription": "全部",
+      "source": "星级模型",
+      "status": "PENDING_BUSINESS_CONFIRMATION",
+      "note": "—",
+      "publishable": false
+    },
+    {
+      "benchmarkCode": "BM-EXP-RETURN",
+      "benchmarkType": "企业经验",
+      "objectCode": "RETURN_RATIO",
+      "name": "Excel示例污泥回流比",
+      "lowerOrSource": 2,
+      "upperOrSource": 4,
+      "unit": "%",
+      "applicabilityDescription": "配置污泥回流",
+      "source": "星级模型",
+      "status": "PENDING_BUSINESS_CONFIRMATION",
+      "note": "应结合回流浓度和效果",
+      "publishable": false
+    },
+    {
+      "benchmarkCode": "BM-EXP-MIX-RPM",
+      "benchmarkType": "企业经验",
+      "objectCode": "mixer_actual_speed",
+      "name": "Excel示例混合区转速",
+      "lowerOrSource": 50,
+      "upperOrSource": 100,
+      "unit": "rpm",
+      "applicabilityDescription": "适用设备",
+      "source": "星级模型",
+      "status": "PENDING_BUSINESS_CONFIRMATION",
+      "note": "设备直径和型式不同不可直接横比",
+      "publishable": false
+    },
+    {
+      "benchmarkCode": "BM-EXP-FLOC-RPM",
+      "benchmarkType": "企业经验",
+      "objectCode": "floc_actual_speed",
+      "name": "Excel示例絮凝区转速",
+      "lowerOrSource": 15,
+      "upperOrSource": 30,
+      "unit": "rpm",
+      "applicabilityDescription": "适用设备",
+      "source": "星级模型",
+      "status": "PENDING_BUSINESS_CONFIRMATION",
+      "note": "设备直径和型式不同不可直接横比",
+      "publishable": false
+    },
+    {
+      "benchmarkCode": "BM-EXP-MOLAR",
+      "benchmarkType": "企业经验",
+      "objectCode": "METAL_P_MOLAR_RATIO",
+      "name": "Excel示例金属/P摩尔比",
+      "lowerOrSource": 1.5,
+      "upperOrSource": 3.5,
+      "unit": "mol/mol",
+      "applicabilityDescription": "适用药剂",
+      "source": "星级模型",
+      "status": "PENDING_BUSINESS_CONFIRMATION",
+      "note": "原表2.5±1换算",
+      "publishable": false
+    },
+    {
+      "benchmarkCode": "BM-EXP-COAG-COST",
+      "benchmarkType": "企业经验",
+      "objectCode": "COAG_COST_PER_WATER",
+      "name": "Excel示例混凝剂吨水成本",
+      "lowerOrSource": 0.009,
+      "upperOrSource": 0.013,
+      "unit": "元/m³",
+      "applicabilityDescription": "原模型口径",
+      "source": "星级模型",
+      "status": "PENDING_BUSINESS_CONFIRMATION",
+      "note": "价格变化时必须更新",
+      "publishable": false
+    },
+    {
+      "benchmarkCode": "BM-EXP-FLOC-COST",
+      "benchmarkType": "企业经验",
+      "objectCode": "FLOC_COST_PER_WATER",
+      "name": "Excel示例絮凝剂吨水成本",
+      "lowerOrSource": 0.025,
+      "upperOrSource": 0.03,
+      "unit": "元/m³",
+      "applicabilityDescription": "原模型口径",
+      "source": "星级模型",
+      "status": "PENDING_BUSINESS_CONFIRMATION",
+      "note": "需核对原表成本口径",
+      "publishable": false
+    },
+    {
+      "benchmarkCode": "BM-EXP-ENERGY-COST",
+      "benchmarkType": "企业经验",
+      "objectCode": "ENERGY_COST_PER_WATER",
+      "name": "Excel示例电耗吨水成本",
+      "lowerOrSource": 0.004,
+      "upperOrSource": 0.007,
+      "unit": "元/m³",
+      "applicabilityDescription": "原模型口径",
+      "source": "星级模型",
+      "status": "PENDING_BUSINESS_CONFIRMATION",
+      "note": "随电价更新",
+      "publishable": false
+    },
+    {
+      "benchmarkCode": "BM-TARGET-COAG",
+      "benchmarkType": "一厂一策",
+      "objectCode": "COAG_DOSAGE",
+      "name": "本厂确认混凝剂目标",
+      "lowerOrSource": "按方案配置",
+      "upperOrSource": "按方案配置",
+      "unit": "mg/L",
+      "applicabilityDescription": "厂区+单体+药剂",
+      "source": "一厂一策",
+      "status": "DRAFT",
+      "note": "首版原型示例21.5 mg/L非通用值",
+      "publishable": false
+    },
+    {
+      "benchmarkCode": "BM-HISTORY-COAG",
+      "benchmarkType": "历史优秀",
+      "objectCode": "COAG_DOSAGE",
+      "name": "相似负荷和出水约束下历史优秀区间",
+      "lowerOrSource": "系统统计",
+      "upperOrSource": "系统统计",
+      "unit": "mg/L",
+      "applicabilityDescription": "厂区+单体+季节",
+      "source": "历史数据",
+      "status": "DRAFT",
+      "note": "需先定义可比条件",
+      "publishable": false
+    },
+    {
+      "benchmarkCode": "BM-HISTORY-COST",
+      "benchmarkType": "历史优秀",
+      "objectCode": "TOTAL_COST_PER_WATER",
+      "name": "相似负荷下历史优秀成本区间",
+      "lowerOrSource": "系统统计",
+      "upperOrSource": "系统统计",
+      "unit": "元/m³",
+      "applicabilityDescription": "厂区+单体+季节",
+      "source": "历史数据",
+      "status": "DRAFT",
+      "note": "—",
+      "publishable": false
+    }
+  ],
+  "rules": [
+    {
+      "ruleCode": "HSC-CAP-01",
+      "group": "能力",
+      "name": "实际表面负荷偏高",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "minimumCoverage": 0.9,
+      "minimumEvidenceDescription": "运行组数、流量、面积、斜管状态",
+      "condition": {
+        "op": "GT",
+        "left": {
+          "metric": "ACT_SURFACE_LOAD"
+        },
+        "right": {
+          "benchmark": "APPLICABLE_UPPER"
+        }
+      },
+      "persistence": {
+        "mode": "HRT",
+        "count": 2
+      },
+      "persistenceDescription": "连续2个HRT或周期统计",
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [],
+      "likelyCausesDescription": "运行组数不足；峰值流量；有效面积下降；斜管堵塞",
+      "recommendationTemplate": "增开池组；均衡配水；清理斜管；控制峰值",
+      "constraint": "出水与下游负荷不得恶化",
+      "recoveryDescription": "连续2个HRT回到范围",
+      "status": "DRAFT",
+      "boundaryNote": "只诊断单体水力能力",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-CAP-02",
+      "group": "能力",
+      "name": "实际表面负荷偏低",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "minimumCoverage": 0.9,
+      "minimumEvidenceDescription": "运行组数、能耗、出水",
+      "condition": {
+        "op": "LT",
+        "left": {
+          "metric": "ACT_SURFACE_LOAD"
+        },
+        "right": {
+          "benchmark": "APPLICABLE_LOWER"
+        }
+      },
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "persistenceDescription": "连续7日",
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [],
+      "likelyCausesDescription": "运行池组过多；低负荷策略不合理",
+      "recommendationTemplate": "减少运行组数并验证出水和泥位",
+      "constraint": "保留备用能力",
+      "recoveryDescription": "连续3日回到目标且效果稳定",
+      "status": "DRAFT",
+      "boundaryNote": "—",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-HRT-01",
+      "group": "控制",
+      "name": "混合时间偏离合理区间",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "minimumCoverage": 0.9,
+      "minimumEvidenceDescription": "流量、池容、运行组数",
+      "condition": {
+        "op": "OUTSIDE",
+        "value": {
+          "metric": "MIX_HRT"
+        },
+        "range": {
+          "benchmark": "APPLICABLE_RANGE"
+        }
+      },
+      "persistence": {
+        "mode": "HRT",
+        "count": 2
+      },
+      "persistenceDescription": "连续2个HRT",
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [],
+      "likelyCausesDescription": "流量变化；池容或组数配置错误",
+      "recommendationTemplate": "调整运行组数或配水",
+      "constraint": "先核对设计和有效池容",
+      "recoveryDescription": "回到范围",
+      "status": "DRAFT",
+      "boundaryNote": "—",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-HRT-02",
+      "group": "控制",
+      "name": "絮凝时间不足",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "minimumCoverage": 0.9,
+      "minimumEvidenceDescription": "絮体、SS、配水",
+      "condition": {
+        "op": "LT",
+        "left": {
+          "metric": "FLOC_HRT"
+        },
+        "right": {
+          "benchmark": "APPLICABLE_LOWER"
+        }
+      },
+      "persistence": {
+        "mode": "HRT",
+        "count": 2
+      },
+      "persistenceDescription": "连续2个HRT",
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [],
+      "likelyCausesDescription": "高峰负荷；短流；配水不均",
+      "recommendationTemplate": "均衡配水；调整池组和搅拌",
+      "constraint": "不得以单纯加药替代水力整改",
+      "recoveryDescription": "回到范围且絮体改善",
+      "status": "DRAFT",
+      "boundaryNote": "—",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-MIX-01",
+      "group": "控制",
+      "name": "混合强度不足",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "minimumCoverage": 0.8,
+      "minimumEvidenceDescription": "功率、转速、药剂分散、絮体",
+      "condition": {
+        "op": "LT",
+        "left": {
+          "metric": "MIX_POWER_DENSITY"
+        },
+        "right": {
+          "benchmark": "APPLICABLE_LOWER"
+        }
+      },
+      "persistence": {
+        "mode": "HRT",
+        "count": 2
+      },
+      "persistenceDescription": "连续2个HRT",
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [],
+      "likelyCausesDescription": "搅拌器异常；转速低；池容配置错误",
+      "recommendationTemplate": "调整转速或运行组合",
+      "constraint": "设备额定范围内",
+      "recoveryDescription": "指标和絮体恢复",
+      "status": "DRAFT",
+      "boundaryNote": "不评价设备维修质量",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-MIX-02",
+      "group": "控制",
+      "name": "混合或絮凝强度过高",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "minimumCoverage": 0.8,
+      "minimumEvidenceDescription": "转速、絮体、电耗",
+      "condition": {
+        "op": "ANY",
+        "conditions": [
+          {
+            "op": "GT",
+            "left": {
+              "metric": "MIX_POWER_DENSITY"
+            },
+            "right": {
+              "benchmark": "APPLICABLE_UPPER"
+            }
+          },
+          {
+            "op": "GT",
+            "left": {
+              "metric": "FLOC_POWER_DENSITY"
+            },
+            "right": {
+              "benchmark": "APPLICABLE_UPPER"
+            }
+          }
+        ]
+      },
+      "persistence": {
+        "mode": "HRT",
+        "count": 2
+      },
+      "persistenceDescription": "连续2个HRT",
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [],
+      "likelyCausesDescription": "转速高；设备选型偏大",
+      "recommendationTemplate": "分步降低转速",
+      "constraint": "设置出水和絮体回退条件",
+      "recoveryDescription": "能耗下降且效果稳定",
+      "status": "DRAFT",
+      "boundaryNote": "—",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-SET-01",
+      "group": "效果",
+      "name": "沉淀效果不足",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "minimumCoverage": 0.9,
+      "minimumEvidenceDescription": "水力、絮体、药剂、斜管、泥位、排泥",
+      "condition": {
+        "op": "ANY",
+        "conditions": [
+          {
+            "op": "GT",
+            "left": {
+              "field": "effluent_ss"
+            },
+            "right": {
+              "benchmark": "SITE_TARGET_UPPER"
+            }
+          },
+          {
+            "op": "LT",
+            "left": {
+              "metric": "SS_REMOVAL"
+            },
+            "right": {
+              "benchmark": "SITE_TARGET_LOWER"
+            }
+          }
+        ]
+      },
+      "persistence": {
+        "mode": "HRT",
+        "count": 2
+      },
+      "persistenceDescription": "连续2个HRT",
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [
+        "HSC-SET-01-01",
+        "HSC-SET-01-02",
+        "HSC-SET-01-03",
+        "HSC-SET-01-04"
+      ],
+      "likelyCausesDescription": "水力负荷；絮凝；斜管；泥位；排泥",
+      "recommendationTemplate": "按原因树逐项核验",
+      "constraint": "不默认增加药剂",
+      "recoveryDescription": "SS恢复且稳定",
+      "status": "DRAFT",
+      "boundaryNote": "只判断高效池单元效果",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-SET-02",
+      "group": "效果",
+      "name": "斜管有效能力下降",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.lamella"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "斜管/斜板",
+      "minimumCoverage": 0.8,
+      "minimumEvidenceDescription": "斜管状态、同负荷历史、出水",
+      "condition": {
+        "op": "ALL",
+        "conditions": [
+          {
+            "op": "IN",
+            "value": {
+              "field": "lamella_state"
+            },
+            "set": [
+              "局部堵塞",
+              "明显堵塞",
+              "结垢",
+              "藻类附着"
+            ]
+          },
+          {
+            "op": "TRUE",
+            "value": {
+              "function": "sameLoadEffectDeteriorated"
+            }
+          }
+        ]
+      },
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "persistenceDescription": "连续3日",
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [],
+      "likelyCausesDescription": "堵塞；结垢；藻类；短流",
+      "recommendationTemplate": "清洗；遮阳；配水校核",
+      "constraint": "维护动作转设备管理",
+      "recoveryDescription": "状态与效果恢复",
+      "status": "DRAFT",
+      "boundaryNote": "—",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-CHEM-01",
+      "group": "药剂",
+      "name": "混凝剂实际投加偏高",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.chemicalPhosphorusRemoval"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "化学除磷",
+      "minimumCoverage": 0.9,
+      "minimumEvidenceDescription": "有效成分、计量、流量、出水效果",
+      "condition": {
+        "op": "GT",
+        "left": {
+          "metric": "COAG_DEVIATION"
+        },
+        "right": {
+          "benchmark": "ALLOWED_DEVIATION"
+        }
+      },
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "persistenceDescription": "连续7日",
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [
+        "HSC-CHEM-01-01",
+        "HSC-CHEM-01-02",
+        "HSC-CHEM-01-03",
+        "HSC-CHEM-01-04"
+      ],
+      "likelyCausesDescription": "有效成分低；计量误差；过量投加；取样不同步",
+      "recommendationTemplate": "校验后开展梯度减量",
+      "constraint": "出水约束不变",
+      "recoveryDescription": "药耗回到目标且效果稳定",
+      "status": "DRAFT",
+      "boundaryNote": "—",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-CHEM-02",
+      "group": "药剂",
+      "name": "混凝剂投加不足",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.chemicalPhosphorusRemoval"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "化学除磷",
+      "minimumCoverage": 0.9,
+      "minimumEvidenceDescription": "计量、有效成分、投加点、混合",
+      "condition": {
+        "op": "ALL",
+        "conditions": [
+          {
+            "op": "LT",
+            "left": {
+              "metric": "COAG_DEVIATION"
+            },
+            "right": {
+              "benchmark": "NEGATIVE_ALLOWED_DEVIATION"
+            }
+          },
+          {
+            "op": "TRUE",
+            "value": {
+              "function": "unitEffectInsufficient"
+            }
+          }
+        ]
+      },
+      "persistence": {
+        "mode": "HRT",
+        "count": 2
+      },
+      "persistenceDescription": "连续2个HRT",
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [],
+      "likelyCausesDescription": "药量不足；药剂变化；混合不良",
+      "recommendationTemplate": "先核实计量和混合，再调整药量",
+      "constraint": "不得跳过原因核验",
+      "recoveryDescription": "效果恢复",
+      "status": "DRAFT",
+      "boundaryNote": "—",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-CHEM-03",
+      "group": "药剂",
+      "name": "絮凝剂配比异常",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.flocculant"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "配置絮凝剂",
+      "minimumCoverage": 0.8,
+      "minimumEvidenceDescription": "配药、老化、投加点、絮体",
+      "condition": {
+        "op": "ANY",
+        "conditions": [
+          {
+            "op": "OUTSIDE",
+            "value": {
+              "metric": "FLOC_DOSAGE"
+            },
+            "range": {
+              "benchmark": "APPLICABLE_RANGE"
+            }
+          },
+          {
+            "op": "TRUE",
+            "value": {
+              "function": "flocculantRatioAbnormal"
+            }
+          }
+        ]
+      },
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "persistenceDescription": "连续7日",
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [],
+      "likelyCausesDescription": "配药浓度；药液老化；投加点",
+      "recommendationTemplate": "优化配制和投加",
+      "constraint": "保持沉淀效果",
+      "recoveryDescription": "配比与效果恢复",
+      "status": "DRAFT",
+      "boundaryNote": "—",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-CHEM-04",
+      "group": "药剂",
+      "name": "达标但药耗存在优化空间",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.chemicalPhosphorusRemoval"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "化学除磷",
+      "minimumCoverage": 0.9,
+      "minimumEvidenceDescription": "出水稳定、进水可比、有效成分、计量",
+      "condition": {
+        "op": "ALL",
+        "conditions": [
+          {
+            "op": "GT",
+            "left": {
+              "metric": "COAG_DOSAGE"
+            },
+            "right": {
+              "benchmark": "HISTORICAL_OR_SITE_TARGET_UPPER"
+            }
+          },
+          {
+            "op": "TRUE",
+            "value": {
+              "function": "unitEffluentStable"
+            }
+          },
+          {
+            "op": "TRUE",
+            "value": {
+              "function": "influentComparable"
+            }
+          }
+        ]
+      },
+      "persistence": {
+        "mode": "DAY",
+        "count": 14
+      },
+      "persistenceDescription": "连续14日",
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [
+        "HSC-CHEM-04-01",
+        "HSC-CHEM-04-02",
+        "HSC-CHEM-04-03",
+        "HSC-CHEM-04-04"
+      ],
+      "likelyCausesDescription": "安全余量过大；固定药量；目标未更新",
+      "recommendationTemplate": "小步减量生产性试验",
+      "constraint": "进水变化>15%暂停",
+      "recoveryDescription": "完成验证并固化目标",
+      "status": "DRAFT",
+      "boundaryNote": "不得直接认定过量",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-SLD-01",
+      "group": "污泥",
+      "name": "泥位偏高",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "minimumCoverage": 0.9,
+      "minimumEvidenceDescription": "排泥量、浓度、管路、泥位仪",
+      "condition": {
+        "op": "GT",
+        "left": {
+          "field": "sludge_level"
+        },
+        "right": {
+          "benchmark": "APPLICABLE_UPPER"
+        }
+      },
+      "persistence": {
+        "mode": "SLUDGE_CYCLE",
+        "count": 2
+      },
+      "persistenceDescription": "连续2个排泥周期",
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [
+        "HSC-SLD-01-01",
+        "HSC-SLD-01-02",
+        "HSC-SLD-01-03",
+        "HSC-SLD-01-04"
+      ],
+      "likelyCausesDescription": "排泥不足；管路堵塞；数据错误",
+      "recommendationTemplate": "核验后调整排泥频次或时长",
+      "constraint": "避免一次性过度排泥",
+      "recoveryDescription": "连续2周期回到范围",
+      "status": "DRAFT",
+      "boundaryNote": "—",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-SLD-02",
+      "group": "污泥",
+      "name": "泥位偏低",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "minimumCoverage": 0.9,
+      "minimumEvidenceDescription": "排泥、回流、絮体",
+      "condition": {
+        "op": "LT",
+        "left": {
+          "field": "sludge_level"
+        },
+        "right": {
+          "benchmark": "APPLICABLE_LOWER"
+        }
+      },
+      "persistence": {
+        "mode": "SLUDGE_CYCLE",
+        "count": 2
+      },
+      "persistenceDescription": "连续2个排泥周期",
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [],
+      "likelyCausesDescription": "排泥过量；回流过大；仪表偏差",
+      "recommendationTemplate": "减少排泥并跟踪效果",
+      "constraint": "防止泥位持续累积",
+      "recoveryDescription": "回到范围",
+      "status": "DRAFT",
+      "boundaryNote": "—",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-SLD-03",
+      "group": "污泥",
+      "name": "回流比不合理",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.sludgeReturn"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "配置污泥回流",
+      "minimumCoverage": 0.8,
+      "minimumEvidenceDescription": "回流流量、浓度、泥位、效果",
+      "condition": {
+        "op": "TRUE",
+        "value": {
+          "function": "returnSludgeCombinationAbnormal"
+        }
+      },
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "persistenceDescription": "连续3日",
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [],
+      "likelyCausesDescription": "泵组合；流量偏差；泥质变化",
+      "recommendationTemplate": "以效果和成本约束优化回流",
+      "constraint": "不替代全厂回流诊断",
+      "recoveryDescription": "组合恢复",
+      "status": "DRAFT",
+      "boundaryNote": "仅限高效池内部回流",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-SLD-04",
+      "group": "污泥",
+      "name": "理论与实际排泥不平衡",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "minimumCoverage": 0.8,
+      "minimumEvidenceDescription": "流量、浓度、药剂产泥、泥位",
+      "condition": {
+        "op": "GT",
+        "left": {
+          "function": "ABS",
+          "args": [
+            {
+              "metric": "SLUDGE_BALANCE_DEV"
+            }
+          ]
+        },
+        "right": {
+          "benchmark": "ALLOWED_DEVIATION"
+        }
+      },
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "persistenceDescription": "连续7日",
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [
+        "HSC-SLD-04-01",
+        "HSC-SLD-04-02",
+        "HSC-SLD-04-03",
+        "HSC-SLD-04-04"
+      ],
+      "likelyCausesDescription": "数据误差；积泥；跑泥；产泥模型偏差",
+      "recommendationTemplate": "先校核数据再识别积泥或流失",
+      "constraint": "不得仅凭理论值下结论",
+      "recoveryDescription": "偏差回到范围",
+      "status": "DRAFT",
+      "boundaryNote": "—",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-ENE-01",
+      "group": "能耗",
+      "name": "单元电耗偏高",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "minimumCoverage": 0.9,
+      "minimumEvidenceDescription": "分项电量、运行时长、负荷",
+      "condition": {
+        "op": "GT",
+        "left": {
+          "metric": "UNIT_ENERGY_INTENSITY"
+        },
+        "right": {
+          "benchmark": "SITE_TARGET_OR_HISTORICAL_UPPER"
+        }
+      },
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "persistenceDescription": "连续7日",
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [
+        "HSC-ENE-01-01",
+        "HSC-ENE-01-02",
+        "HSC-ENE-01-03"
+      ],
+      "likelyCausesDescription": "搅拌、回流、排泥运行过长或低效",
+      "recommendationTemplate": "下钻设备效率和组合",
+      "constraint": "不得牺牲处理效果",
+      "recoveryDescription": "能耗下降且效果稳定",
+      "status": "DRAFT",
+      "boundaryNote": "设备故障归设备管理",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-COST-01",
+      "group": "成本",
+      "name": "总吨水成本偏高",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "minimumCoverage": 0.9,
+      "minimumEvidenceDescription": "药剂、电耗、排泥、负荷可比性",
+      "condition": {
+        "op": "GT",
+        "left": {
+          "metric": "TOTAL_COST_PER_WATER"
+        },
+        "right": {
+          "benchmark": "SITE_TARGET_OR_HISTORICAL_UPPER"
+        }
+      },
+      "persistence": {
+        "mode": "DAY",
+        "count": 14
+      },
+      "persistenceDescription": "连续14日",
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "resultStatusWhenMatched": "TRIGGERED",
+      "causeCodes": [],
+      "likelyCausesDescription": "药剂与能耗组合不经济",
+      "recommendationTemplate": "按边际成本排序优化",
+      "constraint": "保持效果约束",
+      "recoveryDescription": "成本下降",
+      "status": "DRAFT",
+      "boundaryNote": "—",
+      "suppresses": [],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-DATA-01",
+      "group": "数据",
+      "name": "药量诊断证据不足",
+      "applicability": {
+        "op": "EQ",
+        "left": {
+          "config": "features.chemicalPhosphorusRemoval"
+        },
+        "right": true
+      },
+      "applicabilityDescription": "化学除磷",
+      "minimumCoverage": null,
+      "minimumEvidenceDescription": "有效成分、流量、投加量",
+      "condition": {
+        "op": "FALSE",
+        "value": {
+          "function": "chemicalMinimumEvidenceSatisfied"
+        }
+      },
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "persistenceDescription": "当前周期",
+      "severity": "INFO",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "causeCodes": [],
+      "likelyCausesDescription": "药剂主数据或计量链不完整",
+      "recommendationTemplate": "补齐计量和检测",
+      "constraint": "不输出确定性药耗原因",
+      "recoveryDescription": "字段补齐",
+      "status": "DRAFT",
+      "boundaryNote": "—",
+      "suppresses": [
+        "HSC-CHEM-01",
+        "HSC-CHEM-02",
+        "HSC-CHEM-03",
+        "HSC-CHEM-04"
+      ],
+      "engine": "CONTROLLED_AST_V1"
+    },
+    {
+      "ruleCode": "HSC-DATA-02",
+      "group": "数据",
+      "name": "进出水数据不可比",
+      "applicability": {
+        "op": "TRUE"
+      },
+      "applicabilityDescription": "全部",
+      "minimumCoverage": null,
+      "minimumEvidenceDescription": "点位、采样时间、水力时滞",
+      "condition": {
+        "op": "FALSE",
+        "value": {
+          "function": "influentEffluentComparable"
+        }
+      },
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "persistenceDescription": "当前周期",
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "causeCodes": [
+        "HSC-DATA-02-01",
+        "HSC-DATA-02-02",
+        "HSC-DATA-02-03"
+      ],
+      "likelyCausesDescription": "采样未按停留时间匹配",
+      "recommendationTemplate": "修正采样和统计口径",
+      "constraint": "暂停效果诊断",
+      "recoveryDescription": "形成可比样本",
+      "status": "DRAFT",
+      "boundaryNote": "—",
+      "suppresses": [
+        "HSC-HRT-01",
+        "HSC-HRT-02",
+        "HSC-SET-01",
+        "HSC-SET-02"
+      ],
+      "engine": "CONTROLLED_AST_V1"
+    }
+  ],
+  "causes": [
+    {
+      "causeCode": "HSC-SET-01-01",
+      "ruleCode": "HSC-SET-01",
+      "sequence": 1,
+      "category": "水力条件",
+      "question": "实际表面负荷是否超限",
+      "requiredEvidence": "ACT_SURFACE_LOAD、运行组数、峰值流量",
+      "evidenceSource": "系统计算",
+      "confirmationCriteria": "表面负荷回到范围后SS恢复",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-SET-01-02",
+      "ruleCode": "HSC-SET-01",
+      "sequence": 2,
+      "category": "絮凝条件",
+      "question": "絮凝时间和转速是否合理",
+      "requiredEvidence": "FLOC_HRT、floc_actual_speed、floc_state",
+      "evidenceSource": "系统+观察",
+      "confirmationCriteria": "絮体恢复且SS改善",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-SET-01-03",
+      "ruleCode": "HSC-SET-01",
+      "sequence": 3,
+      "category": "药剂条件",
+      "question": "混凝剂和PAM是否适配",
+      "requiredEvidence": "COAG_DOSAGE、FLOC_DOSAGE、有效成分",
+      "evidenceSource": "系统+药剂数据",
+      "confirmationCriteria": "计量核验或小试结果",
+      "priority": "一般",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-SET-01-04",
+      "ruleCode": "HSC-SET-01",
+      "sequence": 4,
+      "category": "沉淀条件",
+      "question": "斜管、泥位和排泥是否异常",
+      "requiredEvidence": "lamella_state、sludge_level、排泥量",
+      "evidenceSource": "观察+系统",
+      "confirmationCriteria": "清理或排泥调整后恢复",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-CHEM-01-01",
+      "ruleCode": "HSC-CHEM-01",
+      "sequence": 1,
+      "category": "药剂质量",
+      "question": "有效成分是否低于配置值",
+      "requiredEvidence": "药剂批次检测/合格证",
+      "evidenceSource": "化验管理引用",
+      "confirmationCriteria": "有效成分复核",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-CHEM-01-02",
+      "ruleCode": "HSC-CHEM-01",
+      "sequence": 2,
+      "category": "投加计量",
+      "question": "计量泵实际流量是否准确",
+      "requiredEvidence": "标定记录、冲程、频率、运行时长",
+      "evidenceSource": "设备/运行记录",
+      "confirmationCriteria": "容积法或标定确认",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-CHEM-01-03",
+      "ruleCode": "HSC-CHEM-01",
+      "sequence": 3,
+      "category": "水量口径",
+      "question": "药量与水量统计周期是否一致",
+      "requiredEvidence": "日药量、日水量时间戳",
+      "evidenceSource": "系统校验",
+      "confirmationCriteria": "周期一致",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-CHEM-01-04",
+      "ruleCode": "HSC-CHEM-01",
+      "sequence": 4,
+      "category": "反应效率",
+      "question": "投加点和混合条件是否合理",
+      "requiredEvidence": "混合转速、G/GT、现场观察",
+      "evidenceSource": "系统+观察",
+      "confirmationCriteria": "调整后同药量效果提升",
+      "priority": "一般",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-CHEM-04-01",
+      "ruleCode": "HSC-CHEM-04",
+      "sequence": 1,
+      "category": "可比条件",
+      "question": "进水负荷与历史优秀期是否可比",
+      "requiredEvidence": "流量、TP、SS、温度",
+      "evidenceSource": "系统计算",
+      "confirmationCriteria": "差异在设定范围",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-CHEM-04-02",
+      "ruleCode": "HSC-CHEM-04",
+      "sequence": 2,
+      "category": "出水约束",
+      "question": "TP和SS是否连续稳定",
+      "requiredEvidence": "出水均值、P90、异常次数",
+      "evidenceSource": "系统计算",
+      "confirmationCriteria": "14日稳定",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-CHEM-04-03",
+      "ruleCode": "HSC-CHEM-04",
+      "sequence": 3,
+      "category": "计量可信",
+      "question": "药量、流量和有效成分是否可信",
+      "requiredEvidence": "数据覆盖率、复核状态",
+      "evidenceSource": "系统校验",
+      "confirmationCriteria": "最低证据集满足",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-CHEM-04-04",
+      "ruleCode": "HSC-CHEM-04",
+      "sequence": 4,
+      "category": "试验条件",
+      "question": "是否具备小步减量和回退能力",
+      "requiredEvidence": "泵调节、监测频次、责任人",
+      "evidenceSource": "人工确认",
+      "confirmationCriteria": "试验方案批准",
+      "priority": "一般",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-SLD-01-01",
+      "ruleCode": "HSC-SLD-01",
+      "sequence": 1,
+      "category": "排泥能力",
+      "question": "排泥泵实际流量是否达到预期",
+      "requiredEvidence": "流量计/容积法、运行时长",
+      "evidenceSource": "系统+测定",
+      "confirmationCriteria": "实际流量确认",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-SLD-01-02",
+      "ruleCode": "HSC-SLD-01",
+      "sequence": 2,
+      "category": "污泥浓度",
+      "question": "排泥污泥浓度是否准确",
+      "requiredEvidence": "化验结果、采样点和频次",
+      "evidenceSource": "化验管理引用",
+      "confirmationCriteria": "代表性样品确认",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-SLD-01-03",
+      "ruleCode": "HSC-SLD-01",
+      "sequence": 3,
+      "category": "管路状态",
+      "question": "排泥管路是否堵塞或阀门不到位",
+      "requiredEvidence": "现场检查、压力/流量变化",
+      "evidenceSource": "设备管理引用",
+      "confirmationCriteria": "状态确认",
+      "priority": "一般",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-SLD-01-04",
+      "ruleCode": "HSC-SLD-01",
+      "sequence": 4,
+      "category": "泥位仪表",
+      "question": "泥位信号是否存在偏差",
+      "requiredEvidence": "人工测量与仪表比对",
+      "evidenceSource": "仪表校验",
+      "confirmationCriteria": "偏差在允许范围",
+      "priority": "一般",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-SLD-04-01",
+      "ruleCode": "HSC-SLD-04",
+      "sequence": 1,
+      "category": "流量数据",
+      "question": "排泥流量和运行时长是否可信",
+      "requiredEvidence": "流量、时长、估算标识",
+      "evidenceSource": "系统校验",
+      "confirmationCriteria": "数据覆盖率满足",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-SLD-04-02",
+      "ruleCode": "HSC-SLD-04",
+      "sequence": 2,
+      "category": "浓度数据",
+      "question": "浓度采样是否代表排泥周期",
+      "requiredEvidence": "采样时间、点位、结果",
+      "evidenceSource": "化验管理引用",
+      "confirmationCriteria": "代表性确认",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-SLD-04-03",
+      "ruleCode": "HSC-SLD-04",
+      "sequence": 3,
+      "category": "理论模型",
+      "question": "药剂产泥和SS产泥模型是否适用",
+      "requiredEvidence": "药剂类型、有效成分、SS去除",
+      "evidenceSource": "模型校验",
+      "confirmationCriteria": "模型适用",
+      "priority": "一般",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-SLD-04-04",
+      "ruleCode": "HSC-SLD-04",
+      "sequence": 4,
+      "category": "积泥或流失",
+      "question": "是否存在泥位累积或出水带泥",
+      "requiredEvidence": "泥位趋势、出水SS、池面状态",
+      "evidenceSource": "系统+观察",
+      "confirmationCriteria": "趋势证据一致",
+      "priority": "一般",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-ENE-01-01",
+      "ruleCode": "HSC-ENE-01",
+      "sequence": 1,
+      "category": "负荷可比",
+      "question": "能耗对比期间处理负荷是否可比",
+      "requiredEvidence": "水量、运行组数",
+      "evidenceSource": "系统计算",
+      "confirmationCriteria": "负荷差异在允许范围",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-ENE-01-02",
+      "ruleCode": "HSC-ENE-01",
+      "sequence": 2,
+      "category": "分项能耗",
+      "question": "搅拌、回流、排泥哪一项贡献最大",
+      "requiredEvidence": "分项电量或功率×时长",
+      "evidenceSource": "系统计算",
+      "confirmationCriteria": "能耗结构完整",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-ENE-01-03",
+      "ruleCode": "HSC-ENE-01",
+      "sequence": 3,
+      "category": "运行组合",
+      "question": "设备运行台数和时长是否超出需求",
+      "requiredEvidence": "设备运行记录",
+      "evidenceSource": "系统分析",
+      "confirmationCriteria": "减少后效果稳定",
+      "priority": "一般",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-DATA-02-01",
+      "ruleCode": "HSC-DATA-02",
+      "sequence": 1,
+      "category": "采样点位",
+      "question": "进出水点位是否代表本单体",
+      "requiredEvidence": "点位配置、现场确认",
+      "evidenceSource": "化验管理引用",
+      "confirmationCriteria": "点位确认",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-DATA-02-02",
+      "ruleCode": "HSC-DATA-02",
+      "sequence": 2,
+      "category": "水力时滞",
+      "question": "进出水样是否按HRT匹配",
+      "requiredEvidence": "采样时间、HRT",
+      "evidenceSource": "系统计算",
+      "confirmationCriteria": "时间匹配",
+      "priority": "优先",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "HSC-DATA-02-03",
+      "ruleCode": "HSC-DATA-02",
+      "sequence": 3,
+      "category": "统计口径",
+      "question": "均值和异常样本处理是否一致",
+      "requiredEvidence": "数据聚合规则",
+      "evidenceSource": "系统校验",
+      "confirmationCriteria": "口径一致",
+      "priority": "一般",
+      "status": "DRAFT"
+    }
+  ],
+  "pageMappings": [
+    {
+      "componentCode": "HSC-OV-01",
+      "page": "分析概览",
+      "componentType": "顶部对象信息",
+      "name": "对象与周期",
+      "binding": "厂区、单体、工艺类型、运行组数、分析周期、模型版本",
+      "objectType": "字段",
+      "displayCondition": "始终显示",
+      "interaction": "只读",
+      "priority": "高",
+      "productNote": "对象切换后整体刷新",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-OV-02",
+      "page": "分析概览",
+      "componentType": "核心指标卡",
+      "name": "处理负荷率",
+      "binding": "LOAD_RATE",
+      "objectType": "指标",
+      "displayCondition": "有设计规模和实际水量",
+      "interaction": "下钻",
+      "priority": "高",
+      "productNote": "查看设计/实际及公式",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-OV-03",
+      "page": "分析概览",
+      "componentType": "核心指标卡",
+      "name": "TP去除率",
+      "binding": "TP_REMOVAL",
+      "objectType": "指标",
+      "displayCondition": "进出水TP可比",
+      "interaction": "下钻",
+      "priority": "高",
+      "productNote": "不可比时显示数据不足",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-OV-04",
+      "page": "分析概览",
+      "componentType": "核心指标卡",
+      "name": "混凝剂单耗",
+      "binding": "COAG_DOSAGE、COAG_DEVIATION",
+      "objectType": "指标",
+      "displayCondition": "药量和水量完整",
+      "interaction": "下钻",
+      "priority": "高",
+      "productNote": "展示目标来源",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-OV-05",
+      "page": "分析概览",
+      "componentType": "核心指标卡",
+      "name": "控制泥位",
+      "binding": "sludge_level",
+      "objectType": "字段+基准",
+      "displayCondition": "泥位数据有效",
+      "interaction": "下钻",
+      "priority": "高",
+      "productNote": "展示目标区间",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-OV-06",
+      "page": "分析概览",
+      "componentType": "运行链",
+      "name": "混合—絮凝—沉淀—出水",
+      "binding": "mixer_actual_speed、floc_actual_speed、ACT_SURFACE_LOAD、effluent_tp、effluent_ss",
+      "objectType": "字段+指标",
+      "displayCondition": "适用",
+      "interaction": "下钻",
+      "priority": "高",
+      "productNote": "快速识别环节偏差",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-OV-07",
+      "page": "分析概览",
+      "componentType": "主要结论",
+      "name": "主要偏差与优化机会",
+      "binding": "诊断结果Top3",
+      "objectType": "诊断",
+      "displayCondition": "存在结果",
+      "interaction": "进入诊断",
+      "priority": "高",
+      "productNote": "不显示设备和安全评价结论",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-DATA-01",
+      "page": "数据与计算",
+      "componentType": "折叠区",
+      "name": "构筑物与设计",
+      "binding": "设计和构筑物字段",
+      "objectType": "字段",
+      "displayCondition": "适用",
+      "interaction": "编辑/查看来源",
+      "priority": "中",
+      "productNote": "设计值需审批后生效",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-DATA-02",
+      "page": "数据与计算",
+      "componentType": "折叠区",
+      "name": "水量水质",
+      "binding": "周期水量和进出水水质",
+      "objectType": "字段",
+      "displayCondition": "适用",
+      "interaction": "查看来源",
+      "priority": "高",
+      "productNote": "显示覆盖率和复核状态",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-DATA-03",
+      "page": "数据与计算",
+      "componentType": "折叠区",
+      "name": "混合絮凝",
+      "binding": "转速、功率、HRT、单位容积功率",
+      "objectType": "字段+指标",
+      "displayCondition": "适用",
+      "interaction": "查看公式",
+      "priority": "中",
+      "productNote": "—",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-DATA-04",
+      "page": "数据与计算",
+      "componentType": "折叠区",
+      "name": "药剂",
+      "binding": "药剂主数据、投加量、理论和反向核算",
+      "objectType": "字段+指标",
+      "displayCondition": "化学除磷",
+      "interaction": "查看公式",
+      "priority": "高",
+      "productNote": "两个原Excel药剂工具合并",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-DATA-05",
+      "page": "数据与计算",
+      "componentType": "折叠区",
+      "name": "污泥回流与排泥",
+      "binding": "泥位、回流、排泥、泥量平衡",
+      "objectType": "字段+指标",
+      "displayCondition": "适用",
+      "interaction": "查看公式",
+      "priority": "高",
+      "productNote": "—",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-DATA-06",
+      "page": "数据与计算",
+      "componentType": "折叠区",
+      "name": "能耗成本",
+      "binding": "电量、电价、药价和成本",
+      "objectType": "字段+指标",
+      "displayCondition": "适用",
+      "interaction": "查看公式",
+      "priority": "中",
+      "productNote": "—",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-DIAG-01",
+      "page": "偏差诊断",
+      "componentType": "诊断卡",
+      "name": "能力偏差",
+      "binding": "HSC-CAP-*、HSC-HRT-*",
+      "objectType": "诊断",
+      "displayCondition": "规则触发或正常",
+      "interaction": "展开证据",
+      "priority": "高",
+      "productNote": "正常结论可折叠",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-DIAG-02",
+      "page": "偏差诊断",
+      "componentType": "诊断卡",
+      "name": "效果与药剂",
+      "binding": "HSC-SET-*、HSC-CHEM-*",
+      "objectType": "诊断",
+      "displayCondition": "规则触发",
+      "interaction": "展开原因核验",
+      "priority": "高",
+      "productNote": "原因分已确认和待核验",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-DIAG-03",
+      "page": "偏差诊断",
+      "componentType": "诊断卡",
+      "name": "污泥与排泥",
+      "binding": "HSC-SLD-*",
+      "objectType": "诊断",
+      "displayCondition": "规则触发",
+      "interaction": "展开原因核验",
+      "priority": "高",
+      "productNote": "—",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-PLAN-01",
+      "page": "优化方案",
+      "componentType": "方案卡",
+      "name": "生产性试验",
+      "binding": "目标、约束、步长、观察指标、停止和回退条件",
+      "objectType": "业务对象",
+      "displayCondition": "优化机会已确认",
+      "interaction": "新建/审批",
+      "priority": "高",
+      "productNote": "药剂减量默认小步调整",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-PLAN-02",
+      "page": "优化方案",
+      "componentType": "收益面板",
+      "name": "预计节药节电",
+      "binding": "ANNUAL_SAVING",
+      "objectType": "指标",
+      "displayCondition": "成本数据完整",
+      "interaction": "查看测算",
+      "priority": "高",
+      "productNote": "未验证标记预计",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-TRACK-01",
+      "page": "效果跟踪",
+      "componentType": "前后对比",
+      "name": "可比性检查",
+      "binding": "负荷、水质、参数、效果、成本",
+      "objectType": "字段+指标",
+      "displayCondition": "存在验证周期",
+      "interaction": "查看差异",
+      "priority": "高",
+      "productNote": "进水变化明显时不认定成果",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "HSC-TRACK-02",
+      "page": "效果跟踪",
+      "componentType": "结论",
+      "name": "固化/继续观察/回退",
+      "binding": "验证结果",
+      "objectType": "业务对象",
+      "displayCondition": "观察期完成",
+      "interaction": "审批",
+      "priority": "高",
+      "productNote": "固化后可形成新一厂一策目标",
+      "status": "DRAFT"
+    }
+  ],
+  "dictionaries": [
+    {
+      "dictionaryType": "data_type",
+      "value": "数值",
+      "description": "字段数据类型",
+      "order": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "data_type",
+      "value": "整数",
+      "description": "字段数据类型",
+      "order": 2,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "data_type",
+      "value": "百分比",
+      "description": "字段数据类型",
+      "order": 3,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "data_type",
+      "value": "枚举",
+      "description": "字段数据类型",
+      "order": 4,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "data_type",
+      "value": "日期区间",
+      "description": "字段数据类型",
+      "order": 5,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "data_type",
+      "value": "关联ID",
+      "description": "字段数据类型",
+      "order": 6,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "required",
+      "value": "是",
+      "description": "必填状态",
+      "order": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "required",
+      "value": "否",
+      "description": "必填状态",
+      "order": 2,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "required",
+      "value": "条件必填",
+      "description": "必填状态",
+      "order": 3,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "process_type",
+      "value": "常规高效沉淀",
+      "description": "工艺类型",
+      "order": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "process_type",
+      "value": "磁混凝",
+      "description": "工艺类型",
+      "order": 2,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "process_type",
+      "value": "微砂",
+      "description": "工艺类型",
+      "order": 3,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "process_type",
+      "value": "其他",
+      "description": "工艺类型",
+      "order": 9,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "floc_state",
+      "value": "絮体正常",
+      "description": "矾花状态",
+      "order": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "floc_state",
+      "value": "絮体偏小",
+      "description": "矾花状态",
+      "order": 2,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "floc_state",
+      "value": "絮体破碎",
+      "description": "矾花状态",
+      "order": 3,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "floc_state",
+      "value": "药剂漂浮",
+      "description": "矾花状态",
+      "order": 4,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "lamella_state",
+      "value": "畅通清澈",
+      "description": "斜管状态",
+      "order": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "lamella_state",
+      "value": "局部堵塞",
+      "description": "斜管状态",
+      "order": 2,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "lamella_state",
+      "value": "明显堵塞",
+      "description": "斜管状态",
+      "order": 3,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "lamella_state",
+      "value": "结垢",
+      "description": "斜管状态",
+      "order": 4,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "lamella_state",
+      "value": "藻类附着",
+      "description": "斜管状态",
+      "order": 5,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "conclusion_type",
+      "value": "已确认偏差",
+      "description": "诊断结论类型",
+      "order": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "conclusion_type",
+      "value": "疑似偏差",
+      "description": "诊断结论类型",
+      "order": 2,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "conclusion_type",
+      "value": "优化机会",
+      "description": "诊断结论类型",
+      "order": 3,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "conclusion_type",
+      "value": "数据不足",
+      "description": "诊断结论类型",
+      "order": 4,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "severity",
+      "value": "提示",
+      "description": "严重程度",
+      "order": 1,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "severity",
+      "value": "一般",
+      "description": "严重程度",
+      "order": 2,
+      "status": "ACTIVE"
+    },
+    {
+      "dictionaryType": "severity",
+      "value": "重要",
+      "description": "严重程度",
+      "order": 3,
+      "status": "ACTIVE"
+    }
+  ],
+  "counts": {
+    "fields": 60,
+    "metrics": 29,
+    "benchmarks": 15,
+    "rules": 20,
+    "causes": 26,
+    "pageMappings": 20,
+    "dictionaries": 29
+  }
+}

@@ -1,0 +1,3095 @@
+{
+  "$schema": "./dewatering-model.schema.json",
+  "modelCode": "DWT",
+  "modelName": "污泥脱水分析",
+  "version": "0.1.0",
+  "status": "DRAFT",
+  "objectScope": "UNIT",
+  "ownerDomain": "unit.dewatering",
+  "unitType": "SLUDGE_DEWATERING",
+  "timezone": "Asia/Shanghai",
+  "pages": [
+    "分析概览",
+    "数据与计算",
+    "偏差诊断",
+    "优化方案",
+    "效果跟踪"
+  ],
+  "processVariants": [
+    "板框压滤机",
+    "带式浓缩脱水机",
+    "离心脱水机"
+  ],
+  "boundary": {
+    "owns": [
+      "脱水能力与负荷",
+      "泥饼含固率与固体捕获",
+      "设备周期/产率",
+      "药剂水耗能耗与成本",
+      "运行工况和优化验证"
+    ],
+    "references": [
+      "浓缩进泥事实",
+      "排泥与浓缩平衡",
+      "设备状态与工单",
+      "药剂批次",
+      "运输处置参数",
+      "安全限制"
+    ],
+    "forbids": [
+      "生化或源端产泥原因",
+      "全厂泥量平衡主结论",
+      "设备维修质量评价",
+      "药剂采购评价",
+      "污泥处置合规评价",
+      "安全作业评价"
+    ]
+  },
+  "benchmarkResolution": {
+    "displayOrder": [
+      "DESIGN",
+      "SITE_TARGET",
+      "STANDARD",
+      "HISTORICAL_BEST",
+      "PEER_BENCHMARK"
+    ],
+    "allowUnconfirmedExperience": false,
+    "noMatchBehavior": "NO_APPLICABLE_BENCHMARK"
+  },
+  "evaluationStatuses": [
+    "NOT_APPLICABLE",
+    "DATA_INSUFFICIENT",
+    "NORMAL",
+    "TRIGGERED",
+    "SUPPRESSED"
+  ],
+  "registries": {
+    "functions": [
+      "minimumDewateringMassEvidenceMissing",
+      "minimumCostEvidenceMissing",
+      "variantEventEvidenceMissing",
+      "lowPamWithPoorPerformance",
+      "cycleStageCompleteness",
+      "totalChainCostShift"
+    ],
+    "modelReferences": [],
+    "benchmarkReferences": [
+      "siteCapacityRange",
+      "historicalComparableRange"
+    ]
+  },
+  "fields": [
+    {
+      "fieldCode": "site_id",
+      "group": "对象",
+      "name": "厂区ID",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "基础信息",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "unit_id",
+      "group": "对象",
+      "name": "单体ID",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "基础信息",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "analysis_period",
+      "group": "对象",
+      "name": "分析周期",
+      "dataType": "DATE_RANGE",
+      "unit": "—",
+      "source": "分析任务",
+      "cadence": "周期",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "model_version",
+      "group": "对象",
+      "name": "模型版本",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "模型中心",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "config_version",
+      "group": "对象",
+      "name": "单体配置版本",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "单体配置",
+      "cadence": "配置",
+      "requiredMode": "REQUIRED",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "dewatering_type",
+      "group": "适用性",
+      "name": "脱水机类型",
+      "dataType": "ENUM",
+      "unit": "—",
+      "source": "单体配置",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "design_ds_capacity",
+      "group": "设计",
+      "name": "设计干固体处理能力",
+      "dataType": "DECIMAL",
+      "unit": "tDS/d",
+      "source": "设计/设备台账",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "installed_units",
+      "group": "设备",
+      "name": "安装台数",
+      "dataType": "INTEGER",
+      "unit": "台",
+      "source": "设备台账",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "running_units",
+      "group": "运行",
+      "name": "运行台数",
+      "dataType": "INTEGER",
+      "unit": "台",
+      "source": "自控/记录",
+      "cadence": "班次",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "feed_volume",
+      "group": "进泥",
+      "name": "日进泥量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "流量计",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "feed_solids",
+      "group": "进泥",
+      "name": "进泥含固率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "feed_density",
+      "group": "进泥",
+      "name": "进泥密度",
+      "dataType": "DECIMAL",
+      "unit": "t/m3",
+      "source": "化验/默认",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "cake_wet_mass",
+      "group": "产出",
+      "name": "湿泥饼产量",
+      "dataType": "DECIMAL",
+      "unit": "t/d",
+      "source": "称量",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "cake_moisture",
+      "group": "产出",
+      "name": "泥饼含水率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "filtrate_volume",
+      "group": "产出",
+      "name": "滤液/离心液量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "流量计/估算",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "filtrate_solids",
+      "group": "产出",
+      "name": "滤液含固率",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "化验",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "operating_hours",
+      "group": "运行",
+      "name": "日运行时长",
+      "dataType": "DECIMAL",
+      "unit": "h/d/台",
+      "source": "运行记录",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "downtime_hours",
+      "group": "运行",
+      "name": "非计划停机时长",
+      "dataType": "DECIMAL",
+      "unit": "h/d",
+      "source": "事件记录",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "cycle_count",
+      "group": "板框",
+      "name": "日循环次数",
+      "dataType": "DECIMAL",
+      "unit": "次/d/台",
+      "source": "事件日志",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "板框压滤机",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "cycle_minutes",
+      "group": "板框",
+      "name": "单循环总时长",
+      "dataType": "DECIMAL",
+      "unit": "min",
+      "source": "事件日志",
+      "cadence": "事件",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "板框压滤机",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "filter_area",
+      "group": "板框",
+      "name": "单机过滤面积",
+      "dataType": "DECIMAL",
+      "unit": "m2",
+      "source": "设备台账",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "板框压滤机",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "chamber_volume",
+      "group": "板框",
+      "name": "单机滤室容积",
+      "dataType": "DECIMAL",
+      "unit": "m3",
+      "source": "设备台账",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "板框压滤机",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "cake_thickness",
+      "group": "板框",
+      "name": "泥饼厚度",
+      "dataType": "DECIMAL",
+      "unit": "mm",
+      "source": "检测/设备设置",
+      "cadence": "班次",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "板框压滤机",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "belt_width",
+      "group": "带式",
+      "name": "滤带宽度",
+      "dataType": "DECIMAL",
+      "unit": "m",
+      "source": "设备台账",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "带式浓缩脱水机",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "belt_speed",
+      "group": "带式",
+      "name": "滤带速度",
+      "dataType": "DECIMAL",
+      "unit": "m/min",
+      "source": "自控",
+      "cadence": "班次",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "带式浓缩脱水机",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "belt_loading",
+      "group": "带式",
+      "name": "滤带干固体负荷",
+      "dataType": "DECIMAL",
+      "unit": "kgDS/(m·h)",
+      "source": "计算/记录",
+      "cadence": "班次",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "带式浓缩脱水机",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "bowl_speed",
+      "group": "离心",
+      "name": "转鼓转速",
+      "dataType": "DECIMAL",
+      "unit": "r/min",
+      "source": "自控",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "离心脱水机",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "differential_speed",
+      "group": "离心",
+      "name": "差速",
+      "dataType": "DECIMAL",
+      "unit": "r/min",
+      "source": "自控",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "离心脱水机",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "torque",
+      "group": "离心",
+      "name": "扭矩/负载",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "自控",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "离心脱水机",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "vibration_drive",
+      "group": "离心",
+      "name": "驱动端振动",
+      "dataType": "DECIMAL",
+      "unit": "mm/s",
+      "source": "振动监测",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "离心脱水机",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "vibration_non_drive",
+      "group": "离心",
+      "name": "非驱动端振动",
+      "dataType": "DECIMAL",
+      "unit": "mm/s",
+      "source": "振动监测",
+      "cadence": "分钟",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "离心脱水机",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "pam_mass",
+      "group": "药剂",
+      "name": "PAM日用量",
+      "dataType": "DECIMAL",
+      "unit": "kg/d",
+      "source": "称量/加药",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "pam_active_fraction",
+      "group": "药剂",
+      "name": "PAM有效成分",
+      "dataType": "DECIMAL",
+      "unit": "%",
+      "source": "批次质检",
+      "cadence": "批次",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "pam_price",
+      "group": "成本",
+      "name": "PAM单价",
+      "dataType": "DECIMAL",
+      "unit": "CNY/kg",
+      "source": "经营参数",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "conditioning_chemical_mass",
+      "group": "药剂",
+      "name": "其他调理药剂日用量",
+      "dataType": "DECIMAL",
+      "unit": "kg/d",
+      "source": "称量",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "conditioning_chemical_price",
+      "group": "成本",
+      "name": "其他调理药剂单价",
+      "dataType": "DECIMAL",
+      "unit": "CNY/kg",
+      "source": "经营参数",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "wash_water",
+      "group": "水耗",
+      "name": "日冲洗水量",
+      "dataType": "DECIMAL",
+      "unit": "m3/d",
+      "source": "流量计",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "water_price",
+      "group": "成本",
+      "name": "冲洗水单价",
+      "dataType": "DECIMAL",
+      "unit": "CNY/m3",
+      "source": "经营参数",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "equipment_energy",
+      "group": "能耗",
+      "name": "脱水主机及辅机日电量",
+      "dataType": "DECIMAL",
+      "unit": "kWh/d",
+      "source": "分项电表",
+      "cadence": "日",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "electricity_price",
+      "group": "成本",
+      "name": "电价",
+      "dataType": "DECIMAL",
+      "unit": "CNY/kWh",
+      "source": "经营参数",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "maintenance_cost",
+      "group": "成本",
+      "name": "周期维修材料费用",
+      "dataType": "DECIMAL",
+      "unit": "CNY",
+      "source": "维修成本台账",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "maintenance_period_days",
+      "group": "成本",
+      "name": "维修成本统计天数",
+      "dataType": "INTEGER",
+      "unit": "d",
+      "source": "成本台账",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "transport_distance",
+      "group": "外部",
+      "name": "运输距离",
+      "dataType": "DECIMAL",
+      "unit": "km",
+      "source": "运输合同",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "transport_unit_price",
+      "group": "外部",
+      "name": "运输单价",
+      "dataType": "DECIMAL",
+      "unit": "CNY/t",
+      "source": "运输合同",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "disposal_unit_price",
+      "group": "外部",
+      "name": "处置单价",
+      "dataType": "DECIMAL",
+      "unit": "CNY/t",
+      "source": "处置合同",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "product_sample_time",
+      "group": "数据",
+      "name": "泥饼采样时间",
+      "dataType": "DATETIME",
+      "unit": "—",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "filtrate_sample_time",
+      "group": "数据",
+      "name": "滤液采样时间",
+      "dataType": "DATETIME",
+      "unit": "—",
+      "source": "LIMS",
+      "cadence": "样本",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "energy_boundary_version",
+      "group": "数据",
+      "name": "脱水能耗边界版本",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "计量配置",
+      "cadence": "版本化",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "chemical_batch_id",
+      "group": "数据",
+      "name": "药剂批次ID",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "药剂台账",
+      "cadence": "批次",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "cycle_stage_log",
+      "group": "数据",
+      "name": "板框阶段事件日志",
+      "dataType": "JSON",
+      "unit": "—",
+      "source": "自控",
+      "cadence": "事件",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "板框压滤机",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "fieldCode": "equipment_state_ref",
+      "group": "外部",
+      "name": "设备状态引用",
+      "dataType": "STRING",
+      "unit": "—",
+      "source": "设备模块",
+      "cadence": "周期",
+      "requiredMode": "CONDITIONAL",
+      "applicability": "全部",
+      "quality": "非空、单位、时间戳、对象与口径一致性校验",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    }
+  ],
+  "metrics": [
+    {
+      "metricCode": "FEED_DS",
+      "group": "能力",
+      "name": "进泥干固体量",
+      "formula": "feed_volume*feed_solids",
+      "unit": "tDS/d",
+      "dependencies": [
+        "feed_volume",
+        "feed_solids"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.feed_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CAKE_DS",
+      "group": "效果",
+      "name": "泥饼干固体量",
+      "formula": "cake_wet_mass*(1-cake_moisture)",
+      "unit": "tDS/d",
+      "dependencies": [
+        "cake_wet_mass",
+        "cake_moisture"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.cake_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "FILTRATE_DS",
+      "group": "效果",
+      "name": "滤液流失干固体量",
+      "formula": "filtrate_volume*filtrate_solids",
+      "unit": "tDS/d",
+      "dependencies": [
+        "filtrate_volume",
+        "filtrate_solids"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.filtrate_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "SOLIDS_CAPTURE",
+      "group": "效果",
+      "name": "固体捕获率",
+      "formula": "CAKE_DS/FEED_DS",
+      "unit": "%",
+      "dependencies": [
+        "CAKE_DS",
+        "FEED_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.solids_capture.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CAKE_SOLIDS",
+      "group": "效果",
+      "name": "泥饼含固率",
+      "formula": "1-cake_moisture",
+      "unit": "%",
+      "dependencies": [
+        "cake_moisture"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.cake_solids.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CAPACITY_UTILIZATION",
+      "group": "能力",
+      "name": "设计干固体能力利用率",
+      "formula": "FEED_DS/design_ds_capacity",
+      "unit": "%",
+      "dependencies": [
+        "FEED_DS",
+        "design_ds_capacity"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.capacity_utilization.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "DS_THROUGHPUT_UNIT",
+      "group": "能力",
+      "name": "单台小时干固体产率",
+      "formula": "CAKE_DS/operating_hours/running_units",
+      "unit": "tDS/(h·台)",
+      "dependencies": [
+        "CAKE_DS",
+        "operating_hours",
+        "running_units"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.ds_throughput_unit.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "WET_THROUGHPUT_UNIT",
+      "group": "能力",
+      "name": "单台小时湿泥产率",
+      "formula": "cake_wet_mass/operating_hours/running_units",
+      "unit": "t/(h·台)",
+      "dependencies": [
+        "cake_wet_mass",
+        "operating_hours",
+        "running_units"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.wet_throughput_unit.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "AVAILABILITY",
+      "group": "运行",
+      "name": "运行可用率",
+      "formula": "operating_hours/(operating_hours+downtime_hours)",
+      "unit": "%",
+      "dependencies": [
+        "operating_hours",
+        "downtime_hours"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.availability.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "PLATE_CYCLE_PRODUCTIVITY",
+      "group": "板框",
+      "name": "板框单循环干固体产量",
+      "formula": "CAKE_DS/cycle_count/running_units",
+      "unit": "tDS/(次·台)",
+      "dependencies": [
+        "CAKE_DS",
+        "cycle_count",
+        "running_units"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.plate_cycle_productivity.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "PLATE_AREA_LOADING",
+      "group": "板框",
+      "name": "板框面积干固体负荷",
+      "formula": "CAKE_DS*1000/filter_area/running_units",
+      "unit": "kgDS/(m2·d)",
+      "dependencies": [
+        "CAKE_DS",
+        "filter_area",
+        "running_units"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.plate_area_loading.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "BELT_LOADING_CALC",
+      "group": "带式",
+      "name": "滤带实际干固体负荷",
+      "formula": "CAKE_DS*1000/operating_hours/running_units/belt_width",
+      "unit": "kgDS/(m·h)",
+      "dependencies": [
+        "CAKE_DS",
+        "operating_hours",
+        "running_units",
+        "belt_width"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.belt_loading_calc.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CENTRIFUGE_WET_RATE",
+      "group": "离心",
+      "name": "离心机湿泥产率",
+      "formula": "cake_wet_mass*1000/operating_hours/running_units",
+      "unit": "kg/h/台",
+      "dependencies": [
+        "cake_wet_mass",
+        "operating_hours",
+        "running_units"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.centrifuge_wet_rate.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "PAM_UNIT",
+      "group": "药剂",
+      "name": "PAM吨干固体单耗",
+      "formula": "pam_mass*pam_active_fraction/CAKE_DS",
+      "unit": "kg/tDS",
+      "dependencies": [
+        "pam_mass",
+        "pam_active_fraction",
+        "CAKE_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.pam_unit.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "OTHER_CHEM_UNIT",
+      "group": "药剂",
+      "name": "其他调理药剂吨干固体单耗",
+      "formula": "conditioning_chemical_mass/CAKE_DS",
+      "unit": "kg/tDS",
+      "dependencies": [
+        "conditioning_chemical_mass",
+        "CAKE_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.other_chem_unit.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "CHEMICAL_COST_DS",
+      "group": "成本",
+      "name": "吨干固体药剂成本",
+      "formula": "(pam_mass*pam_price+conditioning_chemical_mass*conditioning_chemical_price)/CAKE_DS",
+      "unit": "CNY/tDS",
+      "dependencies": [
+        "pam_mass",
+        "pam_price",
+        "conditioning_chemical_mass",
+        "conditioning_chemical_price",
+        "CAKE_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.chemical_cost_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "UNIT_ENERGY_DS",
+      "group": "能耗",
+      "name": "吨干固体电耗",
+      "formula": "equipment_energy/CAKE_DS",
+      "unit": "kWh/tDS",
+      "dependencies": [
+        "equipment_energy",
+        "CAKE_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.unit_energy_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "UNIT_WASH_WATER",
+      "group": "水耗",
+      "name": "吨干固体冲洗水耗",
+      "formula": "wash_water/CAKE_DS",
+      "unit": "m3/tDS",
+      "dependencies": [
+        "wash_water",
+        "CAKE_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.unit_wash_water.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "ENERGY_COST_DS",
+      "group": "成本",
+      "name": "吨干固体电费",
+      "formula": "equipment_energy*electricity_price/CAKE_DS",
+      "unit": "CNY/tDS",
+      "dependencies": [
+        "equipment_energy",
+        "electricity_price",
+        "CAKE_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.energy_cost_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "WATER_COST_DS",
+      "group": "成本",
+      "name": "吨干固体水费",
+      "formula": "wash_water*water_price/CAKE_DS",
+      "unit": "CNY/tDS",
+      "dependencies": [
+        "wash_water",
+        "water_price",
+        "CAKE_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.water_cost_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "MAINTENANCE_COST_DS",
+      "group": "成本",
+      "name": "吨干固体维修材料费",
+      "formula": "maintenance_cost/(CAKE_DS*maintenance_period_days)",
+      "unit": "CNY/tDS",
+      "dependencies": [
+        "maintenance_cost",
+        "CAKE_DS",
+        "maintenance_period_days"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.maintenance_cost_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "TRANSPORT_COST_DS",
+      "group": "外部",
+      "name": "吨干固体运输费",
+      "formula": "cake_wet_mass*transport_unit_price/CAKE_DS",
+      "unit": "CNY/tDS",
+      "dependencies": [
+        "cake_wet_mass",
+        "transport_unit_price",
+        "CAKE_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.transport_cost_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "DISPOSAL_COST_DS",
+      "group": "外部",
+      "name": "吨干固体处置费",
+      "formula": "cake_wet_mass*disposal_unit_price/CAKE_DS",
+      "unit": "CNY/tDS",
+      "dependencies": [
+        "cake_wet_mass",
+        "disposal_unit_price",
+        "CAKE_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.disposal_cost_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "TOTAL_OPERATION_COST_DS",
+      "group": "成本",
+      "name": "吨干固体脱水运行成本",
+      "formula": "CHEMICAL_COST_DS+ENERGY_COST_DS+WATER_COST_DS+MAINTENANCE_COST_DS",
+      "unit": "CNY/tDS",
+      "dependencies": [
+        "CHEMICAL_COST_DS",
+        "ENERGY_COST_DS",
+        "WATER_COST_DS",
+        "MAINTENANCE_COST_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.total_operation_cost_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "TOTAL_CHAIN_COST_DS",
+      "group": "外部",
+      "name": "含运处吨干固体全链成本",
+      "formula": "TOTAL_OPERATION_COST_DS+TRANSPORT_COST_DS+DISPOSAL_COST_DS",
+      "unit": "CNY/tDS",
+      "dependencies": [
+        "TOTAL_OPERATION_COST_DS",
+        "TRANSPORT_COST_DS",
+        "DISPOSAL_COST_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.total_chain_cost_ds.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    },
+    {
+      "metricCode": "MASS_CLOSURE",
+      "group": "数据",
+      "name": "脱水平衡闭合率",
+      "formula": "(CAKE_DS+FILTRATE_DS)/FEED_DS",
+      "unit": "%",
+      "dependencies": [
+        "CAKE_DS",
+        "FILTRATE_DS",
+        "FEED_DS"
+      ],
+      "minimumCoverage": 0.85,
+      "implementationKey": "dewatering.mass_closure.v1",
+      "qualityRule": "依赖有效、分母非零、单位与时间口径一致",
+      "boundary": "仅用于本单体分析",
+      "status": "DRAFT"
+    }
+  ],
+  "benchmarks": [
+    {
+      "benchmarkCode": "DWT-BM-01",
+      "benchmarkType": "DESIGN",
+      "objectCode": "CAPACITY_UTILIZATION",
+      "name": "脱水能力利用范围",
+      "lower": "待设计确认",
+      "upper": "待设计确认",
+      "unit": "%",
+      "applicability": "对应机型与运行台数",
+      "source": "设计/设备台账",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-02",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "SOLIDS_CAPTURE",
+      "name": "固体捕获率下限",
+      "lower": "待一厂一策",
+      "upper": null,
+      "unit": "%",
+      "applicability": "进泥泥饼滤液同步",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-03",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "CAKE_SOLIDS",
+      "name": "泥饼含固率目标",
+      "lower": "待一厂一策",
+      "upper": "待一厂一策",
+      "unit": "%",
+      "applicability": "对应机型和处置要求",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-04",
+      "benchmarkType": "DESIGN",
+      "objectCode": "DS_THROUGHPUT_UNIT",
+      "name": "单台干固体产率",
+      "lower": "按设备能力",
+      "upper": "按设备能力",
+      "unit": "tDS/(h·台)",
+      "applicability": "对应机型",
+      "source": "设备台账",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-05",
+      "benchmarkType": "DESIGN",
+      "objectCode": "cycle_minutes",
+      "name": "板框循环时间",
+      "lower": "按批准程序",
+      "upper": "按批准程序",
+      "unit": "min",
+      "applicability": "板框压滤机",
+      "source": "批准程序",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-06",
+      "benchmarkType": "DESIGN",
+      "objectCode": "PLATE_AREA_LOADING",
+      "name": "板框面积负荷",
+      "lower": "按设备能力",
+      "upper": "按设备能力",
+      "unit": "kgDS/(m2·d)",
+      "applicability": "板框压滤机",
+      "source": "设备台账",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-07",
+      "benchmarkType": "DESIGN",
+      "objectCode": "BELT_LOADING_CALC",
+      "name": "滤带干固体负荷",
+      "lower": "按设备能力",
+      "upper": "按设备能力",
+      "unit": "kgDS/(m·h)",
+      "applicability": "带式机",
+      "source": "设备台账",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-08",
+      "benchmarkType": "DESIGN",
+      "objectCode": "differential_speed",
+      "name": "离心机差速范围",
+      "lower": "按设备能力",
+      "upper": "按设备能力",
+      "unit": "r/min",
+      "applicability": "离心机",
+      "source": "设备台账",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-09",
+      "benchmarkType": "DESIGN",
+      "objectCode": "vibration_drive",
+      "name": "离心机振动上限",
+      "lower": null,
+      "upper": "按设备限值",
+      "unit": "mm/s",
+      "applicability": "离心机",
+      "source": "设备台账",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-10",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "PAM_UNIT",
+      "name": "PAM单耗目标",
+      "lower": null,
+      "upper": "待一厂一策",
+      "unit": "kg/tDS",
+      "applicability": "泥质与药剂可比",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-11",
+      "benchmarkType": "HISTORICAL_BEST",
+      "objectCode": "UNIT_ENERGY_DS",
+      "name": "吨干固体电耗目标",
+      "lower": null,
+      "upper": "待历史确认",
+      "unit": "kWh/tDS",
+      "applicability": "对应机型泥质可比",
+      "source": "历史优秀期",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-12",
+      "benchmarkType": "HISTORICAL_BEST",
+      "objectCode": "UNIT_WASH_WATER",
+      "name": "吨干固体冲洗水耗目标",
+      "lower": null,
+      "upper": "待历史确认",
+      "unit": "m3/tDS",
+      "applicability": "对应机型",
+      "source": "历史优秀期",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-13",
+      "benchmarkType": "HISTORICAL_BEST",
+      "objectCode": "TOTAL_OPERATION_COST_DS",
+      "name": "吨干固体运行成本目标",
+      "lower": null,
+      "upper": "待历史确认",
+      "unit": "CNY/tDS",
+      "applicability": "价格与边界一致",
+      "source": "历史优秀期",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-14",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "AVAILABILITY",
+      "name": "脱水系统可用率下限",
+      "lower": "待一厂一策",
+      "upper": null,
+      "unit": "%",
+      "applicability": "计划停机剔除",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-15",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "MASS_CLOSURE",
+      "name": "脱水平衡闭合范围",
+      "lower": "待一厂一策",
+      "upper": "待一厂一策",
+      "unit": "%",
+      "applicability": "同步样本完整",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-16",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "filtrate_solids",
+      "name": "滤液含固率上限",
+      "lower": null,
+      "upper": "待一厂一策",
+      "unit": "%",
+      "applicability": "样本点确认",
+      "source": "试点审批",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    },
+    {
+      "benchmarkCode": "DWT-BM-17",
+      "benchmarkType": "SITE_TARGET",
+      "objectCode": "cycleStageCompleteness",
+      "name": "板框阶段日志完整率",
+      "lower": "待一厂一策",
+      "upper": null,
+      "unit": "%",
+      "applicability": "板框压滤机",
+      "source": "数据标准",
+      "status": "PENDING",
+      "publishable": false,
+      "note": "试点审批后方可用于正式诊断"
+    }
+  ],
+  "rules": [
+    {
+      "ruleCode": "DWT-DATA-01",
+      "group": "数据",
+      "name": "进泥泥饼滤液证据不足",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.8,
+      "condition": {
+        "op": "FUNCTION",
+        "function": "minimumDewateringMassEvidenceMissing"
+      },
+      "thresholdRef": "最低证据集",
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "覆盖率、来源、时间和版本",
+      "likelyCauses": [
+        "数据源未接入",
+        "时间或对象口径不完整"
+      ],
+      "recommendation": "补齐最低证据后重新分析",
+      "constraint": "只输出补数要求",
+      "recovery": "最低证据持续满足",
+      "boundary": "数据门槛，不生成业务偏差",
+      "suppresses": [
+        "DWT-EFF-01",
+        "DWT-EFF-02",
+        "DWT-BAL-01"
+      ],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "ruleCode": "DWT-DATA-02",
+      "group": "数据",
+      "name": "能耗药耗边界不完整",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.8,
+      "condition": {
+        "op": "FUNCTION",
+        "function": "minimumCostEvidenceMissing"
+      },
+      "thresholdRef": "最低证据集",
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "覆盖率、来源、时间和版本",
+      "likelyCauses": [
+        "数据源未接入",
+        "时间或对象口径不完整"
+      ],
+      "recommendation": "补齐最低证据后重新分析",
+      "constraint": "只输出补数要求",
+      "recovery": "最低证据持续满足",
+      "boundary": "数据门槛，不生成业务偏差",
+      "suppresses": [
+        "DWT-CHEM-01",
+        "DWT-ENERGY-01",
+        "DWT-COST-01"
+      ],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "ruleCode": "DWT-DATA-03",
+      "group": "数据",
+      "name": "机型事件证据不足",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.8,
+      "condition": {
+        "op": "FUNCTION",
+        "function": "variantEventEvidenceMissing"
+      },
+      "thresholdRef": "最低证据集",
+      "persistence": {
+        "mode": "CURRENT_PERIOD",
+        "count": 1
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "覆盖率、来源、时间和版本",
+      "likelyCauses": [
+        "数据源未接入",
+        "时间或对象口径不完整"
+      ],
+      "recommendation": "补齐最低证据后重新分析",
+      "constraint": "只输出补数要求",
+      "recovery": "最低证据持续满足",
+      "boundary": "数据门槛，不生成业务偏差",
+      "suppresses": [
+        "DWT-PLATE-01",
+        "DWT-BELT-01",
+        "DWT-CENT-01",
+        "DWT-CENT-02"
+      ],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "CAP-01",
+      "group": "能力",
+      "name": "脱水能力利用异常",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "CAPACITY_UTILIZATION",
+        "benchmark": "DWT-BM-01"
+      },
+      "thresholdRef": "DWT-BM-01",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "进泥干固体、运行台数、设计能力",
+      "likelyCauses": [
+        "进泥波动",
+        "设备能力或口径配置错误"
+      ],
+      "recommendation": "核实能力口径并优化运行组合",
+      "constraint": "不判断源端产泥原因",
+      "recovery": "连续3日回归",
+      "boundary": "只评价脱水能力",
+      "ruleCode": "DWT-CAP-01",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "CAP-02",
+      "group": "能力",
+      "name": "单台干固体产率偏低",
+      "condition": {
+        "op": "LT",
+        "metric": "DS_THROUGHPUT_UNIT",
+        "benchmark": "DWT-BM-04.lower"
+      },
+      "thresholdRef": "DWT-BM-04.lower",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "干固体产量、时长、台数",
+      "likelyCauses": [
+        "低负荷运行",
+        "进泥性质或参数不匹配"
+      ],
+      "recommendation": "按机型核验关键参数",
+      "constraint": "设备维修原因需转设备模块",
+      "recovery": "连续3日恢复",
+      "boundary": "只评价运行产率",
+      "ruleCode": "DWT-CAP-02",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "EFF-01",
+      "group": "效果",
+      "name": "固体捕获率偏低",
+      "condition": {
+        "op": "LT",
+        "metric": "SOLIDS_CAPTURE",
+        "benchmark": "DWT-BM-02.lower"
+      },
+      "thresholdRef": "DWT-BM-02.lower",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "同步进泥、泥饼、滤液固体",
+      "likelyCauses": [
+        "药剂/参数不匹配",
+        "取样不同步"
+      ],
+      "recommendation": "按药剂—负荷—机型参数顺序核验",
+      "constraint": "不得用单点认定设备故障",
+      "recovery": "连续3组样本恢复",
+      "boundary": "只评价脱水效果",
+      "ruleCode": "DWT-EFF-01",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "EFF-02",
+      "group": "效果",
+      "name": "泥饼含固率偏低",
+      "condition": {
+        "op": "LT",
+        "metric": "CAKE_SOLIDS",
+        "benchmark": "DWT-BM-03.lower"
+      },
+      "thresholdRef": "DWT-BM-03.lower",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "泥饼含水率、进泥、参数",
+      "likelyCauses": [
+        "进泥稀或参数不合理",
+        "药剂调理不足"
+      ],
+      "recommendation": "在捕获率约束下优化参数",
+      "constraint": "处置要求作为外部约束引用",
+      "recovery": "连续3组样本恢复",
+      "boundary": "只评价泥饼效果",
+      "ruleCode": "DWT-EFF-02",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "EFF-03",
+      "group": "效果",
+      "name": "滤液含固率偏高",
+      "condition": {
+        "op": "GT",
+        "field": "filtrate_solids",
+        "benchmark": "DWT-BM-16.upper"
+      },
+      "thresholdRef": "DWT-BM-16.upper",
+      "persistence": {
+        "mode": "SAMPLE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "滤液含固率和同步进泥",
+      "likelyCauses": [
+        "固体捕获下降",
+        "采样点异常"
+      ],
+      "recommendation": "核验药剂和机型工况",
+      "constraint": "回流影响由排泥浓缩模块展示",
+      "recovery": "连续3组样本恢复",
+      "boundary": "只评价滤液质量",
+      "ruleCode": "DWT-EFF-03",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "BAL-01",
+      "group": "数据",
+      "name": "脱水平衡不闭合",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "MASS_CLOSURE",
+        "benchmark": "DWT-BM-15"
+      },
+      "thresholdRef": "DWT-BM-15",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "进泥、泥饼和滤液干固体",
+      "likelyCauses": [
+        "流量/含固率不同步",
+        "旁路或库存未计"
+      ],
+      "recommendation": "先修正时间和质量口径",
+      "constraint": "不直接认定固体损失",
+      "recovery": "连续3日闭合",
+      "boundary": "只作脱水单体质量平衡",
+      "ruleCode": "DWT-BAL-01",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "PLATE-01",
+      "group": "板框",
+      "name": "板框循环时间偏离",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "field": "cycle_minutes",
+        "benchmark": "DWT-BM-05"
+      },
+      "thresholdRef": "DWT-BM-05",
+      "persistence": {
+        "mode": "EVENT",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "十步阶段日志和程序版本",
+      "likelyCauses": [
+        "进料/压榨时间异常",
+        "阶段中断"
+      ],
+      "recommendation": "定位贡献阶段并优化程序",
+      "constraint": "不得跳过安全联锁",
+      "recovery": "连续3循环回归",
+      "boundary": "仅板框适用",
+      "ruleCode": "DWT-PLATE-01",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "PLATE-02",
+      "group": "板框",
+      "name": "板框面积负荷偏离",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "PLATE_AREA_LOADING",
+        "benchmark": "DWT-BM-06"
+      },
+      "thresholdRef": "DWT-BM-06",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "干固体产量、面积、循环",
+      "likelyCauses": [
+        "循环次数或进料不足",
+        "滤室配置差异"
+      ],
+      "recommendation": "按能力和泥饼效果联合优化",
+      "constraint": "不评价滤板维修质量",
+      "recovery": "连续3日回归",
+      "boundary": "仅板框适用",
+      "ruleCode": "DWT-PLATE-02",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "BELT-01",
+      "group": "带式",
+      "name": "滤带负荷偏离",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "metric": "BELT_LOADING_CALC",
+        "benchmark": "DWT-BM-07"
+      },
+      "thresholdRef": "DWT-BM-07",
+      "persistence": {
+        "mode": "HOUR",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "干固体、带宽、时长、台数",
+      "likelyCauses": [
+        "带速/进泥组合不合理",
+        "负荷计量偏差"
+      ],
+      "recommendation": "调整带速与进泥量",
+      "constraint": "保持泥饼和滤液保护指标",
+      "recovery": "连续3小时回归",
+      "boundary": "仅带式机适用",
+      "ruleCode": "DWT-BELT-01",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "CENT-01",
+      "group": "离心",
+      "name": "离心机差速偏离",
+      "condition": {
+        "op": "OUTSIDE_RANGE",
+        "field": "differential_speed",
+        "benchmark": "DWT-BM-08"
+      },
+      "thresholdRef": "DWT-BM-08",
+      "persistence": {
+        "mode": "MINUTE",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "CONFIRMED_DEVIATION",
+      "evidence": "差速、扭矩、泥饼和滤液",
+      "likelyCauses": [
+        "差速设定不匹配",
+        "泥质变化"
+      ],
+      "recommendation": "按扭矩与效果小步调整",
+      "constraint": "不得越过设备限值",
+      "recovery": "连续30分钟回归",
+      "boundary": "仅离心机适用",
+      "ruleCode": "DWT-CENT-01",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "CENT-02",
+      "group": "离心",
+      "name": "离心机振动偏高",
+      "condition": {
+        "op": "GT",
+        "field": "vibration_drive",
+        "benchmark": "DWT-BM-09.upper"
+      },
+      "thresholdRef": "DWT-BM-09.upper",
+      "persistence": {
+        "mode": "MINUTE",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "两端振动、转速、负荷",
+      "likelyCauses": [
+        "负荷不均或状态异常",
+        "传感器偏差"
+      ],
+      "recommendation": "降载并转设备模块核验",
+      "constraint": "不在本模块认定机械故障",
+      "recovery": "连续30分钟恢复",
+      "boundary": "仅离心机适用",
+      "ruleCode": "DWT-CENT-02",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "CHEM-01",
+      "group": "药剂",
+      "name": "PAM单耗偏高",
+      "condition": {
+        "op": "GT",
+        "metric": "PAM_UNIT",
+        "benchmark": "DWT-BM-10.upper"
+      },
+      "thresholdRef": "DWT-BM-10.upper",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "PAM有效量、干固体、效果",
+      "likelyCauses": [
+        "药剂过量",
+        "批次/配制/计量变化"
+      ],
+      "recommendation": "在泥饼和捕获率约束下梯度减量",
+      "constraint": "药剂采购质量由所属模块评价",
+      "recovery": "连续7日节药且效果通过",
+      "boundary": "只评价脱水药剂效率",
+      "ruleCode": "DWT-CHEM-01",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "CHEM-02",
+      "group": "药剂",
+      "name": "PAM单耗不足且效果下降",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "lowPamWithPoorPerformance"
+      },
+      "thresholdRef": "approvedPamPerformanceRule",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "PAM单耗、捕获率、泥饼含固率",
+      "likelyCauses": [
+        "投加不足",
+        "配制或混合问题"
+      ],
+      "recommendation": "先核验配制计量再调整",
+      "constraint": "不直接增加药量",
+      "recovery": "连续3日恢复",
+      "boundary": "只评价脱水调理",
+      "ruleCode": "DWT-CHEM-02",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "ENERGY-01",
+      "group": "能耗",
+      "name": "吨干固体电耗偏高",
+      "condition": {
+        "op": "GT",
+        "metric": "UNIT_ENERGY_DS",
+        "benchmark": "DWT-BM-11.upper"
+      },
+      "thresholdRef": "DWT-BM-11.upper",
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "分项电量、干固体、时长",
+      "likelyCauses": [
+        "低负荷运行",
+        "高耗阶段过长"
+      ],
+      "recommendation": "按机型阶段贡献优化",
+      "constraint": "设备维修质量由设备模块负责",
+      "recovery": "连续7日节能且效果通过",
+      "boundary": "只评价脱水能耗",
+      "ruleCode": "DWT-ENERGY-01",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "WATER-01",
+      "group": "水耗",
+      "name": "吨干固体冲洗水耗偏高",
+      "condition": {
+        "op": "GT",
+        "metric": "UNIT_WASH_WATER",
+        "benchmark": "DWT-BM-12.upper"
+      },
+      "thresholdRef": "DWT-BM-12.upper",
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "冲洗水量、干固体、程序",
+      "likelyCauses": [
+        "冲洗时间过长",
+        "空冲洗或计量偏差"
+      ],
+      "recommendation": "优化冲洗时序和终止条件",
+      "constraint": "保持滤布/主机清洁效果",
+      "recovery": "连续7日节水且效果通过",
+      "boundary": "只评价脱水冲洗水耗",
+      "ruleCode": "DWT-WATER-01",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "COST-01",
+      "group": "成本",
+      "name": "吨干固体运行成本偏高",
+      "condition": {
+        "op": "GT",
+        "metric": "TOTAL_OPERATION_COST_DS",
+        "benchmark": "DWT-BM-13.upper"
+      },
+      "thresholdRef": "DWT-BM-13.upper",
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "severity": "GENERAL",
+      "conclusionType": "OPTIMIZATION_OPPORTUNITY",
+      "evidence": "药剂、电、水、维修材料分项",
+      "likelyCauses": [
+        "药剂或能耗主导",
+        "低负荷造成单位成本高"
+      ],
+      "recommendation": "按边际贡献排序优化",
+      "constraint": "运输处置成本另列不混入运行效率",
+      "recovery": "连续7日收益通过",
+      "boundary": "只评价脱水运行成本",
+      "ruleCode": "DWT-COST-01",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "AVAIL-01",
+      "group": "运行",
+      "name": "脱水系统可用率偏低",
+      "condition": {
+        "op": "LT",
+        "metric": "AVAILABILITY",
+        "benchmark": "DWT-BM-14.lower"
+      },
+      "thresholdRef": "DWT-BM-14.lower",
+      "persistence": {
+        "mode": "DAY",
+        "count": 3
+      },
+      "severity": "IMPORTANT",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "运行与非计划停机事件",
+      "likelyCauses": [
+        "频繁中断",
+        "备用能力不足"
+      ],
+      "recommendation": "优化运行计划并引用设备工单",
+      "constraint": "不评价维修履职质量",
+      "recovery": "连续3日恢复",
+      "boundary": "只评价生产可用性",
+      "ruleCode": "DWT-AVAIL-01",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "DATA-04",
+      "group": "数据",
+      "name": "板框阶段日志不完整",
+      "condition": {
+        "op": "LT",
+        "function": "cycleStageCompleteness",
+        "benchmark": "DWT-BM-17.lower"
+      },
+      "thresholdRef": "DWT-BM-17.lower",
+      "persistence": {
+        "mode": "EVENT",
+        "count": 3
+      },
+      "severity": "GENERAL",
+      "conclusionType": "DATA_INSUFFICIENT",
+      "evidence": "阶段事件覆盖率",
+      "likelyCauses": [
+        "PLC事件未贯通",
+        "程序版本不明"
+      ],
+      "recommendation": "补齐十步阶段日志",
+      "constraint": "只输出补数要求",
+      "recovery": "连续3循环完整",
+      "boundary": "仅板框适用",
+      "ruleCode": "DWT-DATA-04",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "DATA_INSUFFICIENT",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    },
+    {
+      "suffix": "COST-02",
+      "group": "外部",
+      "name": "含运处全链成本变化",
+      "condition": {
+        "op": "FUNCTION",
+        "function": "totalChainCostShift"
+      },
+      "thresholdRef": "approvedExternalCostComparison",
+      "persistence": {
+        "mode": "DAY",
+        "count": 7
+      },
+      "severity": "GENERAL",
+      "conclusionType": "SUSPECTED_DEVIATION",
+      "evidence": "运行、运输和处置价格版本",
+      "likelyCauses": [
+        "合同价格变化",
+        "泥饼含水率影响湿重"
+      ],
+      "recommendation": "分开展示运行效率与外部价格",
+      "constraint": "不评价处置合规和采购",
+      "recovery": "连续7日口径稳定",
+      "boundary": "只作成本构成观察",
+      "ruleCode": "DWT-COST-02",
+      "applicability": "板框压滤机/带式浓缩脱水机/离心脱水机",
+      "minimumCoverage": 0.85,
+      "suppresses": [],
+      "resultStatusWhenMatched": "TRIGGERED",
+      "engine": "CONTROLLED_AST_V1",
+      "status": "DRAFT"
+    }
+  ],
+  "causes": [
+    {
+      "causeCode": "DWT-DATA-01-01",
+      "ruleCode": "DWT-DATA-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：数据源未接入",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-DATA-01-02",
+      "ruleCode": "DWT-DATA-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：时间或对象口径不完整",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-DATA-02-01",
+      "ruleCode": "DWT-DATA-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：数据源未接入",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-DATA-02-02",
+      "ruleCode": "DWT-DATA-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：时间或对象口径不完整",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-DATA-03-01",
+      "ruleCode": "DWT-DATA-03",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：数据源未接入",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-DATA-03-02",
+      "ruleCode": "DWT-DATA-03",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：时间或对象口径不完整",
+      "requiredEvidence": "覆盖率、来源、时间和版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-CAP-01-01",
+      "ruleCode": "DWT-CAP-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：进泥波动",
+      "requiredEvidence": "进泥干固体、运行台数、设计能力",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-CAP-01-02",
+      "ruleCode": "DWT-CAP-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：设备能力或口径配置错误",
+      "requiredEvidence": "进泥干固体、运行台数、设计能力",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-CAP-02-01",
+      "ruleCode": "DWT-CAP-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：低负荷运行",
+      "requiredEvidence": "干固体产量、时长、台数",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-CAP-02-02",
+      "ruleCode": "DWT-CAP-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：进泥性质或参数不匹配",
+      "requiredEvidence": "干固体产量、时长、台数",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-EFF-01-01",
+      "ruleCode": "DWT-EFF-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：药剂/参数不匹配",
+      "requiredEvidence": "同步进泥、泥饼、滤液固体",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-EFF-01-02",
+      "ruleCode": "DWT-EFF-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：取样不同步",
+      "requiredEvidence": "同步进泥、泥饼、滤液固体",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-EFF-02-01",
+      "ruleCode": "DWT-EFF-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：进泥稀或参数不合理",
+      "requiredEvidence": "泥饼含水率、进泥、参数",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-EFF-02-02",
+      "ruleCode": "DWT-EFF-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：药剂调理不足",
+      "requiredEvidence": "泥饼含水率、进泥、参数",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-EFF-03-01",
+      "ruleCode": "DWT-EFF-03",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：固体捕获下降",
+      "requiredEvidence": "滤液含固率和同步进泥",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-EFF-03-02",
+      "ruleCode": "DWT-EFF-03",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：采样点异常",
+      "requiredEvidence": "滤液含固率和同步进泥",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-BAL-01-01",
+      "ruleCode": "DWT-BAL-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：流量/含固率不同步",
+      "requiredEvidence": "进泥、泥饼和滤液干固体",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-BAL-01-02",
+      "ruleCode": "DWT-BAL-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：旁路或库存未计",
+      "requiredEvidence": "进泥、泥饼和滤液干固体",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-PLATE-01-01",
+      "ruleCode": "DWT-PLATE-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：进料/压榨时间异常",
+      "requiredEvidence": "十步阶段日志和程序版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-PLATE-01-02",
+      "ruleCode": "DWT-PLATE-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：阶段中断",
+      "requiredEvidence": "十步阶段日志和程序版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-PLATE-02-01",
+      "ruleCode": "DWT-PLATE-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：循环次数或进料不足",
+      "requiredEvidence": "干固体产量、面积、循环",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-PLATE-02-02",
+      "ruleCode": "DWT-PLATE-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：滤室配置差异",
+      "requiredEvidence": "干固体产量、面积、循环",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-BELT-01-01",
+      "ruleCode": "DWT-BELT-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：带速/进泥组合不合理",
+      "requiredEvidence": "干固体、带宽、时长、台数",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-BELT-01-02",
+      "ruleCode": "DWT-BELT-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：负荷计量偏差",
+      "requiredEvidence": "干固体、带宽、时长、台数",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-CENT-01-01",
+      "ruleCode": "DWT-CENT-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：差速设定不匹配",
+      "requiredEvidence": "差速、扭矩、泥饼和滤液",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-CENT-01-02",
+      "ruleCode": "DWT-CENT-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：泥质变化",
+      "requiredEvidence": "差速、扭矩、泥饼和滤液",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-CENT-02-01",
+      "ruleCode": "DWT-CENT-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：负荷不均或状态异常",
+      "requiredEvidence": "两端振动、转速、负荷",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-CENT-02-02",
+      "ruleCode": "DWT-CENT-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：传感器偏差",
+      "requiredEvidence": "两端振动、转速、负荷",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-CHEM-01-01",
+      "ruleCode": "DWT-CHEM-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：药剂过量",
+      "requiredEvidence": "PAM有效量、干固体、效果",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-CHEM-01-02",
+      "ruleCode": "DWT-CHEM-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：批次/配制/计量变化",
+      "requiredEvidence": "PAM有效量、干固体、效果",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-CHEM-02-01",
+      "ruleCode": "DWT-CHEM-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：投加不足",
+      "requiredEvidence": "PAM单耗、捕获率、泥饼含固率",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-CHEM-02-02",
+      "ruleCode": "DWT-CHEM-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：配制或混合问题",
+      "requiredEvidence": "PAM单耗、捕获率、泥饼含固率",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-ENERGY-01-01",
+      "ruleCode": "DWT-ENERGY-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：低负荷运行",
+      "requiredEvidence": "分项电量、干固体、时长",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-ENERGY-01-02",
+      "ruleCode": "DWT-ENERGY-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：高耗阶段过长",
+      "requiredEvidence": "分项电量、干固体、时长",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-WATER-01-01",
+      "ruleCode": "DWT-WATER-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：冲洗时间过长",
+      "requiredEvidence": "冲洗水量、干固体、程序",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-WATER-01-02",
+      "ruleCode": "DWT-WATER-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：空冲洗或计量偏差",
+      "requiredEvidence": "冲洗水量、干固体、程序",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-COST-01-01",
+      "ruleCode": "DWT-COST-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：药剂或能耗主导",
+      "requiredEvidence": "药剂、电、水、维修材料分项",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-COST-01-02",
+      "ruleCode": "DWT-COST-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：低负荷造成单位成本高",
+      "requiredEvidence": "药剂、电、水、维修材料分项",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-AVAIL-01-01",
+      "ruleCode": "DWT-AVAIL-01",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：频繁中断",
+      "requiredEvidence": "运行与非计划停机事件",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-AVAIL-01-02",
+      "ruleCode": "DWT-AVAIL-01",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：备用能力不足",
+      "requiredEvidence": "运行与非计划停机事件",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-DATA-04-01",
+      "ruleCode": "DWT-DATA-04",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：PLC事件未贯通",
+      "requiredEvidence": "阶段事件覆盖率",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-DATA-04-02",
+      "ruleCode": "DWT-DATA-04",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：程序版本不明",
+      "requiredEvidence": "阶段事件覆盖率",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-COST-02-01",
+      "ruleCode": "DWT-COST-02",
+      "sequence": 1,
+      "category": "运行/配置",
+      "question": "是否存在：合同价格变化",
+      "requiredEvidence": "运行、运输和处置价格版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P1",
+      "status": "DRAFT"
+    },
+    {
+      "causeCode": "DWT-COST-02-02",
+      "ruleCode": "DWT-COST-02",
+      "sequence": 2,
+      "category": "数据/外部",
+      "question": "是否存在：泥饼含水率影响湿重",
+      "requiredEvidence": "运行、运输和处置价格版本",
+      "evidenceSource": "分析快照/外部引用/现场核验",
+      "confirmationCriteria": "证据与分析对象、时间和版本一致且可追溯",
+      "priority": "P2",
+      "status": "DRAFT"
+    }
+  ],
+  "pageMappings": [
+    {
+      "componentCode": "DWT-P1-01",
+      "page": "分析概览",
+      "componentType": "SUMMARY",
+      "name": "分析概览摘要",
+      "binding": "dewatering.1.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P1-02",
+      "page": "分析概览",
+      "componentType": "EVIDENCE",
+      "name": "分析概览证据",
+      "binding": "dewatering.1.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P1-03",
+      "page": "分析概览",
+      "componentType": "ACTION",
+      "name": "分析概览操作",
+      "binding": "dewatering.1.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P1-04",
+      "page": "分析概览",
+      "componentType": "BOUNDARY",
+      "name": "分析概览边界",
+      "binding": "dewatering.1.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P2-01",
+      "page": "数据与计算",
+      "componentType": "SUMMARY",
+      "name": "数据与计算摘要",
+      "binding": "dewatering.2.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P2-02",
+      "page": "数据与计算",
+      "componentType": "EVIDENCE",
+      "name": "数据与计算证据",
+      "binding": "dewatering.2.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P2-03",
+      "page": "数据与计算",
+      "componentType": "ACTION",
+      "name": "数据与计算操作",
+      "binding": "dewatering.2.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P2-04",
+      "page": "数据与计算",
+      "componentType": "BOUNDARY",
+      "name": "数据与计算边界",
+      "binding": "dewatering.2.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P3-01",
+      "page": "偏差诊断",
+      "componentType": "SUMMARY",
+      "name": "偏差诊断摘要",
+      "binding": "dewatering.3.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P3-02",
+      "page": "偏差诊断",
+      "componentType": "EVIDENCE",
+      "name": "偏差诊断证据",
+      "binding": "dewatering.3.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P3-03",
+      "page": "偏差诊断",
+      "componentType": "ACTION",
+      "name": "偏差诊断操作",
+      "binding": "dewatering.3.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P3-04",
+      "page": "偏差诊断",
+      "componentType": "BOUNDARY",
+      "name": "偏差诊断边界",
+      "binding": "dewatering.3.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P4-01",
+      "page": "优化方案",
+      "componentType": "SUMMARY",
+      "name": "优化方案摘要",
+      "binding": "dewatering.4.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P4-02",
+      "page": "优化方案",
+      "componentType": "EVIDENCE",
+      "name": "优化方案证据",
+      "binding": "dewatering.4.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P4-03",
+      "page": "优化方案",
+      "componentType": "ACTION",
+      "name": "优化方案操作",
+      "binding": "dewatering.4.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P4-04",
+      "page": "优化方案",
+      "componentType": "BOUNDARY",
+      "name": "优化方案边界",
+      "binding": "dewatering.4.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P5-01",
+      "page": "效果跟踪",
+      "componentType": "SUMMARY",
+      "name": "效果跟踪摘要",
+      "binding": "dewatering.5.summary",
+      "objectType": "AGGREGATE",
+      "displayCondition": "分析任务存在",
+      "interaction": "查看详情",
+      "priority": "P0",
+      "productNote": "复用单体母版",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P5-02",
+      "page": "效果跟踪",
+      "componentType": "EVIDENCE",
+      "name": "效果跟踪证据",
+      "binding": "dewatering.5.evidence",
+      "objectType": "EVIDENCE",
+      "displayCondition": "证据可用",
+      "interaction": "追溯来源",
+      "priority": "P0",
+      "productNote": "保留快照和版本",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P5-03",
+      "page": "效果跟踪",
+      "componentType": "ACTION",
+      "name": "效果跟踪操作",
+      "binding": "dewatering.5.actions",
+      "objectType": "ACTION",
+      "displayCondition": "权限与状态允许",
+      "interaction": "执行操作",
+      "priority": "P1",
+      "productNote": "通用状态机控制",
+      "status": "DRAFT"
+    },
+    {
+      "componentCode": "DWT-P5-04",
+      "page": "效果跟踪",
+      "componentType": "BOUNDARY",
+      "name": "效果跟踪边界",
+      "binding": "dewatering.5.boundary",
+      "objectType": "BOUNDARY",
+      "displayCondition": "始终",
+      "interaction": "查看说明",
+      "priority": "P1",
+      "productNote": "防止重复整体诊断",
+      "status": "DRAFT"
+    }
+  ],
+  "dictionaries": [
+    [
+      "evaluation_status",
+      "NOT_APPLICABLE",
+      "不适用",
+      1
+    ],
+    [
+      "evaluation_status",
+      "DATA_INSUFFICIENT",
+      "数据不足",
+      2
+    ],
+    [
+      "evaluation_status",
+      "NORMAL",
+      "正常",
+      3
+    ],
+    [
+      "evaluation_status",
+      "TRIGGERED",
+      "已触发",
+      4
+    ],
+    [
+      "evaluation_status",
+      "SUPPRESSED",
+      "已抑制",
+      5
+    ],
+    [
+      "conclusion_type",
+      "CONFIRMED_DEVIATION",
+      "已确认偏差",
+      1
+    ],
+    [
+      "conclusion_type",
+      "SUSPECTED_DEVIATION",
+      "疑似偏差",
+      2
+    ],
+    [
+      "conclusion_type",
+      "OPTIMIZATION_OPPORTUNITY",
+      "优化机会",
+      3
+    ],
+    [
+      "conclusion_type",
+      "DATA_INSUFFICIENT",
+      "数据不足",
+      4
+    ],
+    [
+      "benchmark_type",
+      "DESIGN",
+      "设计值",
+      1
+    ],
+    [
+      "benchmark_type",
+      "SITE_TARGET",
+      "一厂一策目标",
+      2
+    ],
+    [
+      "benchmark_type",
+      "STANDARD",
+      "标准/规范",
+      3
+    ],
+    [
+      "benchmark_type",
+      "HISTORICAL_BEST",
+      "历史优秀期",
+      4
+    ],
+    [
+      "benchmark_type",
+      "PEER_BENCHMARK",
+      "同类对标",
+      5
+    ]
+  ],
+  "counts": {
+    "fields": 51,
+    "metrics": 26,
+    "benchmarks": 17,
+    "rules": 22,
+    "causes": 44,
+    "pageMappings": 20,
+    "testCases": 176,
+    "pilotItems": 22
+  }
+}
