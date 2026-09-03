@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="home" viewBox="0 0 24 24">
+    <path d="M3.5 10.5 12 4l8.5 6.5"/><path d="M5.5 9.5V20h13V9.5M9.5 20v-6h5v6"/>
+  </symbol>
+  <symbol id="operations" viewBox="0 0 24 24">
+    <path d="M3 20h18M5 20V10l4 3V9l4 3V7l6 4v9"/><path d="M8 17h1m4 0h1m4 0h1"/>
+  </symbol>
+  <symbol id="process" viewBox="0 0 24 24">
+    <circle cx="5" cy="7" r="2.2"/><circle cx="19" cy="7" r="2.2"/><circle cx="12" cy="17" r="2.2"/><path d="M7.2 7h9.6M12 9.2v5.6"/>
+  </symbol>
+  <symbol id="equipment" viewBox="0 0 24 24">
+    <path d="m14.5 6.5 4-4 2 2-4 4M13 8l6.5 6.5-3 3L10 11"/><path d="M5 3.5 9 7.5 7 9.5 3 5.5v-2zM8.5 12.5l-5 5a2.1 2.1 0 0 0 3 3l5-5"/>
+  </symbol>
+  <symbol id="laboratory" viewBox="0 0 24 24">
+    <path d="M9 3h6v5l4.5 9a2.7 2.7 0 0 1-2.4 4H6.9a2.7 2.7 0 0 1-2.4-4L9 8zM8 14h8"/><path d="M10 6h4"/>
+  </symbol>
+  <symbol id="safety" viewBox="0 0 24 24">
+    <path d="M4 15a8 8 0 0 1 16 0M3 15h18v3H3zM9 14V9m6 5V9"/>
+  </symbol>
+  <symbol id="inventory" viewBox="0 0 24 24">
+    <path d="M3 9 12 4l9 5v11H3zM7 20v-8h10v8M7 15h10M7 18h10"/>
+  </symbol>
+  <symbol id="business" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9"/><path d="m8.5 7.5 3.5 4.3 3.5-4.3M8.5 12h7M9 15h6M12 12v5"/>
+  </symbol>
+  <symbol id="efficiency" viewBox="0 0 24 24">
+    <path d="M4 18c3-1 4.5-4.5 7-4.5 1.7 0 2.2 1.8 3.8 1.8 2.1 0 3.3-3.8 5.2-7.3"/><path d="M16 8h4v4"/>
+  </symbol>
+  <symbol id="evaluation" viewBox="0 0 24 24">
+    <path d="M5 3h10a2 2 0 0 1 2 2v7M5 3v18h10M8 7h6m-6 4h5"/><path d="m13 18 5.5-5.5 2 2L15 20l-3 1z"/>
+  </symbol>
+  <symbol id="quality" viewBox="0 0 24 24">
+    <path d="M12 3v17M6 20h12M5 6h14"/><path d="m5 6-3 6h6L5 6zm14 0-3 6h6l-3-6z"/>
+  </symbol>
+  <symbol id="improvement" viewBox="0 0 24 24">
+    <path d="M20 8a8 8 0 0 0-13-3L4 8M4 4v4h4M4 16a8 8 0 0 0 13 3l3-3M20 20v-4h-4"/>
+  </symbol>
+  <symbol id="information" viewBox="0 0 24 24">
+    <ellipse cx="10" cy="5" rx="6" ry="3"/><path d="M4 5v10c0 1.7 2.7 3 6 3M16 5v4M4 10c0 1.7 2.7 3 6 3 1.2 0 2.3-.2 3.2-.5"/><circle cx="18" cy="16" r="4"/><path d="M18 15v3m0-5.4h.01"/>
+  </symbol>
+  <symbol id="chevron-right" viewBox="0 0 16 16"><path d="m6 3.5 4.5 4.5L6 12.5"/></symbol>
+  <symbol id="chevron-down" viewBox="0 0 16 16"><path d="m3.5 6 4.5 4.5L12.5 6"/></symbol>
+  <symbol id="chevron-left" viewBox="0 0 16 16"><path d="M10 3.5 5.5 8l4.5 4.5"/></symbol>
+</svg>

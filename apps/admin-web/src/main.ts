@@ -1,6 +1,8 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import './styles.css'
+import './design-tokens.css'
+import './waterx-components.css'
 import './risk.css'
 import './platform.css'
 import './diagnosis.css'
