@@ -13,6 +13,7 @@ import LabRawRecordsPage from './modules/lab-raw-records/LabRawRecordsPage.vue'
 import HighEfficiencySedimentationPage from './modules/high-efficiency-sedimentation/HighEfficiencySedimentationPage.vue'
 import VFilterAnalysisPage from './modules/v-filter-analysis/VFilterAnalysisPage.vue'
 import ConfiguredUnitAnalysisPage from './modules/unit-analysis/ConfiguredUnitAnalysisPage.vue'
+import { WxButton, WxCard, WxField, WxInput, WxSelect, WxState, WxStatusSummary, WxTable, WxTableSurface, WxTabs } from './components/waterx'
 import { isRemainingUnitPageId, remainingUnitPageMap } from './modules/unit-analysis/remaining-unit-config'
 import type { RemainingUnitPageId } from './modules/unit-analysis/remaining-unit-config'
 
@@ -759,6 +760,11 @@ const analysisRows = computed<DiagnosisMetric[]>(() => {
     return { ...metric, design, target, actual, deviation, level }
   })
 })
+const diagnosisStatusItems = computed(() => [
+  { label:'正常', value:analysisRows.value.filter(item=>item.level==='normal').length, tone:'normal' as const },
+  { label:'预警', value:analysisRows.value.filter(item=>item.level==='warning').length, tone:'warning' as const },
+  { label:'告警', value:analysisRows.value.filter(item=>item.level==='alarm').length, tone:'alarm' as const }
+])
 const expandedDiagnosisCategories = ref<Record<string,boolean>>({ '污泥性状': true })
 const analysisGroups = computed(() => resultCategories.map(category => ({ category, metrics:analysisRows.value.filter(metric=>metric.category===category) })).filter(group=>group.metrics.length))
 function toggleDiagnosisCategory(category: string) { expandedDiagnosisCategories.value[category] = !expandedDiagnosisCategories.value[category] }
@@ -1289,7 +1295,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
 <template>
   <main v-if="!token" class="login-shell">
     <section class="brand-panel">
-      <div class="brand-logo-wrap"><img src="/waterx-logo-transparent.png" alt="WaterX" /></div>
+      <div class="brand-logo-wrap"><img src="/waterx-logo-on-light.png" alt="WaterX" /></div>
       <p class="eyebrow">WaterX · Digital Water Operations</p>
       <h1>智慧水务运营平台</h1>
     </section>
@@ -1304,33 +1310,33 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
 
   <div v-else class="app-shell" :class="{sidebarCollapsed}">
     <header class="global-topbar">
-      <div class="topbar-brand"><div class="topbar-logo-art" aria-label="WaterX"><img class="logo-water" src="/waterx-logo-transparent.png" alt="" /><img class="logo-x" src="/waterx-logo-transparent.png" alt="" /></div><span>智慧水务运营平台</span></div>
+      <div class="topbar-brand"><div class="topbar-logo-art"><img src="/waterx-logo-on-dark.png" alt="WaterX" /></div><span>智慧水务运营平台</span></div>
       <div class="topbar-actions"><div class="topbar-project"><small>当前项目</small><select v-model="selectedSite" @change="changeSite"><option v-for="site in sites" :key="site.id" :value="site.id">{{site.name}}</option></select></div><span class="topbar-divider"></span><div class="topbar-user"><span class="avatar">管</span><div><b>平台管理员</b><small>系统管理</small></div></div><button @click="logout">退出登录</button></div>
     </header>
     <aside>
-      <button class="sidebar-toggle" :title="sidebarCollapsed?'展开导航':'收起导航'" :aria-label="sidebarCollapsed?'展开导航':'收起导航'" @click="sidebarCollapsed=!sidebarCollapsed"><span>{{sidebarCollapsed?'›':'‹'}}</span><b>收起导航</b></button>
+      <button class="sidebar-toggle" :title="sidebarCollapsed?'展开导航':'收起导航'" :aria-label="sidebarCollapsed?'展开导航':'收起导航'" @click="sidebarCollapsed=!sidebarCollapsed"><span><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${sidebarCollapsed?'right':'left'}`" /></svg></span><b>收起导航</b></button>
       <nav class="module-nav">
-        <button class="module-nav-home" :class="{selected:active==='platform'}" @click="active='platform'"><span class="nav-icon">⌂</span><span>首页</span></button>
+        <button class="module-nav-home" :class="{selected:active==='platform'}" @click="active='platform'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#home'" /></svg></span><span>首页</span></button>
 
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('operations')"><span class="nav-icon">◷</span><span>生产运行</span><i :class="{open:expandedModules.operations}">›</i></button>
+          <button class="nav-group-title" :class="{expanded:expandedModules.operations}" @click="toggleModule('operations')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#operations'" /></svg></span><span>生产运行</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.operations?'down':'right'}`" /></svg></i></button>
           <div v-show="expandedModules.operations" class="nav-children"><button :class="{selected:active==='operationsShift'}" @click="active='operationsShift'">班组与排班 <small>规划</small></button><button :class="{selected:active==='operationsHandover'}" @click="active='operationsHandover'">交接班管理 <small>规划</small></button><button :class="{selected:active==='operationsTasks'}" @click="active='operationsTasks'">当班任务 <small>规划</small></button><button :class="{selected:active==='operationsLog'}" @click="active='operationsLog'">运行日志 <small>规划</small></button></div>
         </section>
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('process')"><span class="nav-icon">≋</span><span>工艺管理</span><i :class="{open:expandedModules.process}">›</i></button>
+          <button class="nav-group-title" :class="{expanded:expandedModules.process}" @click="toggleModule('process')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#process'" /></svg></span><span>工艺管理</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.process?'down':'right'}`" /></svg></i></button>
           <div v-show="expandedModules.process" class="nav-children"><button :class="{selected:active==='processDesign'}" @click="active='processDesign'">工艺设计标准</button><button :class="{selected:active==='conditionMatrix'}" @click="active='conditionMatrix'">工况矩阵管理</button><button :class="{selected:active==='operationEntry'}" @click="active='operationEntry';loadOperationEntry()">运行数据填报</button><button :class="{selected:active==='processAnalysis'}" @click="active='processAnalysis'">工艺诊断分析</button><button :class="{selected:active==='processReport'}" @click="active='processReport'">工艺分析日报</button><button disabled>工艺调整记录 <small>规划中</small></button></div>
         </section>
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('equipment')"><span class="nav-icon">⚙</span><span>设备管理</span><i :class="{open:expandedModules.equipment}">›</i></button>
+          <button class="nav-group-title" :class="{expanded:expandedModules.equipment}" @click="toggleModule('equipment')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#equipment'" /></svg></span><span>设备管理</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.equipment?'down':'right'}`" /></svg></i></button>
           <div v-show="expandedModules.equipment" class="nav-children"><button disabled>设备台账 <small>规划中</small></button><button disabled>维护保养 <small>规划中</small></button></div>
         </section>
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('laboratory')"><span class="nav-icon">⚗</span><span>化验管理</span><i :class="{open:expandedModules.laboratory}">›</i></button>
+          <button class="nav-group-title" :class="{expanded:expandedModules.laboratory}" @click="toggleModule('laboratory')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#laboratory'" /></svg></span><span>化验管理</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.laboratory?'down':'right'}`" /></svg></i></button>
           <div v-show="expandedModules.laboratory" class="nav-children"><button :class="{selected:active==='labRecords'}" @click="active='labRecords';labRecordView='folders'">原始记录管理</button><button :class="{selected:active==='labReports'}" @click="active='labReports';labReportView='folders'">化验报表管理</button><button disabled>化验任务 <small>规划中</small></button><button disabled>水质分析 <small>规划中</small></button></div>
         </section>
 
         <section class="nav-group safety-group" :class="{expanded:expandedModules.safety}">
-          <button class="nav-group-title" @click="toggleModule('safety')"><span class="nav-icon">⛑</span><span>安全管理</span><i :class="{open:expandedModules.safety}">›</i></button>
+          <button class="nav-group-title" :class="{expanded:expandedModules.safety}" @click="toggleModule('safety')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#safety'" /></svg></span><span>安全管理</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.safety?'down':'right'}`" /></svg></i></button>
           <div v-show="expandedModules.safety" class="nav-children">
             <button :class="{selected:active==='overview'}" @click="active='overview'">安全态势</button>
             <button :class="{selected:active==='org'}" @click="active='org'">组织架构</button>
@@ -1349,31 +1355,31 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
         </section>
 
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('inventory')"><span class="nav-icon">▤</span><span>库存管理</span><i :class="{open:expandedModules.inventory}">›</i></button>
+          <button class="nav-group-title" :class="{expanded:expandedModules.inventory}" @click="toggleModule('inventory')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#inventory'" /></svg></span><span>库存管理</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.inventory?'down':'right'}`" /></svg></i></button>
           <div v-show="expandedModules.inventory" class="nav-children"><button :class="{selected:active==='inventoryOverview'}" @click="active='inventoryOverview'">库存总览 <small>规划</small></button><button :class="{selected:active==='inventoryMaterials'}" @click="active='inventoryMaterials'">物资台账 <small>规划</small></button><button :class="{selected:active==='inventoryInbound'}" @click="active='inventoryInbound'">入库管理 <small>规划</small></button><button :class="{selected:active==='inventoryOutbound'}" @click="active='inventoryOutbound'">出库与领用 <small>规划</small></button><button :class="{selected:active==='inventoryStocktake'}" @click="active='inventoryStocktake'">库存盘点 <small>规划</small></button><button :class="{selected:active==='inventoryAlerts'}" @click="active='inventoryAlerts'">库存预警 <small>规划</small></button></div>
         </section>
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('business')"><span class="nav-icon">¥</span><span>经营管理</span><i :class="{open:expandedModules.business}">›</i></button>
+          <button class="nav-group-title" :class="{expanded:expandedModules.business}" @click="toggleModule('business')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#business'" /></svg></span><span>经营管理</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.business?'down':'right'}`" /></svg></i></button>
           <div v-show="expandedModules.business" class="nav-children"><button :class="{selected:active==='businessTargets'}" @click="active='businessTargets'">经营目标 <small>规划</small></button><button :class="{selected:active==='businessPlan'}" @click="active='businessPlan'">生产计划 <small>规划</small></button><button :class="{selected:active==='businessBudget'}" @click="active='businessBudget'">预算管理 <small>规划</small></button><button :class="{selected:active==='businessExecution'}" @click="active='businessExecution'">执行分析 <small>规划</small></button><button :class="{selected:active==='businessCost'}" @click="active='businessCost'">成本收益 <small>规划</small></button><button :class="{selected:active==='businessReceivables'}" @click="active='businessReceivables'">回款管理 <small>规划</small></button></div>
         </section>
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('efficiency')"><span class="nav-icon">♻</span><span>提质增效</span><i :class="{open:expandedModules.efficiency}">›</i></button>
+          <button class="nav-group-title" :class="{expanded:expandedModules.efficiency}" @click="toggleModule('efficiency')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#efficiency'" /></svg></span><span>提质增效</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.efficiency?'down':'right'}`" /></svg></i></button>
           <div v-show="expandedModules.efficiency" class="nav-children"><button :class="{selected:active==='highEfficiencySedimentation'}" @click="active='highEfficiencySedimentation'">高效沉淀池分析</button><button :class="{selected:active==='vFilterAnalysis'}" @click="active='vFilterAnalysis'">V型滤池分析</button><button :class="{selected:active==='pretreatmentAnalysis'}" @click="active='pretreatmentAnalysis'">预处理分析</button><button :class="{selected:active==='disinfectionAnalysis'}" @click="active='disinfectionAnalysis'">消毒分析</button><button :class="{selected:active==='sludgeBalanceAnalysis'}" @click="active='sludgeBalanceAnalysis'">排泥与污泥浓缩分析</button><button :class="{selected:active==='dewateringAnalysis'}" @click="active='dewateringAnalysis'">污泥脱水分析</button><button :class="{selected:active==='mbbrAnalysis'}" @click="active='mbbrAnalysis'">MBBR填料区分析</button><button :class="{selected:active==='aerationAirAnalysis'}" @click="active='aerationAirAnalysis'">曝气供气系统分析</button><button disabled>能耗计量 <small>规划中</small></button><button disabled>能效分析 <small>规划中</small></button></div>
         </section>
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('evaluation')"><span class="nav-icon">✓</span><span>过程评价</span><i :class="{open:expandedModules.evaluation}">›</i></button>
+          <button class="nav-group-title" :class="{expanded:expandedModules.evaluation}" @click="toggleModule('evaluation')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#evaluation'" /></svg></span><span>过程评价</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.evaluation?'down':'right'}`" /></svg></i></button>
           <div v-show="expandedModules.evaluation" class="nav-children"><button :class="{selected:active==='evaluationResults'}" @click="active='evaluationResults'">评价结果管理</button><button :class="{selected:active==='evaluationOperations'}" @click="active='evaluationOperations'">运行管理评价</button><button :class="{selected:active==='evaluationEquipment'}" @click="active='evaluationEquipment'">设备管理评价</button><button :class="{selected:active==='evaluationLaboratory'}" @click="active='evaluationLaboratory'">化验管理评价</button><button :class="{selected:active==='evaluationSafety'}" @click="active='evaluationSafety'">安全管理评价</button><button :class="{selected:active==='evaluationComprehensive'}" @click="active='evaluationComprehensive'">综合管理评价</button><button :class="{selected:active==='evaluationRectification'}" @click="active='evaluationRectification'">问题与整改</button><button :class="{selected:active==='evaluationReport'}" @click="active='evaluationReport'">评价报告</button></div>
         </section>
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('quality')"><span class="nav-icon">◇</span><span>管理质量</span><i :class="{open:expandedModules.quality}">›</i></button>
+          <button class="nav-group-title" :class="{expanded:expandedModules.quality}" @click="toggleModule('quality')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#quality'" /></svg></span><span>管理质量</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.quality?'down':'right'}`" /></svg></i></button>
           <div v-show="expandedModules.quality" class="nav-children"><button :class="{selected:active==='qualityCompliance'}" @click="active='qualityCompliance'">合法合规</button><button :class="{selected:active==='qualityStable'}" @click="active='qualityStable'">稳定达标</button><button :class="{selected:active==='qualitySafety'}" @click="active='qualitySafety'">安全运行</button><button :class="{selected:active==='qualityEfficiency'}" @click="active='qualityEfficiency'">经济高效</button></div>
         </section>
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('improvement')"><span class="nav-icon">↗</span><span>改进提升</span><i :class="{open:expandedModules.improvement}">›</i></button>
+          <button class="nav-group-title" :class="{expanded:expandedModules.improvement}" @click="toggleModule('improvement')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#improvement'" /></svg></span><span>改进提升</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.improvement?'down':'right'}`" /></svg></i></button>
           <div v-show="expandedModules.improvement" class="nav-children"><button :class="{selected:active==='improvementIssues'}" @click="active='improvementIssues'">问题清单 <small>规划</small></button><button :class="{selected:active==='improvementPlans'}" @click="active='improvementPlans'">改进计划 <small>规划</small></button><button :class="{selected:active==='improvementExecution'}" @click="active='improvementExecution'">整改执行 <small>规划</small></button><button :class="{selected:active==='improvementReview'}" @click="active='improvementReview'">复核关闭 <small>规划</small></button><button :class="{selected:active==='improvementAnalysis'}" @click="active='improvementAnalysis'">改进分析 <small>规划</small></button></div>
         </section>
         <section class="nav-group">
-          <button class="nav-group-title" @click="toggleModule('basic')"><span class="nav-icon">▦</span><span>基础信息</span><i :class="{open:expandedModules.basic}">›</i></button>
+          <button class="nav-group-title" :class="{expanded:expandedModules.basic}" @click="toggleModule('basic')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#information'" /></svg></span><span>基础信息</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.basic?'down':'right'}`" /></svg></i></button>
           <div v-show="expandedModules.basic" class="nav-children"><button disabled>工艺线档案 <small>规划中</small></button><button disabled>数据字典 <small>规划中</small></button></div>
         </section>
       </nav>
@@ -1381,13 +1387,13 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
     <section class="workspace">
       <article :class="{'safety-workspace':isSafetyPage}">
         <div v-if="isSafetyPage" class="page-title"><div><p class="eyebrow">{{currentSite?.code}}</p><h1>{{active==='overview' ? '安全态势总览' : active==='org' ? '组织架构' : active==='employee' ? '人员档案' : active==='area' ? '厂区区域管理' : active==='risk' ? '风险分级管控' : active==='inspection' ? '安全检查任务' : active==='hazard'?'隐患排查治理':active==='permit'?'危险作业审批':active==='training'?'安全培训与人员资质':active==='asset'?'设备设施与应急物资':active==='health'?'职业健康管理':active==='investment'?'安全投入管理':'安全承诺与访客告知' }}</h1></div><span class="date-chip">{{ new Date().toLocaleDateString('zh-CN') }}</span></div>
-        <p v-if="error" class="error banner">{{error}}</p>
+        <WxState v-if="error" kind="error" compact class="error banner">{{error}}</WxState>
         <template v-if="active==='platform'">
-          <section class="dashboard-toolbar"><span>今日运营概览</span><div><button>今日</button><button>本月</button><button>自定义</button></div></section>
-          <div class="dashboard-kpis"><section><span>今日处理水量</span><strong>6.82<small>万 m³</small></strong><em>较昨日 +2.6%</em></section><section><span>出水综合达标率</span><strong>99.6<small>%</small></strong><em>稳定达标</em></section><section><span>吨水综合电耗</span><strong>0.286<small>kWh/m³</small></strong><em class="down">较目标低 3.4%</em></section><section><span>未闭环事项</span><strong>7<small>项</small></strong><em class="warn">其中逾期 1 项</em></section></div>
-          <div class="dashboard-chart-grid"><section class="dashboard-card water-chart"><header><b>近七日处理水量</b><span>万 m³/d</span></header><div class="bar-chart"><div v-for="(value,index) in [78,84,72,90,86,82,88]" :key="index"><span :style="{height:`${value}%`}"></span><small>{{['09','10','11','12','13','14','15'][index]}}日</small></div></div></section><section class="dashboard-card trend-chart"><header><b>出水水质趋势</b><span><i></i> COD　<i></i> NH₃-N</span></header><svg viewBox="0 0 500 180" preserveAspectRatio="none"><g><line v-for="y in [30,70,110,150]" :key="y" x1="20" :y1="y" x2="485" :y2="y" /></g><polyline points="20,105 95,92 170,101 245,72 320,82 395,61 485,68"/><polyline class="second" points="20,132 95,125 170,129 245,116 320,121 395,108 485,112"/></svg></section><section class="dashboard-card structure-chart"><header><b>事项分布</b><span>当前</span></header><div class="donut-wrap"><div class="donut"><span>23<small>全部</small></span></div><ul><li><i></i>生产运行 <b>9</b></li><li><i></i>安全管理 <b>7</b></li><li><i></i>设备管理 <b>4</b></li><li><i></i>其他事项 <b>3</b></li></ul></div></section></div>
-          <section class="dashboard-card task-center"><header><b>我的事项</b><span>内容随当前用户和角色动态变化</span></header><nav><button v-for="tab in [{key:'pending',name:'待处理'},{key:'processed',name:'已处理'},{key:'cc',name:'抄送我'},{key:'started',name:'我发起'}]" :key="tab.key" :class="{active:dashboardTaskTab===tab.key}" @click="dashboardTaskTab=tab.key as typeof dashboardTaskTab">{{tab.name}}<em>{{dashboardTasks[tab.key as keyof typeof dashboardTasks].length}}</em></button></nav><div class="dashboard-task-list"><article v-for="task in dashboardTasks[dashboardTaskTab]" :key="task.title"><span>{{task.module}}</span><b>{{task.title}}</b><small>{{task.time}}</small><em>{{task.status}}</em></article></div>
-          </section>
+          <section class="dashboard-toolbar"><span>今日运营概览</span><div><WxButton variant="ghost" class="active">今日</WxButton><WxButton variant="ghost">本月</WxButton><WxButton variant="ghost">自定义</WxButton></div></section>
+          <div class="dashboard-kpis"><WxCard><span>今日处理水量</span><strong>6.82<small>万 m³</small></strong><em>较昨日 +2.6%</em></WxCard><WxCard><span>出水综合达标率</span><strong>99.6<small>%</small></strong><em>稳定达标</em></WxCard><WxCard><span>吨水综合电耗</span><strong>0.286<small>kWh/m³</small></strong><em class="down">较目标低 3.4%</em></WxCard><WxCard><span>未闭环事项</span><strong>7<small>项</small></strong><em class="warn">其中逾期 1 项</em></WxCard></div>
+          <div class="dashboard-chart-grid"><WxCard class="dashboard-card water-chart"><header><b>近七日处理水量</b><span>万 m³/d</span></header><div class="bar-chart"><div v-for="(value,index) in [78,84,72,90,86,82,88]" :key="index"><span :style="{height:`${value}%`}"></span><small>{{['09','10','11','12','13','14','15'][index]}}日</small></div></div></WxCard><WxCard class="dashboard-card trend-chart"><header><b>出水水质趋势</b><span><i></i> COD　<i></i> NH₃-N</span></header><svg viewBox="0 0 500 180" preserveAspectRatio="none"><g><line v-for="y in [30,70,110,150]" :key="y" x1="20" :y1="y" x2="485" :y2="y" /></g><polyline points="20,105 95,92 170,101 245,72 320,82 395,61 485,68"/><polyline class="second" points="20,132 95,125 170,129 245,116 320,121 395,108 485,112"/></svg></WxCard><WxCard class="dashboard-card structure-chart"><header><b>事项分布</b><span>当前</span></header><div class="donut-wrap"><div class="donut"><span>23<small>全部</small></span></div><ul><li><i></i>生产运行 <b>9</b></li><li><i></i>安全管理 <b>7</b></li><li><i></i>设备管理 <b>4</b></li><li><i></i>其他事项 <b>3</b></li></ul></div></WxCard></div>
+          <WxCard class="dashboard-card task-center"><header><b>我的事项</b><span>内容随当前用户和角色动态变化</span></header><WxTabs aria-label="我的事项分类"><button v-for="tab in [{key:'pending',name:'待处理'},{key:'processed',name:'已处理'},{key:'cc',name:'抄送我'},{key:'started',name:'我发起'}]" :key="tab.key" :class="{active:dashboardTaskTab===tab.key}" @click="dashboardTaskTab=tab.key as typeof dashboardTaskTab">{{tab.name}}<em>{{dashboardTasks[tab.key as keyof typeof dashboardTasks].length}}</em></button></WxTabs><div class="dashboard-task-list"><article v-for="task in dashboardTasks[dashboardTaskTab]" :key="task.title"><span>{{task.module}}</span><b>{{task.title}}</b><small>{{task.time}}</small><em>{{task.status}}</em></article></div>
+          </WxCard>
         </template>
         <ProcessEvaluationPage v-else-if="currentProcessEvaluationPage" :active-page="currentProcessEvaluationPage" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" @update:active-page="openProcessEvaluationPage" @navigate:app="handleProcessEvaluationNavigate" />
         <HighEfficiencySedimentationPage v-else-if="active==='highEfficiencySedimentation'" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" />
@@ -1414,23 +1420,23 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
         <ManagementQualityPage v-else-if="currentQualityPage" :active-page="currentQualityPage" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" @update:active-page="openQualityPage" @start-improvement="handleQualityImprovement" />
         <template v-else-if="active==='processAnalysis'">
           <section class="diagnosis-toolbar">
-            <label>水厂<select :value="selectedSite"><option :value="selectedSite">{{currentSite?.name || '示范污水处理厂'}}</option></select></label>
-            <label>工艺线<select v-model="diagnosisLine"><option>一期生化线</option><option>二期生化线</option></select></label>
-            <label>匹配工况<select :value="diagnosisCondition?.id||''" disabled title="根据分析日期自动匹配"><option v-if="!diagnosisCondition" value="">未匹配工况</option><option v-for="plan in conditionPlans" :key="plan.id" :value="plan.id">{{plan.name}}</option></select></label>
-            <label>分析日期<input v-model="diagnosisDate" type="date" /></label>
-            <button @click="refreshDiagnosis">更新</button>
-            <button class="primary" @click="saveDiagnosisReport">保存</button>
-            <div class="toolbar-status"><span><i class="diagnosis-dot normal"></i>{{analysisRows.filter(i=>i.level==='normal').length}} 正常</span><span><i class="diagnosis-dot warning"></i>{{analysisRows.filter(i=>i.level==='warning').length}} 预警</span><span><i class="diagnosis-dot alarm"></i>{{analysisRows.filter(i=>i.level==='alarm').length}} 告警</span><small>更新 {{diagnosisUpdatedAt}}</small></div>
+            <div class="diagnosis-filter-fields">
+              <WxField label="项目"><WxSelect :model-value="selectedSite"><option :value="selectedSite">{{currentSite?.name || '示范污水处理厂'}}</option></WxSelect></WxField>
+              <WxField label="工艺线"><WxSelect v-model="diagnosisLine"><option>一期生化线</option><option>二期生化线</option></WxSelect></WxField>
+              <WxField label="匹配工况"><WxSelect :model-value="diagnosisCondition?.id||''" disabled title="根据分析日期自动匹配"><option v-if="!diagnosisCondition" value="">未匹配工况</option><option v-for="plan in conditionPlans" :key="plan.id" :value="plan.id">{{plan.name}}</option></WxSelect></WxField>
+              <WxField label="分析日期"><WxInput v-model="diagnosisDate" type="date" /></WxField>
+            </div>
+            <div class="diagnosis-toolbar-actions"><WxButton variant="primary" class="primary" @click="refreshDiagnosis">更新</WxButton><WxButton @click="saveDiagnosisReport">保存</WxButton></div>
+            <WxStatusSummary class="toolbar-status" :items="diagnosisStatusItems" aria-label="工艺诊断状态汇总" />
           </section>
 
           <div class="diagnosis-layout">
-            <section class="diagnosis-results">
-              <nav class="diagnosis-board-tabs" aria-label="结果指标分类">
+            <WxTableSurface class="diagnosis-results">
+              <WxTabs class="diagnosis-board-tabs" aria-label="结果指标分类">
                 <div v-for="group in analysisGroups" :key="group.category" :class="['diagnosis-board-tab',{selected:activeAnalysisGroup?.category===group.category}]">
-                  <button type="button" @click="activeResultCategory=group.category"><b>{{group.category}}</b><span class="tab-status-counts"><i class="normal" :class="{empty:statusCounts(group.metrics).normal===0}">{{statusCounts(group.metrics).normal}}</i><i class="warning" :class="{empty:statusCounts(group.metrics).warning===0}">{{statusCounts(group.metrics).warning}}</i><i class="alarm" :class="{empty:statusCounts(group.metrics).alarm===0}">{{statusCounts(group.metrics).alarm}}</i></span></button>
-                  <button type="button" class="board-gear" title="配置指标" :aria-label="`配置${group.category}指标`" @click="openModuleMetricManager('diagnosis',group.category)">⚙</button>
+                  <button type="button" @click="activeResultCategory=group.category"><b>{{group.category}}</b><span class="tab-status-counts"><i v-if="statusCounts(group.metrics).warning" class="warning">{{statusCounts(group.metrics).warning}}</i><i v-if="statusCounts(group.metrics).alarm" class="alarm">{{statusCounts(group.metrics).alarm}}</i></span></button>
                 </div>
-              </nav>
+              </WxTabs>
               <div v-if="activeAnalysisGroup" class="diagnosis-table-wrap grouped diagnosis-tab-panel">
                     <div v-if="activeAnalysisGroup.category==='沿程分析'" class="along-course-analysis">
                       <header><div><b>生化系统沿程采样矩阵</b><span>{{diagnosisDate}} · {{diagnosisLine}} · 数据随分析日期更新</span></div><em>10 个采样点</em></header>
@@ -1438,32 +1444,32 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
                       <div class="along-derived-grid"><article v-for="metric in activeAnalysisGroup.metrics" :key="metric.name"><span>{{metricDisplayName(metric)}}</span><strong>{{metric.actual}} <small>{{metricDisplayUnit(metric)}}</small></strong><em :class="metric.level">{{metric.level==='normal'?'正常':metric.level==='warning'?'预警':'告警'}}</em></article></div>
                       <div class="along-course-summary"><span><b>反硝化段</b>TN 由 31.7 降至 11.5 mg/L，碳源利用充分</span><span><b>硝化段</b>NH₃-N 由 10.2 降至 3.28 mg/L</span><span><b>溶解氧</b>好氧末端 0.52 mg/L，建议结合曝气策略关注</span></div>
                     </div>
-                    <table v-else class="diagnosis-table grouped-table">
-                      <thead><tr><th>指标</th><th>单位</th><th>设计值</th><th>目标值</th><th>实际值</th><th>偏差与状态</th><th>指标意义</th></tr></thead>
-                      <tbody><tr v-for="metric in activeAnalysisGroup.metrics" :key="`${metric.category}-${metric.name}`" :class="`diagnosis-row-${metric.level}`">
+                    <div v-else :class="['diagnosis-table-stack',{'diagnosis-table-stack-wide':activeAnalysisGroup.category==='污泥性状'}]">
+                      <WxTable class="diagnosis-table grouped-table diagnosis-table-head"><colgroup><col><col><col><col><col><col><col></colgroup><thead><tr><th>指标</th><th>单位</th><th>设计值</th><th>目标值</th><th>实际值</th><th>偏差 / 状态</th><th><span class="diagnosis-header-action">指标意义<button type="button" class="board-gear" title="配置指标" :aria-label="`配置${activeAnalysisGroup.category}指标`" @click="openModuleMetricManager('diagnosis',activeAnalysisGroup.category)">⚙</button></span></th></tr></thead></WxTable>
+                      <div class="diagnosis-table-body"><WxTable class="diagnosis-table grouped-table"><colgroup><col><col><col><col><col><col><col></colgroup><tbody><tr v-for="metric in activeAnalysisGroup.metrics" :key="`${metric.category}-${metric.name}`" :class="`diagnosis-row-${metric.level}`">
                         <td><b>{{metricDisplayName(metric)}}</b></td><td>{{metricDisplayUnit(metric)}}</td><td>{{metric.design}}</td><td>{{metric.target}}</td><td><strong>{{metric.actual}}</strong></td>
-                        <td><div class="deviation-cell"><div><span :class="`diagnosis-dot ${metric.level}`"></span><b v-if="metric.deviation!==null" :class="metric.level">{{metric.deviation>0?'+':''}}{{metric.deviation.toFixed(1)}}%</b><b v-else>—</b><em>{{metric.level==='normal'?'正常':metric.level==='warning'?'预警':'告警'}}</em></div><span class="deviation-track"><i :class="metric.level" :style="{width:deviationWidth(metric.deviation)}"></i></span></div></td>
+                        <td><div v-if="metric.deviation!==null" class="deviation-cell"><b :class="metric.level">{{metric.deviation>0?'+':''}}{{metric.deviation.toFixed(1)}}%</b><span class="deviation-track"><i :class="metric.level" :style="{width:deviationWidth(metric.deviation)}"></i></span></div><span v-else :class="['diagnosis-range-chip',metric.level]">{{metric.level==='normal'?'范围内':metric.level==='warning'?'待核查':'异常'}}</span></td>
                         <td><small>{{metric.meaning}}</small></td>
-                      </tr></tbody>
-                    </table>
+                      </tr></tbody></WxTable></div>
+                    </div>
               </div>
-              <div class="diagnosis-legend"><span><i class="normal"></i>正常：处于合理范围或优于目标</span><span><i class="warning"></i>预警：偏离工况目标，需要关注</span><span><i class="alarm"></i>告警：明显异常，建议核查处置</span></div>
-            </section>
+            </WxTableSurface>
 
-            <section class="process-controls">
-              <nav class="diagnosis-board-tabs control-board-tabs" aria-label="过程控制分类">
+            <WxTableSurface class="process-controls">
+              <WxTabs class="diagnosis-board-tabs control-board-tabs" aria-label="过程控制分类">
                 <div v-for="group in displayControlGroups" :key="group.key" :class="['diagnosis-board-tab',{selected:activeControlGroup?.key===group.key}]">
-                  <button type="button" @click="activeControlGroupKey=group.key"><b>{{group.title}}</b><span class="tab-status-counts"><i class="normal" :class="{empty:statusCounts(group.indicators).normal===0}">{{statusCounts(group.indicators).normal}}</i><i class="warning" :class="{empty:statusCounts(group.indicators).warning===0}">{{statusCounts(group.indicators).warning}}</i><i class="alarm" :class="{empty:statusCounts(group.indicators).alarm===0}">{{statusCounts(group.indicators).alarm}}</i></span></button>
-                  <button type="button" class="board-gear" title="配置指标" :aria-label="`配置${group.title}指标`" @click="openModuleMetricManager('diagnosis',group.title)">⚙</button>
+                  <button type="button" @click="activeControlGroupKey=group.key"><b>{{group.title}}</b><span class="tab-status-counts"><i v-if="statusCounts(group.indicators).warning" class="warning">{{statusCounts(group.indicators).warning}}</i><i v-if="statusCounts(group.indicators).alarm" class="alarm">{{statusCounts(group.indicators).alarm}}</i></span></button>
                 </div>
-              </nav>
-              <div v-if="activeControlGroup" class="control-indicator-list diagnosis-tab-panel">
-                <div class="control-indicator-head"><span>指标</span><span>单位</span><span>设计值</span><span>目标值</span><span>实际值</span><span>偏差</span></div>
-                <div v-for="indicator in activeControlGroup.indicators" :key="indicator.name" class="control-indicator-row">
-                  <b>{{metricDisplayName({category:activeControlGroup.title,...indicator})}}</b><span>{{metricDisplayUnit({category:activeControlGroup.title,...indicator})}}</span><span>{{indicator.design||''}}</span><span>{{indicator.target}}</span><strong>{{indicator.actual}}</strong><em :class="indicator.level">{{indicator.deviation===null?'范围内':`${indicator.deviation>0?'+':''}${indicator.deviation.toFixed(1)}%`}}</em>
+              </WxTabs>
+              <div v-if="activeControlGroup" class="diagnosis-tab-panel">
+                <div class="diagnosis-table-stack control-table-stack">
+                  <WxTable class="diagnosis-table control-table diagnosis-table-head"><colgroup><col><col><col><col><col><col></colgroup><thead><tr><th>指标</th><th>单位</th><th>设计值</th><th>目标值</th><th>实际值</th><th><span class="diagnosis-header-action">偏差 / 状态<button type="button" class="board-gear" title="配置指标" :aria-label="`配置${activeControlGroup.title}指标`" @click="openModuleMetricManager('diagnosis',activeControlGroup.title)">⚙</button></span></th></tr></thead></WxTable>
+                  <div class="diagnosis-table-body"><WxTable class="diagnosis-table control-table"><colgroup><col><col><col><col><col><col></colgroup><tbody><tr v-for="indicator in activeControlGroup.indicators" :key="indicator.name" :class="`diagnosis-row-${indicator.level}`">
+                    <td><b>{{metricDisplayName({category:activeControlGroup.title,...indicator})}}</b></td><td>{{metricDisplayUnit({category:activeControlGroup.title,...indicator})}}</td><td>{{indicator.design||''}}</td><td>{{indicator.target}}</td><td><strong>{{indicator.actual}}</strong></td><td><div v-if="indicator.deviation!==null" class="deviation-cell"><b :class="indicator.level">{{indicator.deviation>0?'+':''}}{{indicator.deviation.toFixed(1)}}%</b><span class="deviation-track"><i :class="indicator.level" :style="{width:deviationWidth(indicator.deviation)}"></i></span></div><span v-else :class="['diagnosis-range-chip',indicator.level]">{{indicator.level==='normal'?'范围内':indicator.level==='warning'?'待核查':'异常'}}</span></td>
+                  </tr></tbody></WxTable></div>
                 </div>
               </div>
-            </section>
+            </WxTableSurface>
           </div>
         </template>
         <template v-else-if="active==='processReport'">

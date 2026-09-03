@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { WxTable, WxTableSurface } from '../../components/waterx'
 import { getQualityScenarioView } from './adapter'
 import { DEFAULT_SCENARIO_ID } from './demo-data'
 import { QUALITY_RULE_VERSION, QUALITY_STANDARD_SCORE, dataStatusMeta, qualityPages } from './rules'
@@ -19,6 +20,12 @@ const emit = defineEmits<{
 const selectedMetric = ref<QualityMetricView | null>(null)
 const selectedFact = ref<QualitySourceFact | null>(null)
 const detailTab = ref<'overview'|'standard'|'interpretation'|'data'>('overview')
+const riskMeta = {
+  normal:{ label:'正常', tone:'normal' },
+  attention:{ label:'轻度偏差', tone:'warning' },
+  risk:{ label:'明显偏差', tone:'risk' },
+  unavailable:{ label:'待核查', tone:'muted' }
+} as const
 
 const view = computed(()=>getQualityScenarioView(DEFAULT_SCENARIO_ID))
 const currentPage = computed(()=>qualityPages[props.activePage])
@@ -59,6 +66,10 @@ function trendHeight(metric:QualityMetricView, value:number) {
   const max = Math.max(metric.maxScore,...metric.trend)
   return `${Math.max(8,Math.round(value / max * 100))}%`
 }
+
+function valueWithoutUnit(value:string, unit:string) {
+  return value.endsWith(` ${unit}`) ? value.slice(0,-unit.length-1) : value
+}
 </script>
 
 <template>
@@ -82,27 +93,24 @@ function trendHeight(metric:QualityMetricView, value:number) {
       </button>
     </section>
 
-    <section class="mq-metric-panel">
-      <header>
-        <div><b>{{currentPage.title}}指标</b><span>统一结构展示实际值、基线、偏差、得分、状态与操作</span></div>
-        <em>{{visibleMetrics.length}} 项 · 满分 {{view.dimensions.find(item=>item.id===currentPage.dimension)?.maxScore}}</em>
-      </header>
-      <div class="mq-table-wrap">
-        <table>
-          <thead><tr><th>指标</th><th>实际值</th><th>适用基线 / 偏差</th><th>得分</th><th>数据状态</th><th>操作</th></tr></thead>
-          <tbody>
+    <WxTableSurface class="mq-metric-panel">
+      <div class="mq-table-x-scroll"><div class="mq-table-stack">
+        <WxTable class="mq-table mq-table-head"><colgroup><col><col><col><col><col><col><col><col><col></colgroup><thead><tr><th>指标</th><th>实际值</th><th>单位</th><th>适用基线</th><th>偏差</th><th>得分</th><th>状态</th><th>数据说明</th><th>操作</th></tr></thead></WxTable>
+        <div class="mq-table-body"><WxTable class="mq-table"><colgroup><col><col><col><col><col><col><col><col><col></colgroup><tbody>
             <tr v-for="metric in visibleMetrics" :key="metric.code" :class="[`risk-${metric.riskLevel}`]">
               <td><button type="button" class="mq-metric-name" @click="openMetric(metric)"><i>{{metric.code}}</i><b>{{metric.name}}</b><small>{{metric.dimensionName}} · {{metric.maxScore}}分</small></button></td>
-              <td><strong>{{metric.actual}}</strong><small>{{metric.period}}</small></td>
-              <td><b>{{metric.baseline}}</b><small>偏差：{{metric.deviation}}</small></td>
+              <td><strong>{{valueWithoutUnit(metric.actual,metric.unit)}}</strong><small>{{metric.period}}</small></td>
+              <td><span class="mq-unit">{{metric.unit}}</span></td>
+              <td><b>{{valueWithoutUnit(metric.baseline,metric.unit)}}</b></td>
+              <td><span class="mq-deviation-value">{{metric.deviation}}</span></td>
               <td><strong>{{metric.scoreText}}</strong><i class="mq-score-track"><b :style="{width:scoreWidth(metric)}"></b></i></td>
-              <td><span class="mq-status-chip" :class="dataStatusMeta[metric.status].tone">{{dataStatusMeta[metric.status].label}}</span><small>{{metric.statusNote}}</small></td>
-              <td><div class="mq-row-actions"><button type="button" @click="openMetric(metric,'standard')">查看评分标准</button><button type="button" @click="openMetric(metric,'interpretation')">评分结果解读</button><button v-if="metric.facts.length" type="button" @click="openFact(metric)">查看业务事实</button></div></td>
+              <td><span class="mq-status-chip" :class="riskMeta[metric.riskLevel].tone">{{riskMeta[metric.riskLevel].label}}</span></td>
+              <td><b>{{dataStatusMeta[metric.status].label}}</b><small>{{metric.statusNote}}</small></td>
+              <td><div class="mq-row-actions"><button type="button" @click="openMetric(metric,'standard')">评分标准</button><button type="button" @click="openMetric(metric,'interpretation')">结果解读</button><button v-if="metric.facts.length" type="button" @click="openFact(metric)">业务事实</button></div></td>
             </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+          </tbody></WxTable></div>
+      </div></div>
+    </WxTableSurface>
 
     <div v-if="selectedMetric" class="mq-overlay" @click.self="selectedMetric=null">
       <aside class="mq-drawer" role="dialog" aria-modal="true" :aria-label="`${selectedMetric.code}指标详情`">
@@ -150,4 +158,32 @@ function trendHeight(metric:QualityMetricView, value:number) {
 .mq-score-dock{position:sticky;top:0;z-index:30;display:grid;grid-template-columns:minmax(190px,1.3fr) minmax(135px,.9fr) repeat(4,minmax(145px,1fr));gap:9px;align-self:start;overflow-x:auto;padding:10px;border:1px solid #d7e6ee;border-radius:13px;background:rgba(244,248,251,.96);box-shadow:0 8px 20px rgba(22,66,91,.08);backdrop-filter:blur(10px);scrollbar-width:thin;scrollbar-color:#b8d5e2 transparent}.mq-score-dock>article,.mq-score-dock>.mq-dimension-card{min-height:96px;padding:12px 13px;border:1px solid #dce9f1;border-radius:10px;background:#fff;text-align:left;scroll-snap-align:start}.mq-score-dock span{display:flex;align-items:center;justify-content:space-between;gap:6px;color:#718897;font-size:10px}.mq-score-dock strong{display:block;margin:9px 0 7px;color:#173f58;font-size:20px;line-height:1.2}.mq-score-dock strong small{font-size:10px;font-weight:500}.mq-score-dock article>small{display:block;color:#8296a3;font-size:8px;line-height:1.4}.mq-score-dock .mq-total-score{color:#fff;border-color:#117ead;background:linear-gradient(145deg,#117ead,#0e6f9b)!important}.mq-score-dock .mq-total-score.incomplete{border-color:#536f7f;background:linear-gradient(145deg,#536f7f,#3c5b6c)!important}.mq-score-dock .mq-total-score span,.mq-score-dock .mq-total-score strong,.mq-score-dock .mq-total-score>small{color:#fff}.mq-score-dock .mq-total-score strong{font-size:25px}.mq-period-card strong{font-size:13px;white-space:nowrap}.mq-score-dock .mq-dimension-card{display:block;cursor:pointer;transition:border-color .16s ease,background .16s ease,box-shadow .16s ease}.mq-score-dock .mq-dimension-card:hover{border-color:#8dc6dd;background:#f8fcfe}.mq-score-dock .mq-dimension-card.selected{border-color:#54afd2;background:#edf9fd;box-shadow:inset 0 0 0 1px rgba(54,163,204,.15)}.mq-score-dock .mq-dimension-card span em{font-size:8px;font-style:normal}.mq-score-dock .mq-dimension-card i{display:block;height:4px;overflow:hidden;border-radius:3px;background:#e8f0f4}.mq-score-dock .mq-dimension-card i b{display:block;height:100%;border-radius:inherit;background:#1992bf}
 @media(max-width:1180px){.mq-score-board{grid-template-columns:repeat(3,1fr)}.mq-total-score{grid-column:span 2}.mq-context-bar{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:760px){.mq-score-dock{grid-template-columns:minmax(175px,1.25fr) minmax(125px,.9fr) repeat(4,minmax(135px,1fr));padding:8px;scroll-snap-type:x proximity}.mq-detail-score{grid-template-columns:repeat(2,1fr)}.mq-drawer>nav{grid-template-columns:repeat(2,1fr)}}
+
+/* WaterX Design System 1.0: indicator evaluation table baseline */
+.mq-page{gap:12px;color:var(--wx-n700)}
+.mq-score-dock{top:0;grid-template-columns:minmax(180px,1.25fr) minmax(130px,.82fr) repeat(4,minmax(142px,1fr));gap:9px;padding:0 0 12px;border:0;border-radius:0;background:var(--wx-n50);box-shadow:none;backdrop-filter:none}
+.mq-score-dock>article,.mq-score-dock>.mq-dimension-card{min-height:96px;padding:12px 13px;border:1px solid var(--wx-n200);border-radius:var(--wx-radius-md);box-shadow:none}
+.mq-score-dock .mq-dimension-card.selected{border-color:#9ccfe2;background:var(--wx-n25);box-shadow:inset 0 3px var(--wx-blue-500)}
+.mq-score-dock .mq-dimension-card:hover{border-color:#8dc6dd;background:var(--wx-n25)}
+.mq-score-dock .mq-dimension-card i b{background:var(--wx-success)}
+.mq-score-dock .mq-dimension-card.selected i b{background:var(--wx-warning)}
+.mq-metric-panel{min-width:0;overflow:hidden;padding:20px;border:1px solid var(--wx-n200);border-radius:var(--wx-radius-md);background:var(--wx-n0);box-shadow:none}
+.mq-table-x-scroll{min-width:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;scrollbar-color:rgba(96,123,137,.16) transparent}
+.mq-table-x-scroll::-webkit-scrollbar{height:6px}.mq-table-x-scroll::-webkit-scrollbar-track{background:transparent}.mq-table-x-scroll::-webkit-scrollbar-thumb{border-radius:999px;background:rgba(96,123,137,.16)}
+.mq-table-stack{min-width:1140px}
+.mq-table{width:100%;min-width:0;margin:0;border:0;border-collapse:collapse;table-layout:fixed}
+.mq-table col:nth-child(1){width:13%}.mq-table col:nth-child(2){width:14%}.mq-table col:nth-child(3){width:7%}.mq-table col:nth-child(4){width:11%}.mq-table col:nth-child(5){width:8%}.mq-table col:nth-child(6){width:9%}.mq-table col:nth-child(7){width:10%}.mq-table col:nth-child(8){width:13%}.mq-table col:nth-child(9){width:15%}
+.mq-table th,.mq-table td{border-left:0;border-right:0;text-align:left}
+.mq-table th{height:var(--wx-table-row-height);padding:7px 10px;border-top:1px solid var(--wx-n100);border-bottom:1px solid var(--wx-n100);background:var(--wx-n25);color:var(--wx-n600);font-size:12px;font-weight:400}
+.mq-table td{height:var(--wx-table-row-complex);padding:7px 10px;border-top:1px solid var(--wx-n100);color:var(--wx-n700);font-size:12px;vertical-align:middle}
+.mq-table tbody tr:first-child td{border-top:0}.mq-table tbody tr:last-child td{border-bottom:1px solid var(--wx-n100)}
+.mq-table-body{max-height:calc(100vh - 306px);overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:rgba(96,123,137,.16) transparent}
+.mq-table-body::-webkit-scrollbar{width:1px}.mq-table-body::-webkit-scrollbar-track{background:transparent}.mq-table-body::-webkit-scrollbar-thumb{border-radius:999px;background:rgba(96,123,137,.16)}.mq-table-body:hover::-webkit-scrollbar-thumb{background:rgba(96,123,137,.24)}
+.mq-table td>strong,.mq-table td>b{display:block;color:var(--wx-n700);font-size:12px}.mq-table td>strong{color:var(--wx-n800);font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}.mq-table td>small{display:block;max-width:205px;margin-top:3px;color:var(--wx-n500);font-size:10px;line-height:1.35}
+.mq-metric-name{gap:0}.mq-metric-name i{color:var(--wx-blue-700);font-size:10px;line-height:11px}.mq-metric-name b{color:var(--wx-n700);font-size:12px;line-height:15px;font-weight:600}.mq-metric-name small{margin-top:2px;color:var(--wx-n500);font-size:10px;line-height:12px}
+.mq-unit{color:var(--wx-n600);white-space:normal}.mq-deviation-value{font-variant-numeric:tabular-nums;white-space:nowrap}
+.mq-score-track{width:min(100%,86px);height:3px;background:var(--wx-n100)}.mq-score-track b{background:var(--wx-success)}.risk-attention .mq-score-track b{background:var(--wx-warning)}.risk-risk .mq-score-track b{background:var(--wx-danger)}.risk-unavailable .mq-score-track b{background:var(--wx-n400)}
+.mq-status-chip{min-height:23px;padding:2px 7px;border:1px solid var(--wx-success-border);border-radius:999px;background:var(--wx-success-bg);color:var(--wx-success-strong);font-size:11px}.mq-status-chip.warning{border-color:var(--wx-warning-border);background:var(--wx-warning-bg);color:var(--wx-warning-strong)}.mq-status-chip.risk{border-color:var(--wx-danger-border);background:var(--wx-danger-bg);color:var(--wx-danger-strong)}.mq-status-chip.muted{border-color:var(--wx-n200);background:var(--wx-n100);color:var(--wx-n600)}
+.mq-row-actions{flex-wrap:nowrap;align-items:center;gap:4px;max-width:none;white-space:nowrap}.mq-row-actions button{min-height:28px;padding:3px 6px;border:1px solid var(--wx-n200);border-radius:5px;background:#fff;color:var(--wx-blue-700);font-size:10px;white-space:nowrap}.mq-row-actions button:hover{border-color:var(--wx-blue-600);background:var(--wx-n25)}
+@media(max-width:1300px){.mq-score-dock{grid-template-columns:minmax(165px,1.2fr) minmax(120px,.8fr) repeat(4,minmax(125px,1fr))}.mq-table-body{max-height:calc(100vh - 286px)}}
 </style>

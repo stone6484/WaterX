@@ -1,0 +1,89 @@
+:root {
+  /* WaterX Design System 1.0 — brand */
+  --wx-deep-900: #042d47;
+  --wx-deep-800: #073b57;
+  --wx-deep-700: #0a4a68;
+  --wx-deep-600: #0c5f7d;
+  --wx-sidebar: #073f5d;
+  --wx-blue-700: #0877a7;
+  --wx-blue-600: #078bc4;
+  --wx-blue-500: #129fd0;
+  --wx-blue-400: #39b5d8;
+  --wx-aqua-600: #0d8f88;
+  --wx-aqua-500: #20aaa0;
+
+  /* WaterX Design System 1.0 — neutral */
+  --wx-n0: #ffffff;
+  --wx-n25: #f8fbfd;
+  --wx-n50: #f2f7fa;
+  --wx-n100: #e8f0f4;
+  --wx-n200: #d4e0e6;
+  --wx-n300: #b3c6d0;
+  --wx-n400: #829daa;
+  --wx-n500: #607b89;
+  --wx-n600: #435f6d;
+  --wx-n700: #2e4856;
+  --wx-n800: #1d3542;
+  --wx-n900: #102935;
+
+  /* WaterX Design System 1.0 — semantic */
+  --wx-success: #2f9e6f;
+  --wx-success-strong: #1e704d;
+  --wx-success-bg: #eaf7f0;
+  --wx-success-border: #a7d8bf;
+  --wx-warning: #f28c28;
+  --wx-warning-strong: #c45f05;
+  --wx-warning-bg: #fff4e8;
+  --wx-warning-border: #f5bf84;
+  --wx-danger: #d94a4a;
+  --wx-danger-strong: #b83232;
+  --wx-danger-bg: #fdeeee;
+  --wx-danger-border: #f0aaaa;
+  --wx-info-bg: #e8f5fb;
+
+  /* WaterX Design System 1.0 — geometry and density */
+  --wx-header-height: 56px;
+  --wx-sidebar-width: 192px;
+  --wx-sidebar-width-compact: 56px;
+  --wx-page-padding: 24px;
+  --wx-board-gap: 16px;
+  --wx-space-1: 4px;
+  --wx-space-2: 8px;
+  --wx-space-3: 12px;
+  --wx-space-4: 16px;
+  --wx-space-5: 20px;
+  --wx-space-6: 24px;
+  --wx-control-height: 36px;
+  --wx-table-row-height: 44px;
+  --wx-table-row-comfortable: 52px;
+  --wx-table-row-complex: 60px;
+  --wx-radius-xs: 4px;
+  --wx-radius-sm: 6px;
+  --wx-radius-md: 8px;
+  --wx-radius-lg: 12px;
+  --wx-border-default: 1px solid var(--wx-n200);
+  --wx-border-subtle: 1px solid var(--wx-n100);
+  --wx-focus-ring: 0 0 0 2px rgba(7, 139, 196, .18);
+  --wx-scrollbar-size: 1px;
+  --wx-scrollbar-horizontal-size: 6px;
+  --wx-shadow-sm: 0 2px 8px rgba(4, 45, 71, .1);
+  --wx-shadow-card: 0 4px 16px rgba(14, 116, 162, .035);
+  --wx-shadow-overlay: 0 16px 40px rgba(4, 45, 71, .16);
+
+  /* Compatibility aliases used by the existing application. */
+  --wx-text: var(--wx-n700);
+  --wx-muted: var(--wx-n500);
+  --wx-heading: var(--wx-n800);
+  --wx-accent: var(--wx-blue-700);
+  --wx-font-sm: 11px;
+  --wx-font-md: 13px;
+  --wx-font-lg: 18px;
+}
+
+@media (max-width: 1280px) {
+  :root {
+    --wx-sidebar-width: 180px;
+    --wx-page-padding: 16px;
+    --wx-board-gap: 8px;
+  }
+}
