@@ -1,0 +1,19 @@
+/* Safety first batch only: retain other modules until their own approved batch. */
+main.safety-current{background:var(--wx-n50);color:var(--wx-n700);padding:0 12px 88px;max-width:480px}
+.safety-current>header{margin:0 -12px 16px;padding:18px 16px;background:var(--wx-deep-900);border-radius:0;gap:12px;align-items:center}
+.safety-current>header>div{min-width:0}.safety-current>header h1{font-size:20px;margin-top:10px}
+.safety-current>header select{max-width:100%;border:1px solid var(--wx-n300);background:var(--wx-deep-800);color:var(--wx-n0);border-radius:4px;padding:6px;font-size:13px}
+.safety-current>header button{padding:8px;background:transparent;color:var(--wx-n0);border:1px solid var(--wx-n300);border-radius:4px;white-space:nowrap}
+.safety-current>.alert{margin:0 0 16px;box-shadow:none;border:var(--wx-border-default);border-radius:8px;padding:14px}.safety-current>.alert strong{color:var(--wx-blue-700)}
+.safety-current .alert p,.safety-current .actions small,.safety-current .todo-list small{color:var(--wx-n500)}
+.safety-current>.actions{gap:10px}.safety-current>.actions button{padding:14px;border:var(--wx-border-default);border-radius:8px;box-shadow:none}
+.safety-current>.actions span{background:var(--wx-info-bg);color:var(--wx-blue-700);border-radius:6px;margin-bottom:10px}
+.safety-current .todo-list button{border:var(--wx-border-default);border-radius:8px;color:var(--wx-n700)}
+.safety-current .todo-list span{color:var(--wx-blue-700);background:var(--wx-info-bg)}
+.safety-current>nav{border-top:var(--wx-border-subtle);background:var(--wx-n0)}.safety-current>nav button{min-height:44px;color:var(--wx-n500)}
+.safety-current>nav .active{color:var(--wx-blue-700)}.safety-current>nav .scan{background:var(--wx-blue-700)!important;color:var(--wx-n0)!important;border-radius:8px;box-shadow:none;margin-top:0;height:44px}
+.safety-current .field-work{padding:0 0 16px}.safety-current .field-work>article{border:var(--wx-border-default);border-radius:8px;margin-bottom:10px}
+.safety-current .field-work>.field-toolbar button,.safety-current .field-work>button,.safety-current .field-work>article>button{background:var(--wx-blue-700);color:var(--wx-n0);border:var(--wx-border-default);min-height:44px}
+.safety-current .field-work small{color:var(--wx-n500)}.safety-current .field-work [role=alert]{color:var(--wx-danger-strong)}
+.safety-current .field-work button:disabled{background:var(--wx-n50);color:var(--wx-n400)}
+.safety-current :focus-visible{outline:2px solid var(--wx-blue-500);outline-offset:2px}

@@ -182,119 +182,59 @@ class SafetyApiIntegrationTest {
                         .content("{\"decision\":\"APPROVE\",\"comment\":\"测试审核通过\"}"))
                 .andExpect(status().isOk());
 
+        // Technical administration alone no longer permits business data reads.
         mvc.perform(get("/api/v1/safety/inspection/summary")
                         .header("Authorization", authorization)
                         .header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.pendingTasks").value(1))
-                .andExpect(jsonPath("$.openHazards").value(3)).andExpect(jsonPath("$.pendingReview").value(1))
-                .andExpect(jsonPath("$.overdueHazards").value(1));
+                .andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/safety/inspection/statistics")
                         .header("Authorization", authorization)
                         .header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.totalHazards").value(3))
-                .andExpect(jsonPath("$.plantLevel").value(1));
+                .andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/safety/inspection/templates")
                         .header("Authorization", authorization)
                         .header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(3)));
+                .andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/safety/inspection/tasks")
                         .header("Authorization", authorization)
                         .header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(2)));
+                .andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/safety/hazards")
                         .header("Authorization", authorization)
                         .header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(3)))
-                .andExpect(jsonPath("$[0].escalationLevel").value("PLANT"))
-                .andExpect(jsonPath("$[0].overdueDays").value(9));
+                .andExpect(status().isForbidden());
+        // Business writes now require the assigned employee or a scoped safety role.
+        // Positive workflow, attachments and plan paths are covered by SafetyWorkflowIntegrationTest
+        // with separate reporter, owner and reviewer identities; the platform account must not impersonate them.
         mvc.perform(post("/api/v1/safety/hazards/83000000-0000-0000-0000-000000000001/reminders")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001")
-                        .contentType("application/json").content("{\"message\":\"请尽快完成整改并反馈\"}"))
-                .andExpect(status().isOk());
-        MockMultipartFile photo = new MockMultipartFile("file", "现场照片.png", "image/png", new byte[]{1, 2, 3, 4});
-        String attachmentResponse = mvc.perform(multipart("/api/v1/safety/hazards/83000000-0000-0000-0000-000000000001/attachments")
-                        .file(photo).param("stage", "DISCOVERY")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.originalName").value("现场照片.png"))
-                .andReturn().getResponse().getContentAsString();
-        String attachmentId = json.readTree(attachmentResponse).path("id").asText();
-        mvc.perform(get("/api/v1/safety/hazards/83000000-0000-0000-0000-000000000001/attachments")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].stage").value("DISCOVERY"));
-        mvc.perform(get("/api/v1/safety/hazards/83000000-0000-0000-0000-000000000001/attachments/" + attachmentId + "/download")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))
-                .andExpect(status().isOk());
-        MockMultipartFile rejected = new MockMultipartFile("file", "脚本.txt", "text/plain", "not allowed".getBytes());
-        mvc.perform(multipart("/api/v1/safety/hazards/83000000-0000-0000-0000-000000000001/attachments")
-                        .file(rejected).param("stage", "DISCOVERY")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))
-                .andExpect(status().isBadRequest());
+                        .header("Authorization",authorization).header("X-Site-Id","30000000-0000-0000-0000-000000000001")
+                        .contentType("application/json").content("{\"message\":\"技术管理员不代行业务催办\"}"))
+                .andExpect(status().isForbidden());
         mvc.perform(post("/api/v1/safety/hazards/83000000-0000-0000-0000-000000000001/rectification")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001")
-                        .contentType("application/json").content("{\"completionNote\":\"已完成管路检修并测试合格\"}"))
-                .andExpect(status().isOk());
-        mvc.perform(post("/api/v1/safety/hazards/83000000-0000-0000-0000-000000000001/review")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001")
-                        .contentType("application/json").content("{\"passed\":true,\"comment\":\"现场复查合格\"}"))
-                .andExpect(status().isOk());
-
+                        .header("Authorization",authorization).header("X-Site-Id","30000000-0000-0000-0000-000000000001")
+                        .contentType("application/json").content("{\"completionNote\":\"尝试代他人提交\",\"revision\":1}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/v1/safety/hazards/83000000-0000-0000-0000-000000000002/review")
+                        .header("Authorization",authorization).header("X-Site-Id","30000000-0000-0000-0000-000000000001")
+                        .contentType("application/json").content("{\"passed\":true,\"comment\":\"尝试代行复查\",\"revision\":1}"))
+                .andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/safety/inspection/tasks/82000000-0000-0000-0000-000000000001/items")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(3)));
+                        .header("Authorization",authorization).header("X-Site-Id","30000000-0000-0000-0000-000000000001"))
+                .andExpect(status().isForbidden());
         mvc.perform(post("/api/v1/safety/inspection/tasks/82000000-0000-0000-0000-000000000001/complete")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001")
-                        .contentType("application/json").content("""
-                            {"items":[
-                              {"itemId":"81000000-0000-0000-0000-000000000001","result":"COMPLIANT"},
-                              {"itemId":"81000000-0000-0000-0000-000000000002","result":"COMPLIANT"},
-                              {"itemId":"81000000-0000-0000-0000-000000000003","result":"NON_COMPLIANT","problemDescription":"洗眼器水压不足","handlingMeasure":"检修供水管路","hazardLevel":"GENERAL","dueDate":"2026-07-30"}
-                            ]}
-                            """))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.hazardsCreated").value(1));
+                        .header("Authorization",authorization).header("X-Site-Id","30000000-0000-0000-0000-000000000001")
+                        .contentType("application/json").content("{\"items\":[]}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/safety/inspection/plans")
+                        .header("Authorization",authorization).header("X-Site-Id","30000000-0000-0000-0000-000000000001"))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/v1/safety/inspection/plans/84000000-0000-0000-0000-000000000001/status")
+                        .header("Authorization",authorization).header("X-Site-Id","30000000-0000-0000-0000-000000000001")
+                        .contentType("application/json").content("{\"action\":\"PAUSE\",\"reason\":\"测试无业务授权暂停\"}"))
+                .andExpect(status().isForbidden());
         mvc.perform(get("/api/v1/safety/inspection/summary")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.pendingTasks").value(0))
-                .andExpect(jsonPath("$.openHazards").value(3));
-        mvc.perform(get("/api/v1/safety/inspection/plans")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$", hasSize(1)))
-                .andExpect(jsonPath("$[0].scheduleType").value("DAILY"))
-                .andExpect(jsonPath("$[0].changeCount").value(0));
-        mvc.perform(post("/api/v1/safety/inspection/plans/84000000-0000-0000-0000-000000000001/status")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001")
-                        .contentType("application/json").content("{\"action\":\"PAUSE\",\"reason\":\"测试暂停\"}"))
-                .andExpect(status().isOk());
-        mvc.perform(post("/api/v1/safety/inspection/plans/84000000-0000-0000-0000-000000000001/status")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001")
-                        .contentType("application/json").content("{\"action\":\"RESUME\",\"reason\":\"测试恢复\"}"))
-                .andExpect(status().isOk());
-        mvc.perform(get("/api/v1/safety/inspection/plans")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$[0].status").value("ACTIVE"))
-                .andExpect(jsonPath("$[0].changeCount").value(2));
-        mvc.perform(post("/api/v1/safety/inspection/plans/generate")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.generatedCount").value(1));
-        mvc.perform(post("/api/v1/safety/inspection/plans/generate")
-                        .header("Authorization", authorization)
-                        .header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.generatedCount").value(0));
+                        .header("Authorization",authorization).header("X-Site-Id","30000000-0000-0000-0000-000000000001"))
+                .andExpect(status().isForbidden());
 
         mvc.perform(get("/api/v1/safety/work-permits/templates")
                         .header("Authorization", authorization).header("X-Site-Id", "30000000-0000-0000-0000-000000000001"))

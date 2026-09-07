@@ -1,0 +1,33 @@
+/* 化验日报屏幕外观按现有规范收口，打印继续使用 diagnosis.css 的原版式。 */
+.lab-reports-module{display:grid;gap:12px;min-width:0;color:var(--wx-n700);font-size:12px}
+.lab-reports-module .lab-folder-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;padding:0;border:0;border-radius:0;background:transparent}
+.lab-reports-module .lab-folder-grid button{min-height:180px;align-items:flex-start;gap:10px;padding:20px;border:var(--wx-border-default);border-radius:var(--wx-radius-md);background:var(--wx-n0);box-shadow:none;color:var(--wx-n700);font:inherit;transform:none}
+.lab-reports-module .lab-folder-grid button:hover:not(:disabled){transform:none;border-color:var(--wx-blue-600);background:var(--wx-n25);box-shadow:none}
+.lab-reports-module .lab-folder-grid button:focus-visible{outline:2px solid var(--wx-blue-600);outline-offset:2px}
+.lab-reports-module .lab-folder-grid button i{min-width:48px;height:32px;background:var(--wx-n25);color:var(--wx-blue-700);font-size:12px}
+.lab-reports-module .lab-folder-grid button b{font-size:16px;font-weight:600}
+.lab-reports-module .lab-folder-grid button small{font-size:12px;color:var(--wx-n600)}
+.lab-reports-module .lab-folder-grid button em{font-size:11px;color:var(--wx-n500)}
+.lab-reports-module .lab-form-toolbar{position:sticky;top:0;z-index:5;justify-content:flex-start;gap:8px 12px;min-height:36px;margin:0;padding:8px 0;border:0;border-radius:0;background:var(--wx-n25);box-shadow:none}
+.lab-reports-module .lab-form-toolbar .wx-button{height:var(--wx-control-height);min-height:0;padding:0 12px;border:var(--wx-border-default);border-radius:var(--wx-radius-sm);background:var(--wx-n0);color:var(--wx-blue-700);font-size:12px;font-weight:500}
+.lab-reports-module .lab-form-toolbar .wx-button.is-primary{border-color:var(--wx-blue-700);background:var(--wx-blue-700);color:var(--wx-n0)}
+.lab-reports-module .lab-form-toolbar .wx-button:hover:not(:disabled){border-color:var(--wx-blue-600)}
+.lab-reports-module .lab-form-toolbar .wx-button:disabled{border-color:var(--wx-n100);background:var(--wx-n25);color:var(--wx-n400)}
+.lab-reports-module .lab-form-toolbar label{display:flex;align-items:center;gap:8px;white-space:nowrap;font-size:12px;color:var(--wx-n600)}
+.lab-reports-module .lab-form-toolbar label input{height:var(--wx-control-height);font:inherit;border:var(--wx-border-default);border-radius:var(--wx-radius-sm)}
+.lab-reports-module .lab-form-toolbar>span{font-size:11px;color:var(--wx-n500)}
+@media screen{
+.lab-reports-module .lab-report-wrap{min-width:0;padding:16px;border:var(--wx-border-default);border-radius:var(--wx-radius-md);background:var(--wx-n25);overflow:auto;scrollbar-width:thin;scrollbar-color:var(--wx-n300) transparent}
+.lab-reports-module .lab-report-paper{min-height:0;padding:24px 32px;box-shadow:none}
+.lab-reports-module .lab-report-meta{gap:32px}
+.lab-reports-module .lab-report-table :is(th,td){min-height:36px;height:36px;font-size:12px;border-color:var(--wx-n200);border-width:1px}
+.lab-reports-module .lab-report-table thead th{height:44px;font-weight:500;background:var(--wx-n25)}
+.lab-reports-module .lab-report-paper input{height:30px;font-size:12px}
+.lab-reports-module .lab-report-meta label,.lab-reports-module .lab-report-footer label{font-size:12px}
+.lab-reports-module .lab-report-paper input:focus-visible{outline:2px solid var(--wx-blue-600);outline-offset:-2px}
+}
+@media print{
+  .lab-reports-module .lab-report-paper,.lab-reports-module .lab-report-paper *{color:#000!important;box-shadow:none!important}
+  .lab-reports-module .lab-report-wrap{border:0}
+  .lab-reports-module input[type="date"]::-webkit-calendar-picker-indicator{display:none}
+}

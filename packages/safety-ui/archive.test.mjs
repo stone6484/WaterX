@@ -1,0 +1,15 @@
+import { test } from 'node:test'
+import assert from 'node:assert/strict'
+import { buildHazardArchive, buildTaskArchive, csvContent, inspectionAnswer } from './archive.ts'
+
+const event=(action,revision,extra={})=>({id:`event-${revision}`,action,actorName:`测试人员${revision}`,note:'仅测试',revision,occurredAt:'2026-09-07T03:00:00Z',evidenceIds:['file-1'],snapshot:{status:'RECTIFYING',estimated_cost:0,...extra}})
+const detail={hazard:{hazardNo:'TEST-ONLY',location:'测试区',description:'<script>alert(1)</script>',legalMajorStatus:'UNDETERMINED',status:'CLOSED',revision:7,estimatedCost:0},origins:[],events:[event('RECTIFICATION_SUBMITTED',4,{rectification_signature:'data:image/png;base64,ROUND1',completion_note:'第一轮'}),event('REVIEW_RETURNED',5,{review_signature:'data:image/png;base64,RETURNED'}),event('RECTIFICATION_SUBMITTED',6,{rectification_signature:'data:image/png;base64,ROUND2',completion_note:'第二轮'}),event('CLOSED',7,{review_signature:'data:image/png;base64,CLOSED'})]}
+const files=[{id:'file-1',stage:'RECTIFICATION',originalName:'本轮演示.png',uploadedByName:'测试人员',uploadedAt:'2026-09-07T03:00:00Z'}]
+test('逐轮签署及意见均保留，不拿最终签署覆盖历史',()=>{const html=buildHazardArchive(detail,files);for(const value of ['ROUND1','RETURNED','ROUND2','CLOSED','第一轮','第二轮','测试人员4','测试人员7'])assert.ok(html.includes(value));assert.equal((html.match(/<img /g)||[]).length,4)})
+test('中文状态、费用零、证据名称和索引保留',()=>{const html=buildHazardArchive(detail,files);for(const value of ['待核定','预计费用（元）','<td>0</td>','本轮演示.png（file-1）','复查归档'])assert.ok(html.includes(value))})
+test('所有业务文本转义，不执行输入HTML',()=>{const html=buildHazardArchive(detail,files);assert.ok(!html.includes('<script>'));assert.ok(html.includes('&lt;script&gt;'))})
+test('缺失费用不转为0，缺失历史签字不伪造',()=>{const html=buildHazardArchive({...detail,hazard:{...detail.hazard,estimatedCost:null},events:[event('CLOSED',1)]},[]);assert.ok(html.includes('待确认'));assert.ok(html.includes('签署：未记录'));assert.ok(html.includes('原文件未取得'))})
+test('CSV 防公式包含前导空白，0和缺失不同',()=>{const csv=csvContent([[' =1+1','\t@SUM(1)',0,null,'a"b']]);assert.ok(csv.includes("' =1+1"));assert.ok(csv.includes("'\t@SUM(1)"));assert.ok(csv.includes('"0",""'));assert.ok(csv.includes('a""b'))})
+test('仅条件/反向题翻译是与否，自由文本不改写',()=>{assert.equal(inspectionAnswer({questionType:'CONDITION',answer:'NO'}),'否');assert.equal(inspectionAnswer({questionType:'TEXT',answer:'NO'}),'NO');assert.equal(inspectionAnswer({questionType:'NUMBER',answer:'0'}),'0')})
+test('检查记录结论中文、原始来源、模板版本和历史来源提示',()=>{const html=buildTaskArchive({title:'测试',taskNo:'TEST',templateName:'测试模板',templateVersion:2,snapshotOrigin:'LEGACY_CAPTURE'},[{category:'测试项',content:'测试内容',sourceRef:'原表第3行',questionType:'COMPLIANCE',result:'NOT_APPLICABLE',notApplicableReason:'场景不涉及'}]);for(const value of ['V2','非原始签署证明','原表第3行','不适用','场景不涉及'])assert.ok(html.includes(value))})
+test('打印A4横版、重复表头，签署不跨页，技术快照不打印',()=>{const html=buildHazardArchive(detail,files);for(const value of ['A4 landscape','table-header-group','.signature{break-inside:avoid}','button,details{display:none}'])assert.ok(html.includes(value))})

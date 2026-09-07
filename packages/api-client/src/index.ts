@@ -81,7 +81,56 @@ export type SafetyCommitmentTemplate={id:string;code:string;name:string;position
 export type VisitorBriefing={id:string;tenantId:string;siteId:string;siteName:string;accessToken:string;title:string;briefingContent:string;riskMapDescription?:string;evacuationDescription?:string;emergencyContact?:string;riskMapUrl?:string;evacuationMapUrl?:string}
 export type VisitorRecord={id:string;visitorName:string;mobile?:string;companyName?:string;visitPurpose:string;hostName:string;registeredAt:string;status:string}
 
+
+export type SafetyContext = { employeeId:string;userId:string;displayName:string;canManage:boolean;canReport?:boolean }
+export type WorkflowHazard = SafetyHazard & { revision:number;responsibleEmployeeId?:string;responsibleOrgId?:string;reportedBy?:string;legalMajorStatus:'UNDETERMINED'|'YES'|'NO';legalMajorBasis?:string;riskHazardId?:string;riskName?:string;legacyCategoryMajor?:string;canAssign:boolean;canReceive:boolean;canRectify:boolean;canReview:boolean;rectificationSignature?:string;reviewSignature?:string }
+export type HazardEvent = { id:string;action:string;actorName:string;note:string;revision:number;occurredAt:string;snapshot:Record<string,unknown>;evidenceIds:string[] }
+export type HazardDetail = { hazard:WorkflowHazard;events:HazardEvent[];origins:Array<{taskNo:string;taskId:string;itemId:string;description:string}> }
+export type WorkflowTemplate = InspectionTemplate & { version:number;familyCode:string;sourceName:string;instructions:string }
+export type WorkflowTask = InspectionTask & {templateVersion:number;snapshotOrigin:string;canExecute:boolean;assigneeEmployeeId?:string;completedBy?:string;completedAt?:string;inspectionLocation?:string;participants?:string;signatureData?:string}
+export type QuestionType = 'COMPLIANCE'|'CONDITION'|'OBSERVATION'|'TEXT'|'NUMBER'
+export type WorkflowItem = {id:string;category:string;content:string;required:boolean;sortOrder:number;questionType:QuestionType;conditionItemId?:string;sourceRef?:string;result?:string;answer?:string;notApplicableReason?:string;problemDescription?:string;handlingMeasure?:string;linkedHazardId?:string}
+export type WorkflowAnswer = { itemId:string;result?:string;answer?:string;notApplicableReason?:string;problemDescription?:string;handlingMeasure?:string;linkedHazardId?:string }
+export type HazardAssignment = {revision:number;categoryMajor:string;hazardLevel:string;rectificationMeasure:string;temporaryMeasure:string;dueDate:string;estimatedCost?:number;responsibleOrgId:string;responsibleEmployeeId:string;legalMajorStatus:string;legalMajorBasis?:string;riskHazardId?:string;note:string}
+export type WorkflowAction = {revision:number;note:string;accepted?:boolean;signatureData?:string}
+export type TemplateRevision = {version:number;name:string;reason:string;items:Array<{category:string;content:string;questionType:QuestionType;conditionIndex?:number;sourceRef?:string}>}
+export type SafetyDirectory = {employees:Array<Employee & {orgId:string}>;units:OrgUnit[];risks:Array<{id:string;name:string}>}
+
+
+export type DailyCell={value:string;state:'VALID'|'INVALID'|'NA';source:'MANUAL'|'IMPORT'|'DEMO';note:string}
+export type DailyMetric={id:string;code:string;category:string;name:string;unit:string;design:string;target:string;actual:string;meaning:string;formula:string;scopes:Array<'design'|'condition'|'entry'|'diagnosis'>;source:'MANUAL'|'CALCULATED'|'DESIGN';text:boolean}
+export type DailyLine={id:string;name:string;template:DailyMetric[];template_version:number;permissions:string[];employeeId:string;actors:Array<{id:string;name:string;execute:boolean;review:boolean}>}
+export type DailyVersion={version:number;candidate:number;cells:Record<string,DailyCell>;template:DailyMetric[];confirmed_at:string;confirmed_by:string;reason:string}
+export type DailyRecord={id:string;business_date:string;line_id:string;revision:number;state:string;candidate:number;confirmed_version:number;assignee_id:string;reviewer_id:string;assigneeName:string;reviewerName:string;analysisBlocked:boolean;actions:string[];correction_reason:string;review_note:string;cells:Record<string,DailyCell>;template:DailyMetric[];versions:DailyVersion[];events:Array<{revision:number;action:string;actor_name:string;created_at:string;note:string;snapshot:{cells:Record<string,DailyCell>;template:DailyMetric[]}}>}
+export type DailySummary=Omit<DailyRecord,'cells'|'template'|'versions'|'events'>
+export type DailyAssignment={lineId:string;date:string;assigneeId:string;reviewerId:string;note:string}
+export type DailyAction={revision:number;note:string;assigneeId?:string;reviewerId?:string;cells?:Record<string,DailyCell>}
+
+export type ProcessTarget={value:string;mode:'POINT'|'RANGE'|'UPPER'|'LOWER'|'TEXT'|'REFERENCE';warning:number;alarm:number}
+export type ProcessParameterContent={name:string;basis:string;reason:string;from:string;to:string;status:'ACTIVE'|'RETIRED';impact:'ROUTINE'|'MAJOR';values?:Record<string,string>;targets?:Record<string,ProcessTarget>}
+export type ProcessParameterVersion={parameter_id:string;version:number;content:ProcessParameterContent;published_by:string;actor_name:string;published_at:string}
+export type ProcessParameter={id:string;line_id:string;kind:'DESIGN'|'TARGET';revision:number;published_version:number;draft?:ProcessParameterContent;versions:ProcessParameterVersion[];events?:Array<{revision:number;action:string;actor_name:string;note:string;created_at:string;content:ProcessParameterContent}>}
+export type ProcessResultRow={id:string;code:string;category:string;name:string;unit:string;design:string;target:string;actual:string;data:'VALID'|'MISSING'|'INVALID'|'NA'|'CALC_INVALID'|'UNCONFIGURED';state:'normal'|'warning'|'alarm'|'pending'|'reference';deviation:number|null;difference:number|null;explanation:string;source:string;formula:string;rule:string}
+export type ProcessReport={id:string;record_id:string;version:number;status:'DRAFT'|'SAVED';source_stamp:string;source:{recordId:string;lineId:string;date:string;ruleVersion:string;entry:DailyVersion;design:ProcessParameterVersion;target:ProcessParameterVersion};rows:ProcessResultRow[];rule_version:string;creator_name:string;created_at:string;saved_at:string|null;note:string;sourceChanged:boolean;sourceNotice:string;canSave:boolean;canExport:boolean}
+export type ProcessReportSummary=Omit<ProcessReport,'rows'>
+
 export class ApiClient {
+  processParameters(line:string):Promise<ProcessParameter[]>{return this.request(`/v1/process/archive/parameters?line=${encodeURIComponent(line)}`)}
+  processParameterSave(line:string,kind:'DESIGN'|'TARGET',publish:boolean,revision:number,content:ProcessParameterContent):Promise<ProcessParameter[]>{return this.request(`/v1/process/archive/parameters/${encodeURIComponent(line)}/${kind}/${publish?'publish':'draft'}`,{method:'POST',body:JSON.stringify({revision,content})})}
+  processReports(record:string):Promise<ProcessReportSummary[]>{return this.request(`/v1/process/archive/reports?record=${encodeURIComponent(record)}`)}
+  processReport(id:string):Promise<ProcessReport>{return this.request(`/v1/process/archive/reports/${encodeURIComponent(id)}`)}
+  processReportGenerate(recordId:string,note:string):Promise<ProcessReport>{return this.request('/v1/process/archive/reports',{method:'POST',body:JSON.stringify({recordId,note})})}
+  processReportSave(id:string,sourceStamp:string,note:string):Promise<ProcessReport>{return this.request(`/v1/process/archive/reports/${encodeURIComponent(id)}/save`,{method:'POST',body:JSON.stringify({sourceStamp,note})})}
+  processReportExport(id:string):Promise<ProcessReport>{return this.request(`/v1/process/archive/reports/${encodeURIComponent(id)}/export`)}
+
+  processDailyContext():Promise<DailyLine[]>{return this.request('/v1/process/daily/context')}
+  processDailyList(line:string):Promise<DailySummary[]>{return this.request(`/v1/process/daily?line=${encodeURIComponent(line)}`)}
+  processDailyDetail(id:string):Promise<DailyRecord>{return this.request(`/v1/process/daily/${encodeURIComponent(id)}`)}
+  processDailyCreate(input:DailyAssignment):Promise<{id:string}>{return this.request('/v1/process/daily',{method:'POST',body:JSON.stringify(input)})}
+  processDailyAction(id:string,action:string,input:DailyAction):Promise<DailyRecord>{return this.request(`/v1/process/daily/${encodeURIComponent(id)}/${encodeURIComponent(action)}`,{method:'POST',body:JSON.stringify(input)})}
+  processDailySource(id:string):Promise<DailyVersion>{return this.request(`/v1/process/daily/${encodeURIComponent(id)}/analysis-source`)}
+  processDailyExport(id:string):Promise<DailyRecord>{return this.request(`/v1/process/daily/${encodeURIComponent(id)}/export`)}
+
   private accessToken = ''
   private refreshToken = ''
   private siteId = ''
@@ -95,6 +144,11 @@ export class ApiClient {
     this.siteId = siteId
   }
 
+  forSite(siteId:string):ApiClient {
+    const scoped=new ApiClient(this.baseUrl);scoped.setSession(this.accessToken,siteId,this.refreshToken)
+    scoped.onTokenRefresh(pair=>{this.accessToken=pair.accessToken;this.refreshToken=pair.refreshToken;this.tokenRefreshHandler?.(pair)})
+    return scoped
+  }
   onTokenRefresh(handler: (pair: TokenPair) => void) { this.tokenRefreshHandler = handler }
 
   setSite(siteId: string) { this.siteId = siteId }
@@ -105,6 +159,7 @@ export class ApiClient {
     return pair
   }
   logoutSession(): Promise<void> { return this.request('/v1/auth/logout', {method:'POST'}, true, false) }
+  currentUser(): Promise<{ userId:string; username:string; displayName:string;permissions:string[] }> { return this.request('/v1/auth/me') }
 
   sites(): Promise<Site[]> { return this.request('/v1/platform/sites') }
   orgUnits(): Promise<OrgUnit[]> { return this.request('/v1/org/units') }
@@ -163,7 +218,7 @@ export class ApiClient {
     return this.request(`/v1/safety/inspection/tasks/${id}/complete`, { method:'POST', body:JSON.stringify({items}) })
   }
   safetyHazards(): Promise<SafetyHazard[]> { return this.request('/v1/safety/hazards') }
-  reportSafetyHazard(input: { location: string; name: string; categoryMajor: string; categoryMinor?: string; description: string; hazardLevel: string; rectificationMeasure: string; temporaryMeasure?: string; dueDate: string; estimatedCost: number }): Promise<{id: string}> {
+  reportSafetyHazard(input: { requestKey?:string;location:string;name?:string;description:string;temporaryMeasure?:string;discoveredAt?:string;categoryMajor?:string;categoryMinor?:string;hazardLevel?:string;rectificationMeasure?:string;dueDate?:string;estimatedCost?:number }): Promise<{id: string}> {
     return this.request('/v1/safety/hazards', { method: 'POST', body: JSON.stringify(input) })
   }
   submitRectification(id: string, completionNote: string): Promise<void> {
@@ -222,6 +277,27 @@ export class ApiClient {
   visitorRecords():Promise<VisitorRecord[]>{return this.request('/v1/safety/visitors/records')}
   publicVisitorBriefing(token:string):Promise<VisitorBriefing>{return this.request(`/v1/public/visitor/${encodeURIComponent(token)}`,{},false)}
   registerVisitor(token:string,input:{visitorName:string;mobile?:string;companyName?:string;visitPurpose:string;hostName:string;acknowledged:boolean}):Promise<{id:string}>{return this.request(`/v1/public/visitor/${encodeURIComponent(token)}/register`,{method:'POST',body:JSON.stringify(input)},false)}
+
+
+  safetyContext():Promise<SafetyContext>{return this.request('/v1/safety/workflow/context')}
+  safetyDirectory():Promise<SafetyDirectory>{return this.request('/v1/safety/workflow/directory')}
+  workflowHazards():Promise<WorkflowHazard[]>{return this.request('/v1/safety/hazards')}
+  hazardDetail(id:string):Promise<HazardDetail>{return this.request(`/v1/safety/workflow/hazards/${id}`)}
+  assignHazard(id:string,input:HazardAssignment):Promise<void>{return this.request(`/v1/safety/workflow/hazards/${id}/assignment`,{method:'POST',body:JSON.stringify(input)})}
+  receiveHazard(id:string,input:WorkflowAction):Promise<void>{return this.request(`/v1/safety/workflow/hazards/${id}/receipt`,{method:'POST',body:JSON.stringify(input)})}
+  rectifyHazard(id:string,input:WorkflowAction):Promise<void>{return this.request(`/v1/safety/workflow/hazards/${id}/rectification`,{method:'POST',body:JSON.stringify(input)})}
+  reviewWorkflowHazard(id:string,input:WorkflowAction):Promise<void>{return this.request(`/v1/safety/workflow/hazards/${id}/review`,{method:'POST',body:JSON.stringify(input)})}
+  workflowTasks():Promise<WorkflowTask[]>{return this.request('/v1/safety/inspection/tasks')}
+  workflowTaskItems(id:string):Promise<WorkflowItem[]>{return this.request(`/v1/safety/inspection/tasks/${id}/items`)}
+  workflowTemplates():Promise<WorkflowTemplate[]>{return this.request('/v1/safety/inspection/templates')}
+  workflowTemplateItems(id:string):Promise<WorkflowItem[]>{return this.request(`/v1/safety/inspection/templates/${id}/items`)}
+  reviseInspectionTemplate(id:string,input:TemplateRevision):Promise<{id:string}>{return this.request(`/v1/safety/workflow/templates/${id}`,{method:'PUT',body:JSON.stringify(input)})}
+  completeWorkflowTask(id:string,input:{items:WorkflowAnswer[];location:string;participants:string;signatureData:string}):Promise<{hazardsCreated:number}>{return this.request(`/v1/safety/workflow/tasks/${id}/complete`,{method:'POST',body:JSON.stringify(input)})}
+  async downloadHazardAttachment(hazardId:string,file:SafetyAttachment):Promise<void>{
+    const response=await fetch(`${this.baseUrl}/v1/safety/hazards/${hazardId}/attachments/${file.id}/download`,{headers:{Authorization:`Bearer ${this.accessToken}`,'X-Site-Id':this.siteId}})
+    if(!response.ok)throw new Error('附件下载失败，请刷新会话后重试')
+    const url=URL.createObjectURL(await response.blob());const a=document.createElement('a');a.href=url;a.download=file.originalName;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000)
+  }
 
   private async request<T>(path: string, init: RequestInit = {}, authenticated = true, allowRefresh = true): Promise<T> {
     const headers = new Headers(init.headers)

@@ -1,0 +1,14 @@
+{
+  "name": "@safety/workflow-ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./SafetyWorkflowPanel.vue",
+    "./archive": "./archive.ts"
+  },
+  "dependencies": {
+    "vue": "3.5.17",
+    "@safety/api-client": "workspace:*"
+  }
+}

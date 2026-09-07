@@ -1,0 +1,43 @@
+{
+  "result": "PASS",
+  "environment": "仅本机5186/8084，独立临时数据库",
+  "site": "试点水厂",
+  "date": "2026-09-07",
+  "recordId": "404528e2-43d8-40d9-bacb-47c0dd65d3e1",
+  "dailyRevision": 8,
+  "confirmedVersion": 2,
+  "reportId": "b3ca8cc4-8382-45ae-9a1d-98c0d36dd92f",
+  "reportVersion": 6,
+  "reportRows": 138,
+  "designVersion": 1,
+  "targetVersion": 3,
+  "checks": [
+    "日数据零值经过运行工填报、工艺经理独立确认",
+    "日报冻结日数据V1、设计V1、目标V1和138项结果，零值不变为缺失",
+    "参数草稿不改变现行日报依据",
+    "参数发布新版本使旧日报标记来源变化，旧结果保留，过时草稿拒绝保存",
+    "日数据更正中拒绝新分析和保存，历史日报仍可查询",
+    "更正重审后新日报引用日数据V2及目标V2，旧版不可变",
+    "管理层只读已保存日报，不默认修改参数、生成、查看草稿或导出；跨厂拒绝"
+  ],
+  "browserChecks": [
+    "工艺经理保存目标草稿R4并发布目标V3/R5",
+    "未保存参数时拦截离开页面",
+    "浏览器生成并保存日报V6，引用日数据V2/设计V1/目标V3",
+    "厂长仅见已保存日报，不能生成、保存、导出；参数字段只读、无草稿选项",
+    "厂长回看日报V1时仍显示原日数据V1/目标V1和来源变化提示",
+    "1280×900桌面，文档宽度1280无整页横向溢出，控制台错误和警告为空"
+  ],
+  "verification": {
+    "backendTests": 31,
+    "calculationParityScenarios": 6,
+    "calculationParityRows": 828,
+    "processRegression": 40,
+    "dailyComponentRegression": 7,
+    "uiGuard": "PASS",
+    "standardBuild": "PASS",
+    "archiveBuild": "PASS",
+    "roundingBoundary": "4.00005依照原引擎显示4，已复现修正并纳入828行对照"
+  },
+  "finalCodeBrowserCheck": "重启本轮独立8084并重建专用验收数据后，浏览器重新生成并保存日报V6；原8083首批保持不动"
+}

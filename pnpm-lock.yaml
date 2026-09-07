@@ -13,6 +13,9 @@ importers:
       '@safety/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@safety/workflow-ui':
+        specifier: workspace:*
+        version: link:../../packages/safety-ui
       '@types/qrcode':
         specifier: ^1.5.6
         version: 1.5.6
@@ -44,6 +47,9 @@ importers:
       '@safety/api-client':
         specifier: workspace:*
         version: link:../../packages/api-client
+      '@safety/workflow-ui':
+        specifier: workspace:*
+        version: link:../../packages/safety-ui
       vue:
         specifier: 3.5.17
         version: 3.5.17(typescript@5.8.3)
@@ -62,6 +68,15 @@ importers:
         version: 3.0.1(typescript@5.8.3)
 
   packages/api-client: {}
+
+  packages/safety-ui:
+    dependencies:
+      '@safety/api-client':
+        specifier: workspace:*
+        version: link:../api-client
+      vue:
+        specifier: 3.5.17
+        version: 3.5.17(typescript@5.8.3)
 
 packages:
 

@@ -11,7 +11,7 @@ withDefaults(defineProps<{
 </script>
 
 <template>
-  <component :is="as" :class="['wx-state', `is-${kind}`, { 'is-compact': compact }]" :role="kind === 'error' ? 'alert' : 'status'">
+  <component :is="as" :class="['wx-state', `is-${kind}`, { 'is-compact': compact }]" :role="kind === 'error' ? 'alert' : 'status'" :aria-busy="kind === 'loading' || undefined">
     <slot />
   </component>
 </template>

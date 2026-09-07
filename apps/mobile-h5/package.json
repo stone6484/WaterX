@@ -10,7 +10,8 @@
   },
   "dependencies": {
     "@safety/api-client": "workspace:*",
-    "vue": "3.5.17"
+    "vue": "3.5.17",
+    "@safety/workflow-ui": "workspace:*"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "6.0.0",

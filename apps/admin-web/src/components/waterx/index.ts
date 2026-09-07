@@ -1,5 +1,6 @@
 export { default as WxButton } from './WxButton.vue'
 export { default as WxCard } from './WxCard.vue'
+export { default as WxDialog } from './WxDialog.vue'
 export { default as WxField } from './WxField.vue'
 export { default as WxInput } from './WxInput.vue'
 export { default as WxSelect } from './WxSelect.vue'
