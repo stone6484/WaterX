@@ -38,10 +38,11 @@ public class AttachmentController {
     private final JdbcClient jdbc;
     private final SiteAccessService sites;
     private final Path storageRoot;
+    private final SafetyWorkflowService flow;
 
     public AttachmentController(JdbcClient jdbc, SiteAccessService sites,
-                                @Value("${app.storage.local-dir}") String storageDir) {
-        this.jdbc=jdbc; this.sites=sites; this.storageRoot=Path.of(storageDir).toAbsolutePath().normalize();
+                                @Value("${app.storage.local-dir}") String storageDir,SafetyWorkflowService flow) {
+        this.flow=flow; this.jdbc=jdbc; this.sites=sites; this.storageRoot=Path.of(storageDir).toAbsolutePath().normalize();
     }
 
     @GetMapping
@@ -63,10 +64,12 @@ public class AttachmentController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAuthority('hazard:manage')")
+    @PreAuthorize("hasAuthority('hazard:read')")
+    @org.springframework.transaction.annotation.Transactional
     AttachmentView upload(@AuthenticationPrincipal CurrentUser user,@RequestHeader("X-Site-Id") UUID siteId,
                           @PathVariable UUID hazardId,@RequestParam String stage,@RequestPart("file") MultipartFile file) {
         sites.requireSiteAccess(user,siteId); requireHazard(user,siteId,hazardId);
+        flow.checkAttachment(user,siteId,hazardId,stage);
         if(!Set.of("DISCOVERY","RECTIFICATION","REVIEW").contains(stage))
             throw new BusinessException("ATTACHMENT_STAGE_INVALID","附件业务阶段无效",HttpStatus.BAD_REQUEST);
         if(file.isEmpty() || file.getSize()>MAX_FILE_SIZE)
@@ -92,6 +95,7 @@ public class AttachmentController {
         } catch(IOException exception) {
             throw new BusinessException("ATTACHMENT_SAVE_FAILED","附件保存失败",HttpStatus.INTERNAL_SERVER_ERROR);
         }
+        flow.event(user,siteId,hazardId,"ATTACHMENT_ADDED","追加"+stage+"附件："+original);
         return new AttachmentView(id,stage,original,contentType,file.getSize(),OffsetDateTime.now(),user.displayName());
     }
 
@@ -117,6 +121,7 @@ public class AttachmentController {
     }
 
     private void requireHazard(CurrentUser user,UUID siteId,UUID hazardId) {
+        flow.requireHazardRead(user,siteId,hazardId);
         int count=jdbc.sql("select count(*) from safety_hazard where tenant_id=:tenantId and site_id=:siteId and id=:id")
                 .param("tenantId",user.tenantId()).param("siteId",siteId).param("id",hazardId).query(Integer.class).single();
         if(count==0) throw new BusinessException("HAZARD_NOT_FOUND","隐患不存在或不属于当前厂区",HttpStatus.NOT_FOUND);

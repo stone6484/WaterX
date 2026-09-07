@@ -15,16 +15,18 @@ public class InspectionPlanService {
 
     public InspectionPlanService(JdbcClient jdbc) { this.jdbc = jdbc; }
 
+    @Transactional
     @Scheduled(cron = "0 5 * * * *", zone = "Asia/Shanghai")
     public void scheduledGeneration() { generateDuePlans(null, null, LocalDate.now()); }
 
     @Transactional
     public int generateDuePlans(UUID tenantId, UUID siteId, LocalDate throughDate) {
+        if(throughDate.isAfter(LocalDate.now()))throw SafetyWorkflowService.bad("仅生成到今天为止的任务");
         String scope = tenantId == null ? "" : " and tenant_id=:tenantId and site_id=:siteId";
         JdbcClient.StatementSpec statement = jdbc.sql("""
             select id,tenant_id,site_id,template_id,code,name,schedule_type,interval_value,next_run_date,due_hours,assignee_employee_id
             from inspection_plan where status='ACTIVE' and next_run_date<=:throughDate
-            """ + scope + " order by next_run_date,id").param("throughDate",throughDate);
+            """ + scope + " order by next_run_date,id for update skip locked").param("throughDate",throughDate);
         if (tenantId != null) statement = statement.param("tenantId",tenantId).param("siteId",siteId);
         List<PlanDue> plans = statement.query((rs,n)->new PlanDue(rs.getObject("id",UUID.class),rs.getObject("tenant_id",UUID.class),
                 rs.getObject("site_id",UUID.class),rs.getObject("template_id",UUID.class),rs.getString("code"),rs.getString("name"),
@@ -62,7 +64,7 @@ public class InspectionPlanService {
         return next;
     }
     private LocalDate advance(LocalDate date,String type,int interval) {
-        return switch(type) { case "DAILY" -> date.plusDays(interval); case "WEEKLY" -> date.plusWeeks(interval); case "MONTHLY" -> date.plusMonths(interval); default -> date; };
+        return switch(type) { case "DAILY" -> date.plusDays(interval); case "WEEKLY" -> date.plusWeeks(interval); case "MONTHLY" -> date.plusMonths(interval); default -> throw SafetyWorkflowService.bad("计划周期无效"); };
     }
     private record PlanDue(UUID id,UUID tenantId,UUID siteId,UUID templateId,String code,String name,String scheduleType,int intervalValue,LocalDate nextRunDate,int dueHours,UUID assigneeEmployeeId) {}
 }

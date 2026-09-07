@@ -1,0 +1,982 @@
+[
+  {
+    "code": "COMPREHENSIVE",
+    "source": "5-1-2综合性安全检查记录单_V1.2.docx",
+    "instructions": "来源为企业检查表，现场适用性由安全负责人维护；题干保留原意，不等同法定阈值。原表为开放式记录单，无固定检查条目；问题可逐条记录并关联整改，整改意见由专业受理环节填写。",
+    "items": [
+      {
+        "category": "综合检查",
+        "content": "记录本次检查范围和发现的问题；未发现问题时明确填写“未发现问题”。",
+        "type": "TEXT",
+        "ref": "原表一、检查出的问题",
+        "condition": null
+      }
+    ]
+  },
+  {
+    "code": "KEY-AREA",
+    "source": "5-1-3重点部位安全检查表_V1.2.docx",
+    "instructions": "来源为企业检查表，现场适用性由安全负责人维护；题干保留原意，不等同法定阈值。",
+    "items": [
+      {
+        "category": "预处理",
+        "content": "护栏牢固可靠，救生圈、救援绳配备齐全？",
+        "type": "COMPLIANCE",
+        "ref": "表1第3行",
+        "condition": null
+      },
+      {
+        "category": "预处理",
+        "content": "除臭装置密闭良好，无臭气溢散？",
+        "type": "COMPLIANCE",
+        "ref": "表1第3行",
+        "condition": null
+      },
+      {
+        "category": "预处理",
+        "content": "盖板完好无缺失锈蚀？",
+        "type": "COMPLIANCE",
+        "ref": "表1第3行",
+        "condition": null
+      },
+      {
+        "category": "预处理",
+        "content": "设备转动部位防护良好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第3行",
+        "condition": null
+      },
+      {
+        "category": "配电室",
+        "content": "配电室防小动物、防火等安全措施有效，室内温度、通风和应急照明良好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "配电室",
+        "content": "按要求配备了绝缘工具及劳动防护用品，定期进行了检验检测，有检测报告？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "配电室",
+        "content": "配电室八项管理制度齐全，且上墙？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "配电室",
+        "content": "低压配电室配有二氧化碳灭火器，高压配电室配有干粉灭火器，且定期检验合格？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "配电室",
+        "content": "进入配电室执行检维修、清扫、抄表等作业人员持证上岗？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "配电室",
+        "content": "无证人员进入配电室由高低压电工陪同监护，并做好登记？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "风机房",
+        "content": "安全警示标志齐全，有噪声职业病危害告知卡，设置耳塞取用处？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "风机房",
+        "content": "灭火器配备充足，且在合格有效期内？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "机修间",
+        "content": "各机修设备安全操作规程规范有效且上墙？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "机修间",
+        "content": "气瓶间距符合要求，有防倾倒措施，阀门及压力表齐全有效？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "机修间",
+        "content": "工器具摆放整齐，设备工具防护装置完好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "机修间",
+        "content": "一机一漏保，漏电保护器功能完好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "压力容器",
+        "content": "外观无锈蚀，工作正常？",
+        "type": "COMPLIANCE",
+        "ref": "表1第7行",
+        "condition": null
+      },
+      {
+        "category": "压力容器",
+        "content": "压力表、泄压阀等安全附件配备齐全，且合格有效？",
+        "type": "COMPLIANCE",
+        "ref": "表1第7行",
+        "condition": null
+      },
+      {
+        "category": "起重机械及吊具",
+        "content": "主要受力构件无明显的连接缺陷、腐蚀、变形和开裂？",
+        "type": "COMPLIANCE",
+        "ref": "表1第8行",
+        "condition": null
+      },
+      {
+        "category": "起重机械及吊具",
+        "content": "吊钩转动灵活表面光洁，无裂缝、剥裂情况？",
+        "type": "COMPLIANCE",
+        "ref": "表1第8行",
+        "condition": null
+      },
+      {
+        "category": "起重机械及吊具",
+        "content": "钢丝绳不应有扭结、压扁、弯折、畸变、断股、绳芯挤出或锈蚀情况？",
+        "type": "COMPLIANCE",
+        "ref": "表1第8行",
+        "condition": null
+      },
+      {
+        "category": "起重机械及吊具",
+        "content": "吊机安全装置、限位装置齐全有效？",
+        "type": "COMPLIANCE",
+        "ref": "表1第8行",
+        "condition": null
+      },
+      {
+        "category": "化验室",
+        "content": "化验室废弃液有指定临时存放点，存放处有警示标志，防溢流措施完善可靠？",
+        "type": "COMPLIANCE",
+        "ref": "表1第9行",
+        "condition": null
+      },
+      {
+        "category": "化验室",
+        "content": "配备和合格有效的洗眼器？",
+        "type": "COMPLIANCE",
+        "ref": "表1第9行",
+        "condition": null
+      },
+      {
+        "category": "化验室",
+        "content": "易制毒、易制爆等危险化学品执行“五双”管理？",
+        "type": "COMPLIANCE",
+        "ref": "表1第9行",
+        "condition": null
+      },
+      {
+        "category": "化验室",
+        "content": "配备和合格有效的二氧化碳灭火器？",
+        "type": "COMPLIANCE",
+        "ref": "表1第9行",
+        "condition": null
+      },
+      {
+        "category": "危废存储间",
+        "content": "防溢流设施安全可靠，存储间内通风良好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第10行",
+        "condition": null
+      },
+      {
+        "category": "危废存储间",
+        "content": "警示标志齐全，出入库记录完整？",
+        "type": "COMPLIANCE",
+        "ref": "表1第10行",
+        "condition": null
+      },
+      {
+        "category": "危废存储间",
+        "content": "不同类型危废分类存放？",
+        "type": "COMPLIANCE",
+        "ref": "表1第10行",
+        "condition": null
+      },
+      {
+        "category": "加药间",
+        "content": "存储和使用部位的防中毒、防喷溅、防泄漏、防静电、防滑跌、防火防爆措施有效？",
+        "type": "COMPLIANCE",
+        "ref": "表1第11行",
+        "condition": null
+      },
+      {
+        "category": "加药间",
+        "content": "废弃的化学品包装箱、包装桶、包装袋等进行妥善处理和存放？",
+        "type": "COMPLIANCE",
+        "ref": "表1第11行",
+        "condition": null
+      },
+      {
+        "category": "加药间",
+        "content": "合理设置化学品安全技术说明书（MSDS）、安全周知卡及职业病危害告知卡？",
+        "type": "COMPLIANCE",
+        "ref": "表1第11行",
+        "condition": null
+      },
+      {
+        "category": "加药间",
+        "content": "配备和合格有效的洗眼器？",
+        "type": "COMPLIANCE",
+        "ref": "表1第11行",
+        "condition": null
+      },
+      {
+        "category": "加氯间",
+        "content": "氯酸钠及盐酸存储符合危化品存储要求？防中毒、防喷溅、防泄漏、防静电、防滑跌和防火防爆措施齐全有效？",
+        "type": "COMPLIANCE",
+        "ref": "表1第12行",
+        "condition": null
+      },
+      {
+        "category": "加氯间",
+        "content": "配备漏氯报警器，且工作正常？",
+        "type": "COMPLIANCE",
+        "ref": "表1第12行",
+        "condition": null
+      },
+      {
+        "category": "加氯间",
+        "content": "视频监控系统使用正常？",
+        "type": "COMPLIANCE",
+        "ref": "表1第12行",
+        "condition": null
+      },
+      {
+        "category": "加氯间",
+        "content": "现场配备防酸碱手套及护目镜，配备和合格有效的洗眼器？",
+        "type": "COMPLIANCE",
+        "ref": "表1第12行",
+        "condition": null
+      }
+    ]
+  },
+  {
+    "code": "DAILY-QC",
+    "source": "质控班组每日安全检查表_V1.2.docx",
+    "instructions": "来源为企业检查表，现场适用性由安全负责人维护；题干保留原意，不等同法定阈值。每日单次保存，月度从逐日记录汇总；上下半月采用第一表口径，第二表措辞差异保留于来源。",
+    "items": [
+      {
+        "category": "劳动纪律",
+        "content": "到岗员工未酒后或服用嗜睡药物后上岗？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "劳动纪律",
+        "content": "到岗员工个人劳动防护用品穿戴齐全？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "劳动纪律",
+        "content": "到岗员工身体及精神状态良好，能够胜任当日工作任务？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "安全操作",
+        "content": "到岗化验员操作熟练，化验过程中严格遵守安全操作规程？",
+        "type": "COMPLIANCE",
+        "ref": "表1第7行",
+        "condition": null
+      },
+      {
+        "category": "安全操作",
+        "content": "化学药剂存放、取用规范，严格履行“五双”管理要求？",
+        "type": "COMPLIANCE",
+        "ref": "表1第8行",
+        "condition": null
+      },
+      {
+        "category": "防护措施",
+        "content": "洗眼器合格可靠，能够正常使用？",
+        "type": "COMPLIANCE",
+        "ref": "表1第9行",
+        "condition": null
+      },
+      {
+        "category": "防护措施",
+        "content": "化验室配备二氧化碳灭火器，且合格有效？",
+        "type": "COMPLIANCE",
+        "ref": "表1第10行",
+        "condition": null
+      },
+      {
+        "category": "防护措施",
+        "content": "通风柜通风效果良好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第11行",
+        "condition": null
+      },
+      {
+        "category": "防护措施",
+        "content": "灭菌锅外观完好，密闭性良好，压力表正常？",
+        "type": "COMPLIANCE",
+        "ref": "表1第12行",
+        "condition": null
+      },
+      {
+        "category": "危废管理",
+        "content": "化验室废液使用专用容器临时存放，并定期转移到危废间？",
+        "type": "COMPLIANCE",
+        "ref": "表1第13行",
+        "condition": null
+      },
+      {
+        "category": "危废管理",
+        "content": "废液临时存放处设置防溢流托盘？",
+        "type": "COMPLIANCE",
+        "ref": "表1第14行",
+        "condition": null
+      },
+      {
+        "category": "危废管理",
+        "content": "废液临时存放点设置危废警示标志及危废标签？",
+        "type": "COMPLIANCE",
+        "ref": "表1第15行",
+        "condition": null
+      },
+      {
+        "category": "危废管理",
+        "content": "废液的产生及转移情况及时如实进行记录？",
+        "type": "COMPLIANCE",
+        "ref": "表1第16行",
+        "condition": null
+      },
+      {
+        "category": "其他",
+        "content": "检查过程中是否发现有其他安全隐患？",
+        "type": "OBSERVATION",
+        "ref": "表1第17行",
+        "condition": null
+      }
+    ]
+  },
+  {
+    "code": "DAILY-OPS",
+    "source": "运维班组每日安全检查表_V1.2.docx",
+    "instructions": "来源为企业检查表，现场适用性由安全负责人维护；题干保留原意，不等同法定阈值。每日单次保存，月度从逐日记录汇总；上下半月采用第一表口径，第二表措辞差异保留于来源。",
+    "items": [
+      {
+        "category": "劳动纪律",
+        "content": "到岗员工未酒后或服用嗜睡药物后上岗？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "劳动纪律",
+        "content": "到岗员工个人劳动防护用品穿戴齐全？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "劳动纪律",
+        "content": "到岗员工身体及精神状态良好，能够胜任当日工作任务？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "危险作业",
+        "content": "本班次是否涉及危险作业？",
+        "type": "CONDITION",
+        "ref": "表1第7行",
+        "condition": null
+      },
+      {
+        "category": "危险作业",
+        "content": "危险作业履行审批手续，进行风险识别，采取防护措施？",
+        "type": "COMPLIANCE",
+        "ref": "表1第8行",
+        "condition": 3
+      },
+      {
+        "category": "设备运行维修作业",
+        "content": "无设备旋转和运行中进行检修和维护作业的违章情况？",
+        "type": "COMPLIANCE",
+        "ref": "表1第9行",
+        "condition": null
+      },
+      {
+        "category": "设备运行维修作业",
+        "content": "无设备带电情况下进行设备电气系统维修检修的违章情况？",
+        "type": "COMPLIANCE",
+        "ref": "表1第10行",
+        "condition": null
+      },
+      {
+        "category": "设备运行维修作业",
+        "content": "设备各运转部件无异常声响，旋转部件的防护罩安装到位？",
+        "type": "COMPLIANCE",
+        "ref": "表1第11行",
+        "condition": null
+      },
+      {
+        "category": "设备运行维修作业",
+        "content": "设备的运转状态无温度、压力或流量异常情况出现？",
+        "type": "COMPLIANCE",
+        "ref": "表1第12行",
+        "condition": null
+      },
+      {
+        "category": "设备运行维修作业",
+        "content": "设备的电源线连接和防护管完好，保护接地线连接可靠？",
+        "type": "COMPLIANCE",
+        "ref": "表1第13行",
+        "condition": null
+      },
+      {
+        "category": "设备运行维修作业",
+        "content": "管线、阀门无跑冒滴漏、异常震动和松动、腐蚀、堵塞等？",
+        "type": "COMPLIANCE",
+        "ref": "表1第14行",
+        "condition": null
+      },
+      {
+        "category": "设备运行维修作业",
+        "content": "各处生产设备运行正常，防护装置可靠？",
+        "type": "COMPLIANCE",
+        "ref": "表1第15行",
+        "condition": null
+      },
+      {
+        "category": "相关方",
+        "content": "本班次是否涉及委外施工作业？",
+        "type": "CONDITION",
+        "ref": "表1第16行",
+        "condition": null
+      },
+      {
+        "category": "相关方",
+        "content": "作业前是否对委外施工作业人员进行安全交底？",
+        "type": "COMPLIANCE",
+        "ref": "表1第17行",
+        "condition": 12
+      },
+      {
+        "category": "相关方",
+        "content": "是否对作业现场进行安全检查并安排专人监督？",
+        "type": "COMPLIANCE",
+        "ref": "表1第18行",
+        "condition": 12
+      },
+      {
+        "category": "其他",
+        "content": "检查过程中是否发现有其他安全隐患？",
+        "type": "OBSERVATION",
+        "ref": "表1第19行",
+        "condition": null
+      }
+    ]
+  },
+  {
+    "code": "WINTER",
+    "source": "冬季专项安全检查表_V1.0.docx",
+    "instructions": "来源为企业检查表，现场适用性由安全负责人维护；题干保留原意，不等同法定阈值。",
+    "items": [
+      {
+        "category": "防滑防冻",
+        "content": "室内外设备、设施防冻措施是否已经落实？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "防滑防冻",
+        "content": "应对极端寒冷天气的应急物资是否准备充分？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "防滑防冻",
+        "content": "经常通行的步道、楼梯和路面确保无积水？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "防滑防冻",
+        "content": "已经结冻的是否及时进行了清理？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "防滑防冻",
+        "content": "各车间的门窗无破损，保温效果良好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "消防工作",
+        "content": "厂区枯枝败叶是否清理干净，无易燃物堆积？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "消防工作",
+        "content": "消防设施的防冻工作是否做好，有无遗漏；",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "消防工作",
+        "content": "住宿、办公场所无违章使用取暖器？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "消防工作",
+        "content": "消防设施是否配备齐全，并处于投用状态？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "消防工作",
+        "content": "员工熟练掌握各类消防器材使用？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "防风",
+        "content": "轻体设施的连接固定设施是否牢固；",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "防风",
+        "content": "设施高处无落物隐患，零散构件固定牢固；",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "防风",
+        "content": "路灯、栏杆和大型标识牌无松动脱落隐患。",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      }
+    ]
+  },
+  {
+    "code": "SUMMER",
+    "source": "夏季专项安全检查表_V1.0.docx",
+    "instructions": "来源为企业检查表，现场适用性由安全负责人维护；题干保留原意，不等同法定阈值。",
+    "items": [
+      {
+        "category": "有限空间作业管理",
+        "content": "是否开展夏季有限空间作业重点培训教育？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "有限空间作业管理",
+        "content": "有限空间作业各类应急救援装备是否完好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "有限空间作业管理",
+        "content": "上半年是否开展了有限空间作业事故应急演练？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "防暑降温",
+        "content": "防暑降温药品是否准备齐全且在合格有效期？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "防暑降温",
+        "content": "职工是否了解预防中暑和中暑后的急救措施？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "防暑降温",
+        "content": "各处配电系统工作温度是否正常？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "防暑降温",
+        "content": "是否已组织开展防暑降温安全培训教育？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "厂内防汛",
+        "content": "高低压配电室、风机房等重要场所无漏雨？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "厂内防汛",
+        "content": "厂内各处排水设施是否完好，井、管道畅通？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "厂内防汛",
+        "content": "防汛应急预案是否完善，组建应急队伍？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "厂内防汛",
+        "content": "沙袋、抽水泵等防汛物资是否配备齐全？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "厂内防汛",
+        "content": "本年度是否已开展防汛应急演练？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "防雷接地",
+        "content": "一年内是否已开展防雷接地检测？",
+        "type": "COMPLIANCE",
+        "ref": "表1第7行",
+        "condition": null
+      },
+      {
+        "category": "防雷接地",
+        "content": "构筑物及设备设施防雷接地电阻值是否正常？",
+        "type": "COMPLIANCE",
+        "ref": "表1第7行",
+        "condition": null
+      }
+    ]
+  },
+  {
+    "code": "SPRING",
+    "source": "春季专项安全检查表_V1.0.docx",
+    "instructions": "来源为企业检查表，现场适用性由安全负责人维护；题干保留原意，不等同法定阈值。原表频次写“春（秋）季前”，此模板用于春季；秋季另有独立模板。",
+    "items": [
+      {
+        "category": "消防",
+        "content": "现场各处灭火器材配备、维护保养完好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "消防",
+        "content": "消防水压是否符合要求，消防水泵完好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "消防",
+        "content": "厂区枯枝败叶是否清理干净，无易燃物堆积？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "消防",
+        "content": "电气设备防火符合要求？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "消防",
+        "content": "消防通道是否畅通，无占用堵塞情况？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "消防",
+        "content": "工熟练掌握各类消防器材使用？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "防风",
+        "content": "轻体厂房是否墙体牢固，无严重锈蚀？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "防风",
+        "content": "设备、设施防雨棚罩牢固可靠？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "防风",
+        "content": "轻质、挡风面积大的设备设置固定牢固？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "防静电",
+        "content": "防静电设施进行全面检查，接地体完好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "防静电",
+        "content": "员工进入易燃易爆品存储区穿防静电服？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      }
+    ]
+  },
+  {
+    "code": "AUTUMN",
+    "source": "秋季专项安全检查表_V1.0.docx",
+    "instructions": "来源为企业检查表，现场适用性由安全负责人维护；题干保留原意，不等同法定阈值。",
+    "items": [
+      {
+        "category": "消防",
+        "content": "现场各处灭火器材配备、维护保养完好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "消防",
+        "content": "消防水压是否符合要求，消防水泵完好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "消防",
+        "content": "厂区枯枝败叶是否清理干净，无易燃物堆积？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "消防",
+        "content": "电气设备防火符合要求？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "消防",
+        "content": "消防通道是否畅通，无占用堵塞情况？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "消防",
+        "content": "工熟练掌握各类消防器材使用？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "防风",
+        "content": "轻体厂房是否墙体牢固，无严重锈蚀？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "防风",
+        "content": "设备、设施防雨棚罩牢固可靠？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "防风",
+        "content": "轻质、挡风面积大的设备设置固定牢固？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "防静电",
+        "content": "防静电设施进行全面检查，接地体完好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "防静电",
+        "content": "员工进入易燃易爆品存储区穿防静电服？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      }
+    ]
+  },
+  {
+    "code": "HOLIDAY",
+    "source": "5-1-6节假日安全检查表_V1.0.docx",
+    "instructions": "来源为企业检查表，现场适用性由安全负责人维护；题干保留原意，不等同法定阈值。",
+    "items": [
+      {
+        "category": "物资准备",
+        "content": "生产物资贮备是否充足，是否能保证正常生产？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "物资准备",
+        "content": "应急救援物资是否准备充分？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "物资准备",
+        "content": "各类备用设备是否完好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第4行",
+        "condition": null
+      },
+      {
+        "category": "应急管理",
+        "content": "应急预案是否按规定定期组织了演练？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "应急管理",
+        "content": "应急救援器材、设备设施是否齐全完好？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "应急管理",
+        "content": "有关人员是否能够保证24小时通讯畅通？",
+        "type": "COMPLIANCE",
+        "ref": "表1第5行",
+        "condition": null
+      },
+      {
+        "category": "消防管理",
+        "content": "消防设备设施、器材是否齐全、随时可用？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "消防管理",
+        "content": "消防通道是否畅通，无占用堵塞情况？",
+        "type": "COMPLIANCE",
+        "ref": "表1第6行",
+        "condition": null
+      },
+      {
+        "category": "保卫管理",
+        "content": "门卫严格遵守公司规定，对进出人员进行登记检查？",
+        "type": "COMPLIANCE",
+        "ref": "表1第7行",
+        "condition": null
+      },
+      {
+        "category": "劳动纪律",
+        "content": "厂区内无吸烟现象？",
+        "type": "COMPLIANCE",
+        "ref": "表1第8行",
+        "condition": null
+      },
+      {
+        "category": "劳动纪律",
+        "content": "有无酒后上岗现象？",
+        "type": "OBSERVATION",
+        "ref": "表1第8行",
+        "condition": null
+      },
+      {
+        "category": "劳动纪律",
+        "content": "当班人员无私自换岗、串岗、脱岗和睡岗情况？",
+        "type": "COMPLIANCE",
+        "ref": "表1第8行",
+        "condition": null
+      },
+      {
+        "category": "领导带班",
+        "content": "制定了节假日领导带班值班表，值班人员电话畅通？",
+        "type": "COMPLIANCE",
+        "ref": "表1第9行",
+        "condition": null
+      },
+      {
+        "category": "其他",
+        "content": "集团及大区要求检查的内容是否落实？",
+        "type": "COMPLIANCE",
+        "ref": "表1第10行",
+        "condition": null
+      }
+    ]
+  }
+]

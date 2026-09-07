@@ -2,7 +2,9 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import QRCode from 'qrcode'
 import { ApiClient, type Area, type AssessmentHistory, type ControlMeasureInput, type Employee, type EmployeeQualification, type EmployeeSafetyArchive, type Hazard, type InspectionPlan, type InspectionStatistics, type InspectionSummary, type InspectionTask, type InspectionTemplate, type InvestmentSummary, type OccupationalExam, type OccupationalFactor, type OccupationalHealthSummary, type OrgUnit, type RiskObject, type RiskSummary, type SafetyAsset, type SafetyAssetSummary, type SafetyAttachment, type SafetyBudget, type SafetyCommitment, type SafetyCommitmentTemplate, type SafetyExpense, type SafetyHazard, type Site, type TrainingAssignment, type TrainingCourse, type TrainingMaterial, type TrainingStatistics, type TrainingSummary, type VisitorBriefing, type VisitorRecord, type WorkPermit, type WorkPermitTemplate } from '@safety/api-client'
+import SafetyWorkspace from './modules/safety/SafetyWorkspace.vue'
 import ManagementQualityPage from './modules/management-quality/ManagementQualityPage.vue'
+import WaterXLogin from './components/waterx/WaterXLogin.vue'
 import ImprovementDraftPanel from './modules/management-quality/ImprovementDraftPanel.vue'
 import { isQualityPageId } from './modules/management-quality/rules'
 import type { ImprovementDraft, QualityPageId } from './modules/management-quality/types'
@@ -10,14 +12,29 @@ import ProcessEvaluationPage from './modules/process-evaluation/ProcessEvaluatio
 import { isProcessEvaluationPageId } from './modules/process-evaluation/rules'
 import type { ProcessEvaluationPageId } from './modules/process-evaluation/types'
 import LabRawRecordsPage from './modules/lab-raw-records/LabRawRecordsPage.vue'
+import './modules/lab-raw-records/lab-reports-ui.css'
+import ProcessManagementPage from './modules/process-management/ProcessManagementPage.vue'
+import DailyCollaborationPage from './modules/process-management/DailyCollaborationPage.vue'
+import ProcessArchivePage from './modules/process-management/ProcessArchivePage.vue'
+import type { ProcessPage, LegacyMetric } from './modules/process-management/types'
 import HighEfficiencySedimentationPage from './modules/high-efficiency-sedimentation/HighEfficiencySedimentationPage.vue'
 import VFilterAnalysisPage from './modules/v-filter-analysis/VFilterAnalysisPage.vue'
 import ConfiguredUnitAnalysisPage from './modules/unit-analysis/ConfiguredUnitAnalysisPage.vue'
+import EfficiencyNavigation from './modules/efficiency/EfficiencyNavigation.vue'
+import EfficiencyLandingPage from './modules/efficiency/EfficiencyLandingPage.vue'
+import WholePlantPage from './modules/efficiency/whole-plant/WholePlantPage.vue'
+import { isEfficiencyPlanningPage, type EfficiencyPlanningPageId } from './modules/efficiency/navigation'
 import { WxButton, WxCard, WxField, WxInput, WxSelect, WxState, WxStatusSummary, WxTable, WxTableSurface, WxTabs } from './components/waterx'
 import { isRemainingUnitPageId, remainingUnitPageMap } from './modules/unit-analysis/remaining-unit-config'
 import type { RemainingUnitPageId } from './modules/unit-analysis/remaining-unit-config'
 
+const processDailyPreview = import.meta.env.VITE_PROCESS_DAILY_PREVIEW === 'true'
+const processArchivePreview = import.meta.env.VITE_PROCESS_ARCHIVE_PREVIEW === 'true'
+const dailyCollaboration = ref<InstanceType<typeof DailyCollaborationPage>|null>(null)
+const processArchive = ref<InstanceType<typeof ProcessArchivePage>|null>(null)
 const api = new ApiClient()
+const signedInPermissions=ref<string[]>([])
+const signedInDisplayName=ref('')
 const token = ref(sessionStorage.getItem('accessToken') || '')
 const refreshToken = ref(sessionStorage.getItem('refreshToken') || '')
 api.onTokenRefresh(pair=>{token.value=pair.accessToken;refreshToken.value=pair.refreshToken;sessionStorage.setItem('accessToken',pair.accessToken);sessionStorage.setItem('refreshToken',pair.refreshToken)})
@@ -68,11 +85,6 @@ const showCommitmentTemplateForm=ref(false);const commitmentTemplateForm=ref({co
 const showCommitmentAssignForm=ref(false);const commitmentAssignForm=ref({templateId:'',employeeId:'',dueAt:new Date(Date.now()+15*86400000).toISOString().slice(0,16)})
 const showPermitForm=ref(false)
 const permitForm=ref({templateId:'',workUnit:'本厂运维单位',location:'',workContent:'',workLevel:'LEVEL_2',riskResult:'',startAt:new Date().toISOString().slice(0,16),endAt:new Date(Date.now()+8*3600000).toISOString().slice(0,16),responsiblePerson:'',guardian:'',workers:'',relatedPermits:''})
-const hazardAttachments = ref<Record<string, SafetyAttachment[]>>({})
-const showTaskForm = ref(false)
-const showPlanForm = ref(false)
-const planForm = ref({templateId:'',name:'',scheduleType:'WEEKLY' as 'DAILY'|'WEEKLY'|'MONTHLY'|'ONCE',intervalValue:1,nextRunDate:new Date().toISOString().slice(0,10),dueHours:24,assigneeEmployeeId:''})
-const taskForm = ref({ templateId:'', title:'', plannedStart:new Date().toISOString().slice(0,10), dueAt:new Date(Date.now()+86400000).toISOString().slice(0,16), assigneeEmployeeId:'' })
 const showAreaForm = ref(false)
 const areaForm = ref({ parentId: '', code: '', name: '', areaType: 'PROCESS_AREA' })
 const showRiskDetail = ref(false)
@@ -91,6 +103,7 @@ const riskForm = ref({
 const loading = ref(false)
 const error = ref('')
 const username = ref('platform_admin')
+const processActor = ref('当前登录用户（身份尚未读取）')
 const password = ref('')
 const plannedPages = {
   operationsShift: { module:'生产运行', title:'班组与排班', stage:'D', description:'维护运行班组、岗位与值班计划，形成清晰的当班责任边界。', capabilities:['班组档案','岗位配置','轮班日历','临时调班'] },
@@ -116,8 +129,10 @@ const plannedPages = {
   improvementAnalysis: { module:'改进提升', title:'改进分析', stage:'A', description:'分析问题结构、关闭效率和复发趋势，支持持续改进。', capabilities:['问题趋势','关闭周期','复发分析','改进成效'] }
 } as const
 type PlannedPageId = keyof typeof plannedPages
-type AppPage = 'platform' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'highEfficiencySedimentation' | 'vFilterAnalysis' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education' | PlannedPageId | QualityPageId | ProcessEvaluationPageId | RemainingUnitPageId
-const active = ref<AppPage>('platform')
+type AppPage = 'platform' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'highEfficiencySedimentation' | 'vFilterAnalysis' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education' | PlannedPageId | QualityPageId | ProcessEvaluationPageId | RemainingUnitPageId | EfficiencyPlanningPageId
+const activePage = ref<AppPage>('platform')
+const active = computed<AppPage>({get:()=>activePage.value,set:page=>{if(page===activePage.value||(dailyCollaboration.value?.canLeave()!==false&&processArchive.value?.canLeave()!==false))activePage.value=page}})
+const currentEfficiencyPlanningPage = computed(() => isEfficiencyPlanningPage(active.value) ? active.value : null)
 const currentPlannedPage = computed(()=>plannedPages[active.value as PlannedPageId])
 const currentQualityPage = computed(()=>isQualityPageId(active.value) ? active.value : null)
 const currentProcessEvaluationPage = computed(()=>isProcessEvaluationPageId(active.value) ? active.value : null)
@@ -865,6 +880,8 @@ const controlGroups: ControlGroup[] = [
 ].map(group=>({...group,level:group.indicators.some(item=>item.level==='alarm')?'alarm':group.indicators.some(item=>item.level==='warning')?'warning':'normal'} as ControlGroup))
 const builtInProcessMetrics = computed<DiagnosisMetric[]>(() => controlGroups.flatMap(group => group.indicators.map(indicator => ({ category:group.title, name:indicator.name, unit:indicator.unit, design:indicator.design||'—', target:indicator.target, actual:indicator.actual, deviation:indicator.deviation, level:indicator.level, meaning:indicator.meaning||`${group.title}过程控制指标` }))))
 const allManagedMetrics = computed(() => [...allDiagnosisMetrics.value, ...builtInProcessMetrics.value, ...customProcessMetrics])
+const processMvpPage = computed(() => (['processDesign','conditionMatrix','operationEntry','processAnalysis','processReport'].includes(active.value) ? active.value as ProcessPage : null))
+const processMvpCatalog = computed<LegacyMetric[]>(() => allManagedMetrics.value.map(metric => ({...metric, code:metricCode(metric), formula:defaultFormulaFor(metric), scopes:(['design','condition','entry','diagnosis'] as MetricModuleKey[]).filter(scope=>isMetricEnabledInModule(metric,scope))})))
 const moduleConfigMetrics = computed(() => {
   const module = activeModuleMetricManager.value
   if (!module) return []
@@ -978,7 +995,7 @@ function ensureOperationEntryRecords() {
   })
   operationEntryRecords.push(...seeded); persistOperationEntryRecords()
 }
-ensureOperationEntryRecords()
+// Legacy records are preserved for explicit migration; entering the app no longer seeds or rewrites them.
 
 type LabRecordType = 'COD'|'NH3'|'SS'|'FC'
 type LabSampleRow = { source:string; name:string; volume:string; dilution:string; start:string; end:string; absorbance:string; containerNo:string; tareFirst:string; tareSecond:string; loadedFirst:string; loadedSecond:string; medium:string; plateNo:string; colonyCount:string }
@@ -1106,9 +1123,17 @@ async function login() {
 async function loadSites() {
   api.setSession(token.value, selectedSite.value, refreshToken.value)
   sites.value = await api.sites()
+  const signedInUser = await api.currentUser()
+  signedInPermissions.value=signedInUser.permissions
+  signedInDisplayName.value=signedInUser.displayName||signedInUser.username
+  if(processDailyPreview){active.value='operationEntry';expandedModules.value.process=true}
+  else if(!signedInPermissions.value.includes('role:manage')&&signedInPermissions.value.includes('inspection:read')){active.value='inspection';expandedModules.value.safety=true}
+  processActor.value = signedInUser.displayName ? `${signedInUser.displayName}（${signedInUser.username}）` : signedInUser.username
   if (!selectedSite.value && sites.value.length) selectedSite.value = sites.value[0].id
   await changeSite()
 }
+
+async function refreshSafetyCounts(){try{inspectionSummary.value=await api.inspectionSummary()}catch(e){error.value=(e as Error).message}}
 
 async function changeSite() {
   if (!selectedSite.value) return
@@ -1116,19 +1141,20 @@ async function changeSite() {
   api.setSite(selectedSite.value)
   loading.value = true; error.value = ''
   try {
+    if(processDailyPreview)return
+    if(!signedInPermissions.value.includes('role:manage')&&signedInPermissions.value.includes('inspection:read')){await refreshSafetyCounts();return}
     [units.value, employees.value, riskSummary.value, hazards.value, riskObjects.value, areas.value, inspectionSummary.value, inspectionStatistics.value, inspectionTemplates.value, inspectionPlans.value, inspectionTasks.value, safetyHazards.value,workPermitTemplates.value,workPermits.value,trainingSummary.value,trainingCourses.value,trainingAssignments.value,qualifications.value,assetSummary.value,safetyAssets.value,healthSummary.value,occupationalFactors.value,occupationalExams.value,investmentSummary.value,safetyBudgets.value,safetyExpenses.value,commitments.value,commitmentTemplates.value,visitorBriefing.value,visitorRecords.value] = await Promise.all([
       api.orgUnits(), api.employees(), api.riskSummary(), api.hazards(), api.riskObjects(), api.areas(), api.inspectionSummary(), api.inspectionStatistics(), api.inspectionTemplates(), api.inspectionPlans(), api.inspectionTasks(), api.safetyHazards(),api.workPermitTemplates(),api.workPermits(),api.trainingSummary(),api.trainingCourses(),api.trainingAssignments(),api.employeeQualifications(),api.safetyAssetSummary(),api.safetyAssets(),api.occupationalHealthSummary(),api.occupationalFactors(),api.occupationalExams(),api.investmentSummary(),api.safetyBudgets(),api.safetyExpenses(),api.safetyCommitments(),api.safetyCommitmentTemplates(),api.visitorBriefing(),api.visitorRecords()
     ])
     const materialEntries=await Promise.all(trainingCourses.value.map(async c=>[c.id,await api.trainingMaterials(c.id)] as const));trainingMaterials.value=Object.fromEntries(materialEntries)
     visitorUrl.value=`${window.location.protocol}//${window.location.hostname}:5174/?visitor=${visitorBriefing.value.accessToken}`;visitorQr.value=await QRCode.toDataURL(visitorUrl.value,{width:220,margin:1,errorCorrectionLevel:'M'})
-    const attachmentEntries = await Promise.all(safetyHazards.value.map(async hazard => [hazard.id, await api.hazardAttachments(hazard.id)] as const))
-    hazardAttachments.value = Object.fromEntries(attachmentEntries)
   }
   catch (e) { error.value = e instanceof Error ? e.message : '数据加载失败' }
   finally { loading.value = false }
 }
 
 async function logout() {
+  if(dailyCollaboration.value?.canLeave()===false||processArchive.value?.canLeave()===false)return
   try { if(token.value) await api.logoutSession() } catch { /* 本地会话仍需清理 */ }
   sessionStorage.clear(); token.value = ''; refreshToken.value=''; sites.value = []; units.value = []; employees.value = []; hazards.value = []
 }
@@ -1228,31 +1254,10 @@ async function reviewAssessment(item: AssessmentHistory, decision: 'APPROVE' | '
 
 const inspectionStatusName: Record<string,string> = { PENDING:'待执行', IN_PROGRESS:'执行中', COMPLETED:'已完成', OVERDUE:'已逾期', CANCELLED:'已取消' }
 const hazardStatusName: Record<string,string> = { OPEN:'待整改', RECTIFYING:'整改中', REVIEW_PENDING:'待验收', CLOSED:'已闭环', OVERDUE:'已逾期' }
-const hazardLevelName: Record<string,string> = { GENERAL:'一般隐患', SERIOUS:'较大隐患', MAJOR:'重大隐患' }
+const hazardLevelName: Record<string,string> = { GENERAL:'一般隐患', SERIOUS:'严重隐患', LARGER:'较大隐患', MAJOR:'重大隐患' }
 const escalationName:Record<string,string>={REMINDER:'一般提醒',DEPARTMENT:'部门督办',PLANT:'厂级升级'}
 const permitStatusName:Record<string,string>={DRAFT:'草稿',PENDING_SAFETY:'待安全审核',PENDING_PRINCIPAL:'待负责人批准',APPROVED:'已批准',IN_PROGRESS:'作业中',CLOSED:'已完工',RETURNED:'已退回',CANCELLED:'已取消'}
 
-async function submitRectification(item: SafetyHazard) {
-  const note = window.prompt('请填写整改完成情况')
-  if (!note) return
-  try { await api.submitRectification(item.id, note); await changeSite() }
-  catch (e) { error.value = e instanceof Error ? e.message : '整改提交失败' }
-}
-
-async function reviewSafetyHazard(item: SafetyHazard, passed: boolean) {
-  const comment = window.prompt(passed ? '请输入验收意见' : '请输入退回整改原因', passed ? '现场复查合格，同意闭环' : '')
-  if (!comment) return
-  try { await api.reviewSafetyHazard(item.id, passed, comment); await changeSite() }
-  catch (e) { error.value = e instanceof Error ? e.message : '隐患验收失败' }
-}
-
-function openTaskForm(){taskForm.value={templateId:inspectionTemplates.value[0]?.id||'',title:'',plannedStart:new Date().toISOString().slice(0,10),dueAt:new Date(Date.now()+86400000).toISOString().slice(0,16),assigneeEmployeeId:employees.value[0]?.id||''};showTaskForm.value=true}
-async function createInspectionTask(){try{await api.createInspectionTask({...taskForm.value,dueAt:new Date(taskForm.value.dueAt).toISOString(),assigneeEmployeeId:taskForm.value.assigneeEmployeeId||undefined});showTaskForm.value=false;await changeSite()}catch(e){error.value=e instanceof Error?e.message:'检查任务创建失败'}}
-function openPlanForm(){planForm.value={templateId:inspectionTemplates.value[0]?.id||'',name:'',scheduleType:'WEEKLY',intervalValue:1,nextRunDate:new Date().toISOString().slice(0,10),dueHours:24,assigneeEmployeeId:employees.value[0]?.id||''};showPlanForm.value=true}
-async function createInspectionPlan(){try{await api.createInspectionPlan({...planForm.value,assigneeEmployeeId:planForm.value.assigneeEmployeeId||undefined});showPlanForm.value=false;await changeSite()}catch(e){error.value=e instanceof Error?e.message:'检查计划创建失败'}}
-async function generatePlans(){try{const result=await api.generateInspectionPlans();await changeSite();window.alert(result.generatedCount?`已生成 ${result.generatedCount} 个检查任务`:'当前没有到期且未生成的计划')}catch(e){error.value=e instanceof Error?e.message:'任务生成失败'}}
-async function changePlanStatus(plan:InspectionPlan){const pausing=plan.status==='ACTIVE';const reason=window.prompt(pausing?'请输入暂停原因':'请输入恢复原因',pausing?'现场安排调整，暂缓自动派发':'恢复正常检查安排');if(!reason)return;try{await api.changeInspectionPlanStatus(plan.id,pausing?'PAUSE':'RESUME',reason);await changeSite()}catch(e){error.value=e instanceof Error?e.message:'计划状态变更失败'}}
-async function remindHazard(item:SafetyHazard){const message=window.prompt('请输入催办要求',`隐患 ${item.hazardNo} 已临近或超过整改时限，请尽快完成整改并反馈。`);if(!message)return;try{await api.remindSafetyHazard(item.id,message);await changeSite();window.alert('催办记录已保存')}catch(e){error.value=e instanceof Error?e.message:'隐患催办失败'}}
 function openPermitForm(){permitForm.value={...permitForm.value,templateId:workPermitTemplates.value[0]?.id||'',location:'',workContent:'',riskResult:'',responsiblePerson:'',guardian:'',workers:''};showPermitForm.value=true}
 async function createPermit(){try{const f=permitForm.value;const created=await api.createWorkPermit({...f,startAt:new Date(f.startAt).toISOString(),endAt:new Date(f.endAt).toISOString()});await api.submitWorkPermit(created.id);showPermitForm.value=false;await changeSite()}catch(e){error.value=e instanceof Error?e.message:'危险作业申请失败'}}
 async function reviewPermit(item:WorkPermit,approved=true){const comment=window.prompt(approved?'请输入审批意见':'请输入退回原因',approved?'作业条件及安全措施符合要求，同意':'');if(!comment)return;try{await api.reviewWorkPermit(item.id,approved,comment);await changeSite()}catch(e){error.value=e instanceof Error?e.message:'危险作业审批失败'}}
@@ -1293,25 +1298,12 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
 </script>
 
 <template>
-  <main v-if="!token" class="login-shell">
-    <section class="brand-panel">
-      <div class="brand-logo-wrap"><img src="/waterx-logo-on-light.png" alt="WaterX" /></div>
-      <p class="eyebrow">WaterX · Digital Water Operations</p>
-      <h1>智慧水务运营平台</h1>
-    </section>
-    <form class="login-card" @submit.prevent="login">
-      <div><p class="eyebrow">欢迎使用</p><h2>登录管理端</h2><p class="muted">请输入由管理员分配的账号</p></div>
-      <label>用户名<input v-model="username" autocomplete="username" /></label>
-      <label>密码<input v-model="password" type="password" autocomplete="current-password" placeholder="至少 12 位" /></label>
-      <p v-if="error" class="error">{{ error }}</p>
-      <button :disabled="loading">{{ loading ? '正在登录…' : '登录' }}</button>
-    </form>
-  </main>
+  <WaterXLogin v-if="!token" v-model:username="username" v-model:password="password" :loading="loading" :error="error" @submit="login" />
 
   <div v-else class="app-shell" :class="{sidebarCollapsed}">
     <header class="global-topbar">
       <div class="topbar-brand"><div class="topbar-logo-art"><img src="/waterx-logo-on-dark.png" alt="WaterX" /></div><span>智慧水务运营平台</span></div>
-      <div class="topbar-actions"><div class="topbar-project"><small>当前项目</small><select v-model="selectedSite" @change="changeSite"><option v-for="site in sites" :key="site.id" :value="site.id">{{site.name}}</option></select></div><span class="topbar-divider"></span><div class="topbar-user"><span class="avatar">管</span><div><b>平台管理员</b><small>系统管理</small></div></div><button @click="logout">退出登录</button></div>
+      <div class="topbar-actions"><div class="topbar-project"><small>当前项目</small><select v-model="selectedSite" :disabled="dailyCollaboration?.hasPendingChanges||processArchive?.hasPendingChanges" @change="changeSite"><option v-for="site in sites" :key="site.id" :value="site.id">{{site.name}}</option></select></div><span class="topbar-divider"></span><div class="topbar-user"><span class="avatar">{{signedInDisplayName.slice(0,1)}}</span><div><b>{{signedInDisplayName}}</b><small>当前账号</small></div></div><button @click="logout">退出登录</button></div>
     </header>
     <aside>
       <button class="sidebar-toggle" :title="sidebarCollapsed?'展开导航':'收起导航'" :aria-label="sidebarCollapsed?'展开导航':'收起导航'" @click="sidebarCollapsed=!sidebarCollapsed"><span><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${sidebarCollapsed?'right':'left'}`" /></svg></span><b>收起导航</b></button>
@@ -1364,7 +1356,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
         </section>
         <section class="nav-group">
           <button class="nav-group-title" :class="{expanded:expandedModules.efficiency}" @click="toggleModule('efficiency')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#efficiency'" /></svg></span><span>提质增效</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.efficiency?'down':'right'}`" /></svg></i></button>
-          <div v-show="expandedModules.efficiency" class="nav-children"><button :class="{selected:active==='highEfficiencySedimentation'}" @click="active='highEfficiencySedimentation'">高效沉淀池分析</button><button :class="{selected:active==='vFilterAnalysis'}" @click="active='vFilterAnalysis'">V型滤池分析</button><button :class="{selected:active==='pretreatmentAnalysis'}" @click="active='pretreatmentAnalysis'">预处理分析</button><button :class="{selected:active==='disinfectionAnalysis'}" @click="active='disinfectionAnalysis'">消毒分析</button><button :class="{selected:active==='sludgeBalanceAnalysis'}" @click="active='sludgeBalanceAnalysis'">排泥与污泥浓缩分析</button><button :class="{selected:active==='dewateringAnalysis'}" @click="active='dewateringAnalysis'">污泥脱水分析</button><button :class="{selected:active==='mbbrAnalysis'}" @click="active='mbbrAnalysis'">MBBR填料区分析</button><button :class="{selected:active==='aerationAirAnalysis'}" @click="active='aerationAirAnalysis'">曝气供气系统分析</button><button disabled>能耗计量 <small>规划中</small></button><button disabled>能效分析 <small>规划中</small></button></div>
+          <div v-show="expandedModules.efficiency" class="nav-children"><EfficiencyNavigation :active="active" @navigate="active=$event" /></div>
         </section>
         <section class="nav-group">
           <button class="nav-group-title" :class="{expanded:expandedModules.evaluation}" @click="toggleModule('evaluation')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#evaluation'" /></svg></span><span>过程评价</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.evaluation?'down':'right'}`" /></svg></i></button>
@@ -1396,6 +1388,8 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
           </WxCard>
         </template>
         <ProcessEvaluationPage v-else-if="currentProcessEvaluationPage" :active-page="currentProcessEvaluationPage" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" @update:active-page="openProcessEvaluationPage" @navigate:app="handleProcessEvaluationNavigate" />
+        <WholePlantPage v-else-if="active==='efficiencyWaterBalance' || active==='efficiencySludge' || active==='efficiencyEnergy' || active==='efficiencyChemical' || active==='efficiencyCapacity' || active==='efficiencyHydraulic'" :key="active+selectedSite" :topic="active==='efficiencyWaterBalance' ? 'water' : active==='efficiencySludge' ? 'sludge' : active==='efficiencyEnergy' ? 'energy' : active==='efficiencyChemical' ? 'chemical' : active==='efficiencyCapacity' ? 'capacity' : 'hydraulic'" :site-id="selectedSite" :actor="processActor" />
+        <EfficiencyLandingPage v-else-if="currentEfficiencyPlanningPage" :page="currentEfficiencyPlanningPage" @navigate="active=$event" />
         <HighEfficiencySedimentationPage v-else-if="active==='highEfficiencySedimentation'" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" />
         <VFilterAnalysisPage v-else-if="active==='vFilterAnalysis'" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" />
         <ConfiguredUnitAnalysisPage v-else-if="currentRemainingUnit" :model-code="currentRemainingUnit" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" />
@@ -1418,6 +1412,9 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
           <section class="module-roadmap-strip"><span><b>01</b>入口与边界确认</span><i></i><span><b>02</b>字段与规则评审</span><i></i><span><b>03</b>交互原型</span><i></i><span><b>04</b>后端工程化</span></section>
         </template>
         <ManagementQualityPage v-else-if="currentQualityPage" :active-page="currentQualityPage" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" @update:active-page="openQualityPage" @start-improvement="handleQualityImprovement" />
+        <ProcessArchivePage v-else-if="processMvpPage && processDailyPreview && processArchivePreview && processMvpPage!=='operationEntry'" ref="processArchive" :key="selectedSite + processMvpPage" :api="api" :page="processMvpPage" :site-id="selectedSite" :site-name="currentSite?.name||'当前项目'" />
+        <DailyCollaborationPage v-else-if="processMvpPage && processDailyPreview" ref="dailyCollaboration" :key="selectedSite" :api="api" :page="processMvpPage" :site-id="selectedSite" :site-name="currentSite?.name||'当前项目'" @navigate="active=$event" />
+        <ProcessManagementPage v-else-if="processMvpPage" :page="processMvpPage" :site-id="selectedSite" :site-name="currentSite?.name||'当前项目'" :actor="processActor" :legacy-metrics="processMvpCatalog" @navigate="active=$event" @configure="openModuleMetricManager($event)" />
         <template v-else-if="active==='processAnalysis'">
           <section class="diagnosis-toolbar">
             <div class="diagnosis-filter-fields">
@@ -1570,16 +1567,15 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
           </template>
         </template>
         <template v-else-if="active==='labReports'">
+          <section class="lab-reports-module">
           <template v-if="labReportView==='folders'">
-            <section class="lab-simple-toolbar"><div><button @click="labReportView='folders'">刷新</button></div><span>选择报表周期，进入化验统计报表</span></section>
             <section class="lab-folder-grid lab-report-folders"><button @click="openLabDailyReport"><i>日报</i><b>化验日报表</b><small>汇总每日水质与污泥检测结果</small><em>{{labDailyReports.length}} 张已保存</em></button><button class="lab-folder-planned" disabled><i>月报</i><b>化验月报表</b><small>按月汇总与趋势分析</small><em>规划中</em></button></section>
           </template>
           <template v-else>
-            <section class="lab-form-toolbar lab-report-toolbar"><button @click="labReportView='folders'">← 返回报表</button><label>报表日期<input v-model="labDailyReport.date" type="date" @change="changeLabReportDate" /></label><button class="primary" @click="refreshLabDailyReport()">更新原始记录</button><button @click="saveLabDailyReport">保存</button><button @click="printLabDailyReport">打印 / 预览</button><button @click="exportLabDailyReport">导出 Excel</button><span>最近更新：{{labDailyReport.updatedAt}}</span></section>
+            <section class="lab-form-toolbar lab-report-toolbar"><WxButton @click="labReportView='folders'">← 返回报表</WxButton><label>报表日期<input class="wx-input" v-model="labDailyReport.date" type="date" @change="changeLabReportDate" /></label><WxButton variant="primary" @click="refreshLabDailyReport()">更新原始记录</WxButton><WxButton @click="saveLabDailyReport">保存</WxButton><WxButton @click="printLabDailyReport">打印 / 预览</WxButton><WxButton @click="exportLabDailyReport">导出 Excel</WxButton><span>最近更新：{{labDailyReport.updatedAt}}</span></section>
             <section class="lab-paper-wrap lab-report-wrap">
               <article class="lab-report-paper">
                 <h1>化验日报表</h1>
-                <button class="lab-report-refresh" @click="refreshLabDailyReport()">更新</button>
                 <div class="lab-report-meta"><label>项目名称<input v-model="labDailyReport.projectName" /></label><label>统计报表编号<input v-model="labDailyReport.reportNo" /></label></div>
                 <table class="lab-report-table"><thead><tr><th>类别</th><th>频次</th><th>项目</th><th colspan="2">进水</th><th colspan="2">出水</th></tr></thead><tbody>
                   <tr><td rowspan="12" class="report-category">污水</td><td rowspan="9">日检</td><th>pH</th><td colspan="2"><input v-model="labDailyReport.values['sewage.ph.in']" /></td><td colspan="2"><input v-model="labDailyReport.values['sewage.ph.out']" /></td></tr>
@@ -1620,6 +1616,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
               </article>
             </section>
           </template>
+          </section>
         </template>
         <template v-else-if="active==='overview'">
           <div class="metrics">
@@ -1647,18 +1644,8 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
             </table>
           </div>
         </template>
-        <template v-else-if="active==='inspection'">
-          <div class="safety-metrics"><section><span>待执行任务</span><strong>{{inspectionSummary.pendingTasks}}</strong><small>含执行中与逾期任务</small></section><section><span>已完成任务</span><strong>{{inspectionSummary.completedTasks}}</strong><small>检查记录可追溯</small></section><section class="hazard-accent"><span>检查发现隐患</span><strong>{{inspectionSummary.openHazards}}</strong><small>自动进入整改闭环</small></section></div>
-          <div class="panel table-panel"><div class="panel-head"><div><h2>周期检查计划</h2><small>系统每小时检查到期计划并自动派发任务</small></div><div class="panel-actions"><span>{{inspectionPlans.length}} 项</span><button class="secondary-action" @click="generatePlans">立即生成</button><button @click="openPlanForm">＋ 新建计划</button></div></div><table><thead><tr><th>计划</th><th>检查模板</th><th>周期</th><th>执行人员</th><th>下次生成</th><th>已生成</th><th>状态 / 操作</th></tr></thead><tbody><tr v-for="plan in inspectionPlans" :key="plan.id"><td><code>{{plan.code}}</code><small>{{plan.name}}</small></td><td>{{plan.templateName}}</td><td>{{scheduleName[plan.scheduleType]}}<small>每 {{plan.intervalValue}} 个周期 · {{plan.dueHours}} 小时内完成</small></td><td>{{plan.assigneeName||'待指派'}}</td><td>{{plan.nextRunDate}}</td><td>{{plan.generatedCount}} 次<small>{{plan.changeCount}} 条变更记录</small></td><td><span class="tag" :class="{green:plan.status==='ACTIVE',warning:plan.status==='PAUSED'}">{{plan.status==='ACTIVE'?'启用':plan.status==='COMPLETED'?'已完成':'已暂停'}}</span><div v-if="plan.status!=='COMPLETED'" class="row-actions"><button :class="{danger:plan.status==='ACTIVE'}" @click="changePlanStatus(plan)">{{plan.status==='ACTIVE'?'暂停':'恢复'}}</button></div></td></tr></tbody></table></div>
-          <div class="panel template-strip"><div><h2>检查模板库</h2><small>依据现有综合、重点部位、班组日检和节假日检查表整理</small></div><span v-for="tpl in inspectionTemplates" :key="tpl.id"><b>{{tpl.name}}</b><small>{{tpl.frequency}} · {{tpl.itemCount}} 项</small></span></div>
-          <div class="panel table-panel"><div class="panel-head"><div><h2>检查任务</h2><small>到期自动提醒，现场逐项填写检查结果</small></div><div class="panel-actions"><span>{{inspectionTasks.length}} 项</span><button @click="openTaskForm">＋ 创建任务</button></div></div><table><thead><tr><th>任务编号</th><th>任务与模板</th><th>负责人</th><th>计划/截止</th><th>发现隐患</th><th>状态</th></tr></thead><tbody><tr v-for="task in inspectionTasks" :key="task.id"><td><code>{{task.taskNo}}</code></td><td><b>{{task.title}}</b><small>{{task.templateName}}</small></td><td>{{task.assigneeName || '待指派'}}</td><td>{{task.plannedStart}}<small>{{new Date(task.dueAt).toLocaleString('zh-CN')}}</small></td><td>{{task.hazardCount}} 项</td><td><span class="tag" :class="{green:task.status==='COMPLETED',warning:task.status==='PENDING'}">{{inspectionStatusName[task.status]}}</span></td></tr></tbody></table></div>
-        </template>
-        <template v-else-if="active==='hazard'">
-          <div class="safety-metrics"><section><span>未闭环隐患</span><strong>{{inspectionSummary.openHazards}}</strong><small>整改中、待验收及逾期</small></section><section><span>待验收</span><strong>{{inspectionSummary.pendingReview}}</strong><small>需安全管理人员复查</small></section><section class="danger-accent"><span>逾期隐患</span><strong>{{inspectionSummary.overdueHazards}}</strong><small>优先跟踪督办</small></section></div>
-          <div class="panel hazard-statistics"><div class="panel-head"><div><h2>隐患治理统计</h2><small>按闭环、级别、来源与逾期升级口径实时汇总</small></div><span>共 {{inspectionStatistics.totalHazards}} 项</span></div><div class="statistics-grid"><section><span>闭环率</span><strong>{{inspectionStatistics.totalHazards?Math.round(inspectionStatistics.closedHazards*100/inspectionStatistics.totalHazards):0}}%</strong><small>{{inspectionStatistics.closedHazards}} 项已闭环</small></section><section><span>隐患级别</span><b>一般 {{inspectionStatistics.generalHazards}} · 较大 {{inspectionStatistics.seriousHazards}} · 重大 {{inspectionStatistics.majorHazards}}</b><small>按当前台账口径</small></section><section><span>发现来源</span><b>检查 {{inspectionStatistics.inspectionSource}} · 员工上报 {{inspectionStatistics.employeeSource}}</b><small>覆盖计划检查与随手拍</small></section><section class="escalation-summary"><span>逾期升级</span><b>提醒 {{inspectionStatistics.reminderLevel}} · 部门 {{inspectionStatistics.departmentLevel}} · 厂级 {{inspectionStatistics.plantLevel}}</b><small>1–3天 / 4–7天 / 8天以上</small></section></div></div>
-          <div class="panel table-panel hazard-table"><div class="panel-head"><div><h2>生产安全事故隐患台账</h2><small>从排查、整改、反馈到验收全流程留痕</small></div><span>{{safetyHazards.length}} 项</span></div><table><thead><tr><th>编号 / 来源</th><th>隐患位置与问题</th><th>分类 / 级别</th><th>整改要求</th><th>责任与时限</th><th>现场材料</th><th>状态 / 操作</th></tr></thead><tbody><tr v-for="item in safetyHazards" :key="item.id"><td><code>{{item.hazardNo}}</code><small>{{item.sourceType==='INSPECTION'?'安全检查':'员工上报'}}</small></td><td><b>{{item.location}} · {{item.name}}</b><small>{{item.description}}</small></td><td>{{item.categoryMajor}}<small>{{item.categoryMinor}} · {{hazardLevelName[item.hazardLevel]}}</small></td><td>{{item.rectificationMeasure}}<small v-if="item.temporaryMeasure">临时措施：{{item.temporaryMeasure}}</small></td><td>{{item.responsibleOrg || '待明确'}}<small>{{item.responsiblePerson || '待指派'}} · {{item.dueDate}}</small><small>预计 ¥{{item.estimatedCost}}</small><small v-if="item.reminderCount">已催办 {{item.reminderCount}} 次 · {{new Date(item.lastRemindedAt!).toLocaleString('zh-CN')}}</small></td><td><b>{{hazardAttachments[item.id]?.length || 0}} 个附件</b><small v-for="file in hazardAttachments[item.id]" :key="file.id">{{file.stage==='DISCOVERY'?'发现':file.stage==='RECTIFICATION'?'整改':'验收'}}：{{file.originalName}}</small></td><td><span class="tag" :class="{green:item.status==='CLOSED',warning:item.status==='REVIEW_PENDING',danger:item.status==='OVERDUE'}">{{hazardStatusName[item.status]}}</span><small v-if="item.escalationLevel" class="escalation-label" :class="item.escalationLevel.toLowerCase()">{{escalationName[item.escalationLevel]}} · 逾期 {{item.overdueDays}} 天</small><div class="row-actions"><button v-if="['OPEN','RECTIFYING','OVERDUE'].includes(item.status)" @click="submitRectification(item)">提交整改</button><button v-if="['OPEN','RECTIFYING','OVERDUE'].includes(item.status)" class="secondary" @click="remindHazard(item)">催办</button><template v-if="item.status==='REVIEW_PENDING'"><button @click="reviewSafetyHazard(item,true)">验收通过</button><button class="danger" @click="reviewSafetyHazard(item,false)">退回</button></template></div><small v-if="item.completionNote">反馈：{{item.completionNote}}</small></td></tr></tbody></table></div>
-        </template>
-        <template v-else-if="active==='permit'"><div class="safety-metrics"><section><span>作业类型</span><strong>{{workPermitTemplates.length}}</strong><small>统一作业票模板</small></section><section><span>待审批</span><strong>{{workPermits.filter(p=>p.status.startsWith('PENDING')).length}}</strong><small>安全审核或负责人批准</small></section><section class="hazard-accent"><span>已批准</span><strong>{{workPermits.filter(p=>p.status==='APPROVED').length}}</strong><small>等待实施或完工验收</small></section></div><div class="panel template-strip"><div><h2>危险作业类型</h2><small>依据提供的 10 类危险作业审批单建立</small></div><span v-for="tpl in workPermitTemplates" :key="tpl.id"><b>{{tpl.name}}</b><small>{{tpl.measureCount}} 项预置措施</small></span></div><div class="panel table-panel"><div class="panel-head"><div><h2>危险作业票台账</h2><small>申请、审核、批准和完工验收全流程留痕</small></div><div class="panel-actions"><span>{{workPermits.length}} 张</span><button @click="openPermitForm">＋ 发起作业申请</button></div></div><table><thead><tr><th>作业票</th><th>类型与地点</th><th>作业内容</th><th>负责人 / 监护人</th><th>实施时间</th><th>状态 / 操作</th></tr></thead><tbody><tr v-for="item in workPermits" :key="item.id"><td><code>{{item.permitNo}}</code><small>{{item.workLevel.replace('LEVEL_','')}}级作业</small></td><td><b>{{item.permitTypeName}}</b><small>{{item.location}}</small></td><td>{{item.workContent}}<small>措施确认 {{item.confirmedCount}}/{{item.involvedCount}}</small></td><td>{{item.responsiblePerson}}<small>监护：{{item.guardian}}</small></td><td>{{new Date(item.startAt).toLocaleString('zh-CN')}}<small>至 {{new Date(item.endAt).toLocaleString('zh-CN')}}</small></td><td><span class="tag" :class="{green:item.status==='APPROVED'||item.status==='CLOSED',warning:item.status.startsWith('PENDING')}">{{permitStatusName[item.status]}}</span><div class="row-actions"><template v-if="item.status==='PENDING_SAFETY'||item.status==='PENDING_PRINCIPAL'"><button @click="reviewPermit(item,true)">审批通过</button><button class="danger" @click="reviewPermit(item,false)">退回</button></template><button v-if="item.status==='APPROVED'" @click="closePermit(item)">完工验收</button></div></td></tr></tbody></table></div></template>
+        <SafetyWorkspace v-else-if="active==='inspection'||active==='hazard'" :key="selectedSite" :api="api" :site-id="selectedSite" :page="active" @updated="refreshSafetyCounts" />
+        <template v-else-if="active==='permit'"><div class="safety-metrics"><section><span>作业类型</span><strong>{{workPermitTemplates.length}}</strong><small>统一作业票模板</small></section><section><span>待审批</span><strong>{{workPermits.filter(p=>p.status.startsWith('PENDING')).length}}</strong><small>安全审核或负责人批准</small></section><section class="hazard-accent"><span>已批准</span><strong>{{workPermits.filter(p=>p.status==='APPROVED').length}}</strong><small>等待实施或完工验收</small></section></div><div class="panel template-strip"><div><h2>危险作业类型</h2><small>当前10类历史配置；本批材料覆盖9类，许可规则待专项深化</small></div><span v-for="tpl in workPermitTemplates" :key="tpl.id"><b>{{tpl.name}}</b><small>{{tpl.measureCount}} 项预置措施</small></span></div><div class="panel table-panel"><div class="panel-head"><div><h2>危险作业票台账</h2><small>申请、审核、批准和完工验收全流程留痕</small></div><div class="panel-actions"><span>{{workPermits.length}} 张</span><button @click="openPermitForm">＋ 发起作业申请</button></div></div><table><thead><tr><th>作业票</th><th>类型与地点</th><th>作业内容</th><th>负责人 / 监护人</th><th>实施时间</th><th>状态 / 操作</th></tr></thead><tbody><tr v-for="item in workPermits" :key="item.id"><td><code>{{item.permitNo}}</code><small>{{item.workLevel.replace('LEVEL_','')}}级作业</small></td><td><b>{{item.permitTypeName}}</b><small>{{item.location}}</small></td><td>{{item.workContent}}<small>措施确认 {{item.confirmedCount}}/{{item.involvedCount}}</small></td><td>{{item.responsiblePerson}}<small>监护：{{item.guardian}}</small></td><td>{{new Date(item.startAt).toLocaleString('zh-CN')}}<small>至 {{new Date(item.endAt).toLocaleString('zh-CN')}}</small></td><td><span class="tag" :class="{green:item.status==='APPROVED'||item.status==='CLOSED',warning:item.status.startsWith('PENDING')}">{{permitStatusName[item.status]}}</span><div class="row-actions"><template v-if="item.status==='PENDING_SAFETY'||item.status==='PENDING_PRINCIPAL'"><button @click="reviewPermit(item,true)">审批通过</button><button class="danger" @click="reviewPermit(item,false)">退回</button></template><button v-if="item.status==='APPROVED'" @click="closePermit(item)">完工验收</button></div></td></tr></tbody></table></div></template>
         <template v-else-if="active==='training'">
           <div class="safety-metrics"><section><span>培训课程</span><strong>{{trainingSummary.courseCount}}</strong><small>覆盖入厂、专项和应急培训</small></section><section><span>待完成培训</span><strong>{{trainingSummary.pendingAssignments}}</strong><small>按时限跟踪学习与考试</small></section><section class="danger-accent"><span>证书预警</span><strong>{{trainingSummary.expiringQualifications}}</strong><small>已到期或进入复审提醒期</small></section></div>
           <div class="panel template-strip"><div><h2>课程资源库</h2><small>支持视频、PPT和文件课程</small><button @click="openCourseForm">＋ 新建课程</button></div><span v-for="course in trainingCourses" :key="course.id"><b>{{course.name}}</b><small>{{course.durationMinutes}} 分钟 · {{course.passingScore}} 分合格</small></span></div>
@@ -1747,8 +1734,6 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
       <div class="form-foot"><span>保存后将直接提交安全管理人员审核</span><button type="button" @click="showRiskForm=false">取消</button><button class="primary" :disabled="savingRisk">{{savingRisk ? '正在提交…' : '完成评估并提交'}}</button></div>
     </form>
   </div>
-  <div v-if="showTaskForm" class="modal-mask" @click.self="showTaskForm=false"><form class="area-form" @submit.prevent="createInspectionTask"><div class="form-head"><div><p class="eyebrow">安全检查</p><h2>创建检查任务</h2></div><button type="button" @click="showTaskForm=false">×</button></div><div class="task-form-body"><label>检查模板<select v-model="taskForm.templateId" required><option v-for="tpl in inspectionTemplates" :key="tpl.id" :value="tpl.id">{{tpl.name}}</option></select></label><label>任务名称<input v-model="taskForm.title" required placeholder="例如：本周重点部位安全检查" /></label><label>计划日期<input v-model="taskForm.plannedStart" type="date" required /></label><label>完成时限<input v-model="taskForm.dueAt" type="datetime-local" required /></label><label>执行人员<select v-model="taskForm.assigneeEmployeeId"><option value="">待指派</option><option v-for="person in employees" :key="person.id" :value="person.id">{{person.displayName}} · {{person.position}}</option></select></label></div><div class="form-foot"><span>创建后将出现在手机端待办中</span><button type="button" @click="showTaskForm=false">取消</button><button class="primary">创建任务</button></div></form></div>
-  <div v-if="showPlanForm" class="modal-mask" @click.self="showPlanForm=false"><form class="area-form" @submit.prevent="createInspectionPlan"><div class="form-head"><div><p class="eyebrow">自动派发</p><h2>新建周期检查计划</h2></div><button type="button" @click="showPlanForm=false">×</button></div><div class="task-form-body"><label>检查模板<select v-model="planForm.templateId" required><option v-for="tpl in inspectionTemplates" :key="tpl.id" :value="tpl.id">{{tpl.name}}</option></select></label><label>计划名称<input v-model="planForm.name" required placeholder="例如：运维班组每日安全检查计划" /></label><label>执行周期<select v-model="planForm.scheduleType"><option value="DAILY">每日</option><option value="WEEKLY">每周</option><option value="MONTHLY">每月</option><option value="ONCE">一次性</option></select></label><label>周期间隔<input v-model.number="planForm.intervalValue" type="number" min="1" required /></label><label>首次生成日期<input v-model="planForm.nextRunDate" type="date" required /></label><label>完成时限（小时）<input v-model.number="planForm.dueHours" type="number" min="1" required /></label><label>执行人员<select v-model="planForm.assigneeEmployeeId"><option value="">待指派</option><option v-for="person in employees" :key="person.id" :value="person.id">{{person.displayName}} · {{person.position}}</option></select></label></div><div class="form-foot"><span>到期后自动生成一次任务，不会重复派发</span><button type="button" @click="showPlanForm=false">取消</button><button class="primary">保存计划</button></div></form></div>
   <div v-if="showPermitForm" class="modal-mask" @click.self="showPermitForm=false"><form class="area-form permit-form" @submit.prevent="createPermit"><div class="form-head"><div><p class="eyebrow">危险作业申请</p><h2>新建危险作业票</h2></div><button type="button" @click="showPermitForm=false">×</button></div><div class="task-form-body"><label>作业类型<select v-model="permitForm.templateId" required><option v-for="tpl in workPermitTemplates" :key="tpl.id" :value="tpl.id">{{tpl.name}}</option></select></label><label>作业级别<select v-model="permitForm.workLevel"><option value="LEVEL_1">1级</option><option value="LEVEL_2">2级</option><option value="LEVEL_3">3级</option></select></label><label>作业单位<input v-model="permitForm.workUnit" required /></label><label>作业地点<input v-model="permitForm.location" required /></label><label>作业内容<textarea v-model="permitForm.workContent" rows="2" required></textarea></label><label>风险辨识结果<textarea v-model="permitForm.riskResult" rows="2" required></textarea></label><label>作业负责人<input v-model="permitForm.responsiblePerson" required /></label><label>监护人<input v-model="permitForm.guardian" required /></label><label>作业人员<input v-model="permitForm.workers" required placeholder="多人用顿号分隔" /></label><label>关联作业票<input v-model="permitForm.relatedPermits" placeholder="无可不填" /></label><label>开始时间<input v-model="permitForm.startAt" type="datetime-local" required /></label><label>结束时间<input v-model="permitForm.endAt" type="datetime-local" required /></label></div><div class="form-foot"><span>提交后进入安全管理人员审核</span><button type="button" @click="showPermitForm=false">取消</button><button class="primary">提交申请</button></div></form></div>
   <div v-if="showTrainingForm" class="modal-mask" @click.self="showTrainingForm=false"><form class="area-form" @submit.prevent="assignTraining"><div class="form-head"><div><p class="eyebrow">培训教育</p><h2>指派安全培训</h2></div><button type="button" @click="showTrainingForm=false">×</button></div><div class="task-form-body"><label>培训课程<select v-model="trainingForm.courseId" required><option v-for="course in trainingCourses" :key="course.id" :value="course.id">{{course.name}}</option></select></label><label>培训员工<select v-model="trainingForm.employeeId" required><option v-for="person in employees" :key="person.id" :value="person.id">{{person.displayName}} · {{person.position}}</option></select></label><label>完成时限<input v-model="trainingForm.dueAt" type="datetime-local" required /></label></div><div class="form-foot"><span>任务将推送至员工移动端待办</span><button type="button" @click="showTrainingForm=false">取消</button><button class="primary">确认指派</button></div></form></div>
   <div v-if="showExamForm" class="modal-mask" @click.self="showExamForm=false"><form class="area-form" @submit.prevent="saveExam"><div class="form-head"><div><p class="eyebrow">职业健康</p><h2>登记职业健康体检</h2></div><button type="button" @click="showExamForm=false">×</button></div><div class="task-form-body"><label>员工<select v-model="examForm.employeeId" required><option v-for="person in employees" :key="person.id" :value="person.id">{{person.displayName}} · {{person.position}}</option></select></label><label>体检类型<select v-model="examForm.examType"><option value="PRE_EMPLOYMENT">岗前</option><option value="PERIODIC">在岗期间</option><option value="EXIT">离岗</option><option value="EMERGENCY">应急</option></select></label><label>体检日期<input v-model="examForm.examDate" type="date" required /></label><label>体检机构<input v-model="examForm.medicalInstitution" required /></label><label>体检结论<select v-model="examForm.conclusion"><option value="FIT">目前未见职业禁忌</option><option value="FIT_WITH_RESTRICTIONS">有限制作业</option><option value="UNFIT">不宜从事原岗位</option><option value="REVIEW_REQUIRED">需要复查</option></select></label><label>岗位限制<input v-model="examForm.restrictedItems" /></label><label>后续措施<textarea v-model="examForm.followUpAction" rows="2"></textarea></label><label>下次体检日期<input v-model="examForm.nextExamOn" type="date" /></label></div><div class="form-foot"><span>保存后自动归入该员工个人安全档案</span><button type="button" @click="showExamForm=false">取消</button><button class="primary">保存体检记录</button></div></form></div>

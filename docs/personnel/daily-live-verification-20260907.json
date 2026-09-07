@@ -1,0 +1,25 @@
+{
+  "result": "PASS",
+  "environment": "仅本机5185/8083、独立临时PostgreSQL",
+  "site": "试点水厂",
+  "line": "一期生化线",
+  "date": "2026-09-07",
+  "recordId": "573763d5-a1af-44b9-a7d2-0cbd213491b7",
+  "revision": 11,
+  "confirmedVersion": 2,
+  "events": 11,
+  "versions": 2,
+  "V1日进水量": "0",
+  "V2日进水量": "7",
+  "unchangedMissingMetrics": 66,
+  "checks": [
+    "实际账号登录",
+    "分派-填报-退回-重提-确认-更正重审",
+    "旧确认版不可变",
+    "运行工乙不可读他人任务",
+    "厂长不可审批或默认导出",
+    "跨厂不可读取",
+    "非工艺专业无日数据范围",
+    "更正中分析来源请求被拒绝"
+  ]
+}
