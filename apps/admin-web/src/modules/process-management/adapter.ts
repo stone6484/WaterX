@@ -1,8 +1,25 @@
-import { type ProjectState, type Metric, type Cell, type DesignVersion, type ConditionVersion, type EntryVersion, type DiagnosisVersion, latest } from './types'
-import { calculateRows, conditionError, matchCondition, matchDesign, RULE_VERSION } from './engine'
+import { type ProjectState, type Metric, type Cell, type Target, type DesignVersion, type ConditionVersion, type EntryVersion, type DiagnosisVersion, latest } from './types'
+import { calculateRows, conditionError, matchCondition, matchDesign, RULE_VERSION, targetFor } from './engine'
+
+export const FIXED_DEMO_DATE = '2026-09-08'
+export const FIXED_DEMO_LINE = '一期生化线'
 
 export const clone=<T>(value:T):T=>JSON.parse(JSON.stringify(value))
 export function emptyProject(siteId:string,siteName:string):ProjectState { return { schema:1,revision:0,siteId,siteName,designs:[],conditions:[],entries:[],diagnoses:[] } }
+export function fixedDemoProject(siteId:string,siteName:string,metrics:Metric[],by:string):ProjectState {
+  const revision={version:0,at:'2026-09-08T08:00:00.000Z',by,reason:'载入固定演示数据'}
+  const designValues=Object.fromEntries(metrics.filter(m=>m.scopes.includes('design')&&m.source!=='CALCULATED'&&m.design&&m.design!=='—').map(m=>[m.id,m.design]))
+  const targets:Record<string,Target>={}
+  for(const metric of metrics.filter(m=>m.scopes.includes('diagnosis')&&m.source!=='DESIGN')){
+    const target=targetFor(metric)
+    if(target.value&&target.value!=='—')targets[metric.id]=target
+  }
+  let state=saveDesign(emptyProject(siteId,siteName),{...revision,effective:'2026-01-01',reference:'WaterX固定演示资料（非生产参数）',lines:{[FIXED_DEMO_LINE]:designValues},demo:true})
+  state=saveCondition(state,'waterx-fixed-demo-condition',{...revision,name:'日常运行演示工况',line:FIXED_DEMO_LINE,from:'2026-01-01',to:'2026-12-31',status:'ACTIVE',description:'固定演示场景；仅用于产品展示，参数须按真实项目重新维护。',targets,demo:true})
+  state=saveEntry(state,FIXED_DEMO_LINE,FIXED_DEMO_DATE,{...revision,cells:demoCells(metrics,'complete'),demo:true})
+  state=saveDiagnosis(state,metrics,FIXED_DEMO_LINE,FIXED_DEMO_DATE,generateDiagnosis(state,metrics,FIXED_DEMO_LINE,FIXED_DEMO_DATE,by))
+  return state
+}
 export const storageKey=(siteId:string)=>`waterx-process-mvp-v1:${encodeURIComponent(siteId)}`
 export function loadProject(siteId:string,siteName:string,storage:Storage=localStorage):ProjectState {
   const raw=storage.getItem(storageKey(siteId))

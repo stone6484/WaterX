@@ -167,18 +167,15 @@ initializeSelection()
 
 <template>
   <section class="hsc-page remaining-unit-page">
-    <header class="hsc-header">
-      <div><p>提质增效 · {{props.siteCode || 'WX-DEMO-01'}} · {{model.modelCode}}单体</p><h1>{{definition.name}}</h1><span>{{definition.positioning}}</span></div>
-      <div class="hsc-header-actions"><span class="hsc-model-badge">模型 {{model.version}}</span><span class="hsc-draft-badge">{{model.status}} · {{pendingBenchmarks.length}}项基准待确认</span><button type="button" @click="resetDemo">重置示范数据</button></div>
-    </header>
+
 
     <section class="hsc-context-bar">
       <label><span>分析对象</span><strong>{{props.siteName || 'WaterX示范污水处理厂'}} · {{definition.objectName}}</strong></label>
       <label><span>分析周期</span><strong>2026-08-01—2026-08-31</strong></label>
       <label class="hsc-scenario-select"><span>固定演示场景</span><select v-model="state.scenarioId" @change="switchScenario"><option v-for="item in scenarios" :key="item.id" :value="item.id">{{item.name}}</option></select></label>
       <label><span>数据完整度</span><strong :class="{warning:dataCoverage<90}">{{dataCoverage}}%</strong></label>
+      <details class="hsc-context-details"><summary>模型与说明</summary><div class="hsc-context-detail-body"><div class="hsc-header-actions"><span class="hsc-model-badge">模型 {{model.version}}</span><span class="hsc-draft-badge">{{model.status}} · {{pendingBenchmarks.length}}项基准待确认</span><button type="button" @click="resetDemo">重置示范数据</button></div><p>{{definition.positioning}}</p><p class="hsc-scenario-note"><b>{{view.scenario.name}}</b>{{view.scenario.summary}}<small>更新：{{view.scenario.updatedAt}}</small></p></div></details>
     </section>
-    <p class="hsc-scenario-note"><b>{{view.scenario.name}}</b>{{view.scenario.summary}}<small>更新：{{view.scenario.updatedAt}}</small></p>
 
     <UnitAnalysisTabs v-model="activeTab" :tabs="tabs" :label="`${definition.name}页面`" />
 

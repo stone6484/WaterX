@@ -48,12 +48,8 @@ function removeLabel(task: EvaluationTask): string {
 
 <template>
   <section class="pe-results-page">
-    <header class="pe-results-head">
-      <div><h1>评价结果管理</h1><p>按评价任务和专业模块归集历次结果；点击任一行可打开当期评价快照。</p></div>
-      <button type="button" class="pe-button pe-button-primary" @click="emit('newTask')">+ 新建评价任务</button>
-    </header>
-
     <div class="pe-result-filters">
+      <button type="button" class="pe-button pe-button-primary" @click="emit('newTask')">+ 新建评价任务</button>
       <label class="pe-search-field"><span>搜索</span><input v-model="keyword" placeholder="任务名称、编号、负责人" /></label>
       <label><span>评价模块</span><select v-model="moduleFilter"><option value="all">全部模块</option><option v-for="module in PROCESS_MODULES" :key="module.key" :value="module.key">{{ module.shortName }}</option></select></label>
       <label><span>评价频次</span><select v-model="cadenceFilter"><option value="all">全部频次</option><option value="月度评价">月度评价</option><option value="季度评价">季度评价</option><option value="半年度评价">半年度评价</option><option value="专项评价">专项评价</option><option value="整改复核">整改复核</option></select></label>
