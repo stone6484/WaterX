@@ -1,0 +1,23 @@
+# Allow only build inputs. Credentials, local archives and test data never enter images.
+**
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!apps/
+!apps/**
+!packages/
+!packages/**
+!backend/
+!backend/pom.xml
+!backend/src/
+!backend/src/main/
+!backend/src/main/**
+!deploy/
+!deploy/cds/
+!deploy/cds/**
+**/node_modules
+**/dist
+**/target
+**/.env*
+**/*.log
+**/.DS_Store

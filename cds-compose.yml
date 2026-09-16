@@ -1,0 +1,97 @@
+# CDS runtime contract: build in GitHub Actions, never compile on CDS.
+x-cds-project:
+  name: WaterX 智慧水务运营平台
+  slug: waterx-2
+
+# Values remain in the existing CDS project scope; do not import empty defaults.
+x-cds-env-meta:
+  CDS_DATABASE_URL:
+    kind: required
+    hint: Existing project PostgreSQL JDBC URL
+  CDS_POSTGRES_USER:
+    kind: required
+    hint: Existing database user
+  CDS_POSTGRES_PASSWORD:
+    kind: required
+    hint: Existing database password, managed only by CDS
+  CDS_POSTGRES_DB:
+    kind: required
+    hint: Existing database name
+
+services:
+  admin-web:
+    image: ghcr.io/stone6484/waterx/admin-web:sha-${CDS_COMMIT_SHA}
+    ports: ['8080']
+    labels:
+      cds.role: web
+      cds.prebuilt-image: 'true'
+      cds.path-prefix: /
+      cds.web-entry-name: WaterX 管理端
+      cds.web-entry-path: /
+      cds.readiness-path: /index.html
+      cds.readiness-timeout: '120'
+  mobile-h5:
+    image: ghcr.io/stone6484/waterx/mobile-h5:sha-${CDS_COMMIT_SHA}
+    ports: ['8080']
+    labels:
+      cds.role: web
+      cds.prebuilt-image: 'true'
+      cds.path-prefix: /h5/
+      cds.web-entry-name: WaterX 手机端
+      cds.web-entry-path: /h5/
+      cds.readiness-path: /h5/index.html
+      cds.readiness-timeout: '120'
+  backend:
+    image: ghcr.io/stone6484/waterx/backend:sha-${CDS_COMMIT_SHA}
+    ports: ['8080']
+    volumes:
+      - waterx_uploads:/data/uploads
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DATABASE_URL: ${CDS_DATABASE_URL}
+      DATABASE_USERNAME: ${CDS_POSTGRES_USER}
+      DATABASE_PASSWORD: ${CDS_POSTGRES_PASSWORD}
+      FILE_STORAGE_DIR: /data/uploads
+    depends_on:
+      - postgres
+    labels:
+      cds.role: api
+      cds.prebuilt-image: 'true'
+      cds.path-prefix: /api/
+      cds.path-prefixes: /api/,/partner/,/open/
+      cds.readiness-path: /actuator/health
+      cds.readiness-timeout: '300'
+      cds.readiness-interval: '5'
+  postgres:
+    image: postgres:16-alpine
+    ports: ['5432']
+    volumes:
+      - waterx_postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${CDS_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${CDS_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${CDS_POSTGRES_DB}
+
+volumes:
+  waterx_postgres:
+  waterx_uploads:
+
+x-cds-deploy-modes:
+  admin-web:
+    express:
+      label: CI 预构建
+      image: ghcr.io/stone6484/waterx/admin-web:sha-${CDS_COMMIT_SHA}
+      prebuilt: true
+      containerPort: 8080
+  mobile-h5:
+    express:
+      label: CI 预构建
+      image: ghcr.io/stone6484/waterx/mobile-h5:sha-${CDS_COMMIT_SHA}
+      prebuilt: true
+      containerPort: 8080
+  backend:
+    express:
+      label: CI 预构建
+      image: ghcr.io/stone6484/waterx/backend:sha-${CDS_COMMIT_SHA}
+      prebuilt: true
+      containerPort: 8080

@@ -1,0 +1,20 @@
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+WORKDIR /src
+COPY backend/pom.xml ./pom.xml
+COPY backend/src/main ./src/main
+RUN mvn -B -DskipTests package
+ARG GIT_COMMIT
+RUN test ${#GIT_COMMIT} -eq 40 && printf '%s\n' "${GIT_COMMIT}" > build-commit.txt
+
+FROM eclipse-temurin:21-jre-jammy
+WORKDIR /app
+ARG GIT_COMMIT
+LABEL org.opencontainers.image.source="https://github.com/stone6484/WaterX" \
+      org.opencontainers.image.revision="${GIT_COMMIT}"
+COPY --from=build /src/target/safety-api-0.1.0-SNAPSHOT.jar /app/application.jar
+COPY --from=build /src/build-commit.txt /app/build-commit.txt
+COPY deploy/cds/backend-entrypoint.sh /app/backend-entrypoint.sh
+ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
+EXPOSE 8080
+ENTRYPOINT ["sh", "/app/backend-entrypoint.sh"]
+CMD ["java", "-jar", "/app/application.jar"]
