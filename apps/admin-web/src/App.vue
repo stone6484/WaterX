@@ -1142,7 +1142,10 @@ async function changeSite() {
   loading.value = true; error.value = ''
   try {
     if(processDailyPreview)return
-    if(!signedInPermissions.value.includes('role:manage')&&signedInPermissions.value.includes('inspection:read')){await refreshSafetyCounts();return}
+    if(!signedInPermissions.value.includes('role:manage')){
+      if(signedInPermissions.value.includes('inspection:read'))await refreshSafetyCounts()
+      return
+    }
     [units.value, employees.value, riskSummary.value, hazards.value, riskObjects.value, areas.value, inspectionSummary.value, inspectionStatistics.value, inspectionTemplates.value, inspectionPlans.value, inspectionTasks.value, safetyHazards.value,workPermitTemplates.value,workPermits.value,trainingSummary.value,trainingCourses.value,trainingAssignments.value,qualifications.value,assetSummary.value,safetyAssets.value,healthSummary.value,occupationalFactors.value,occupationalExams.value,investmentSummary.value,safetyBudgets.value,safetyExpenses.value,commitments.value,commitmentTemplates.value,visitorBriefing.value,visitorRecords.value] = await Promise.all([
       api.orgUnits(), api.employees(), api.riskSummary(), api.hazards(), api.riskObjects(), api.areas(), api.inspectionSummary(), api.inspectionStatistics(), api.inspectionTemplates(), api.inspectionPlans(), api.inspectionTasks(), api.safetyHazards(),api.workPermitTemplates(),api.workPermits(),api.trainingSummary(),api.trainingCourses(),api.trainingAssignments(),api.employeeQualifications(),api.safetyAssetSummary(),api.safetyAssets(),api.occupationalHealthSummary(),api.occupationalFactors(),api.occupationalExams(),api.investmentSummary(),api.safetyBudgets(),api.safetyExpenses(),api.safetyCommitments(),api.safetyCommitmentTemplates(),api.visitorBriefing(),api.visitorRecords()
     ])

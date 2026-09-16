@@ -190,10 +190,10 @@ function valueWithoutUnit(value:string, unit:string) {
 @media(max-width:760px){.mq-score-dock{grid-template-columns:minmax(175px,1.25fr) minmax(125px,.9fr) repeat(4,minmax(135px,1fr));padding:8px;scroll-snap-type:x proximity}.mq-detail-score{grid-template-columns:repeat(2,1fr)}.mq-drawer>nav{grid-template-columns:repeat(2,1fr)}}
 
 /* WaterX Design System 1.0: indicator evaluation table baseline */
-.mq-page{gap:12px;color:var(--wx-n700)}
-.mq-score-dock{top:0;grid-template-columns:minmax(180px,1.25fr) minmax(130px,.82fr) repeat(4,minmax(142px,1fr));gap:9px;padding:0 0 12px;border:0;border-radius:0;background:var(--wx-n50);box-shadow:none;backdrop-filter:none}
+.mq-page{gap:8px;color:var(--wx-n700);min-width:0}
+.mq-score-dock{top:0;grid-template-columns:minmax(180px,1.25fr) minmax(130px,.82fr) repeat(4,minmax(142px,1fr));gap:8px;padding:0;border:0;border-radius:0;background:var(--wx-n50);box-shadow:none;backdrop-filter:none}
 .mq-score-dock>article,.mq-score-dock>.mq-dimension-card{min-height:96px;padding:12px 13px;border:1px solid var(--wx-n200);border-radius:var(--wx-radius-md);box-shadow:none}
-.mq-score-dock>article{min-width:0}
+.mq-score-dock>article{min-width:0;width:100%;margin:0}
 .mq-score-dock .mq-period-card strong{white-space:normal;overflow-wrap:anywhere}
 .mq-score-dock .mq-total-score{grid-column:auto}
 .mq-score-dock .mq-dimension-card.selected{border-color:#9ccfe2;background:var(--wx-n25);box-shadow:inset 0 3px var(--wx-blue-500)}

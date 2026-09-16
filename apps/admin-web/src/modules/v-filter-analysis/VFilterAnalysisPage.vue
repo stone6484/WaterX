@@ -129,18 +129,15 @@ watch(visibleRules, rules => {
 
 <template>
   <section class="hsc-page vf-page">
-    <header class="hsc-header">
-      <div><p>提质增效 · {{props.siteCode || 'WX-DEMO-01'}} · VF单体</p><h1>V型滤池分析</h1><span>聚焦滤速与水头、过滤周期、三阶段反洗、局部效果、水耗能耗与优化验证。</span></div>
-      <div class="hsc-header-actions"><span class="hsc-model-badge">VF {{vfModel.version}}</span><span class="hsc-draft-badge">DRAFT · 20项基准待确认</span><button type="button" @click="resetDemo">重置示范数据</button></div>
-    </header>
+
 
     <section class="hsc-context-bar">
       <label><span>分析对象</span><strong>{{props.siteName || 'WaterX示范污水处理厂'}} · 1#V型滤池</strong></label>
       <label><span>分析周期</span><strong>{{view.scenario.values.analysis_period}}</strong></label>
       <label class="hsc-scenario-select"><span>固定演示场景</span><select v-model="state.scenarioId" @change="switchScenario"><option v-for="item in vfScenarios" :key="item.id" :value="item.id">{{item.name}}</option></select></label>
       <label><span>数据完整度</span><strong :class="{warning:dataCoverage<90}">{{dataCoverage}}%</strong></label>
+      <details class="hsc-context-details"><summary>模型与说明</summary><div class="hsc-context-detail-body"><div class="hsc-header-actions"><span class="hsc-model-badge">VF {{vfModel.version}}</span><span class="hsc-draft-badge">DRAFT · 20项基准待确认</span><button type="button" @click="resetDemo">重置示范数据</button></div><p>聚焦滤速与水头、过滤周期、三阶段反洗、局部效果、水耗能耗与优化验证。</p><p class="hsc-scenario-note"><b>{{view.scenario.name}}</b>{{view.scenario.summary}}<small>更新：{{view.scenario.updatedAt}}</small></p></div></details>
     </section>
-    <p class="hsc-scenario-note"><b>{{view.scenario.name}}</b>{{view.scenario.summary}}<small>更新：{{view.scenario.updatedAt}}</small></p>
     <UnitAnalysisTabs v-model="activeTab" :tabs="tabs" label="V型滤池分析页面" />
 
     <template v-if="activeTab==='overview'">

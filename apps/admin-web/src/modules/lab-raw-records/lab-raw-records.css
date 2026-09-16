@@ -1,5 +1,5 @@
 /* 原始记录：分类入口 / 扁平台账工具栏 / 长表单；打印表单保留独立黑白版式。 */
-.lab-raw-module{display:grid;gap:12px;min-width:0;color:var(--wx-n700);font-size:12px}
+.lab-raw-module{display:grid;gap:8px;min-width:0;color:var(--wx-n700);font-size:12px}
 .lab-library-controls,.lab-raw-summary,.lab-raw-toolbar,.lab-raw-toolbar>div{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .lab-library-controls,.lab-raw-toolbar{justify-content:space-between}
 .lab-raw-summary{color:var(--wx-n500)}
@@ -31,7 +31,7 @@
 .lab-record-filter{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:0}
 .lab-record-filter label{display:flex;align-items:center;gap:8px;font-weight:500;color:var(--wx-n600)}
 .lab-record-filter input,.lab-record-filter select{height:var(--wx-control-height);padding:0 10px;border:var(--wx-border-default);border-radius:var(--wx-radius-sm);background:var(--wx-n0);color:var(--wx-n700);font:inherit}
-.lab-record-filter input{width:240px}
+.lab-record-filter input,.lab-record-filter select{width:160px;min-width:0}
 .lab-record-filter input:focus-visible,.lab-record-filter select:focus-visible{outline:0;box-shadow:var(--wx-focus-ring);border-color:var(--wx-blue-600)}
 .lab-record-table-wrap{min-width:0;max-height:calc(100dvh - 260px);overflow:auto;scrollbar-width:thin;scrollbar-color:var(--wx-n300) transparent;padding:16px;border:var(--wx-border-default);border-radius:var(--wx-radius-md);background:var(--wx-n0)}
 .lab-record-table{width:100%;min-width:1400px;border-collapse:collapse;table-layout:fixed}

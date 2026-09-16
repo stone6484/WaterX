@@ -107,6 +107,6 @@ async function download(){if(!detail.value)return;await run(async()=>{const payl
 .daily-collaboration .pm-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin:0;padding:0;border:0}
 .daily-collaboration .pm-toolbar .wx-field{min-width:0}
 .daily-collaboration .pm-toolbar :deep(.wx-field-control){width:160px}
-.daily-collaboration .daily-assignment :deep(.wx-field-control){width:144px}
+.daily-collaboration .daily-assignment :deep(.wx-field-control){width:160px}
 .daily-collaboration h3{font-size:14px;margin:8px 0}.daily-collaboration .pm-table small{display:block;color:var(--wx-n500);margin-top:4px}.daily-collaboration .pm-table td{overflow-wrap:anywhere}.daily-actions>.wx-field{max-width:720px}
 </style>

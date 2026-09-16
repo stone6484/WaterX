@@ -172,26 +172,19 @@ watch(visibleRules, rules => {
 
 <template>
   <section class="hsc-page">
-    <header class="hsc-header">
-      <div>
-        <p>提质增效 · {{props.siteCode || 'WX-DEMO-01'}} · HSC单体</p>
-        <h1>高效沉淀池分析</h1>
-        <span>聚焦单体水力、混合絮凝、沉淀、药剂、排泥、能耗成本与优化验证。</span>
-      </div>
-      <div class="hsc-header-actions">
-        <span class="hsc-model-badge">模型 {{HSC_MODEL_LABEL}}</span>
-        <span class="hsc-draft-badge">{{HSC_MODEL_STATUS}} · 待试点确认</span>
-        <button type="button" @click="resetDemo">重置示范数据</button>
-      </div>
-    </header>
+
 
     <section class="hsc-context-bar">
       <label><span>分析对象</span><strong>{{props.siteName || 'WaterX示范污水处理厂'}} · 1#高效沉淀池</strong></label>
       <label><span>分析周期</span><strong>{{view.scenario.values.analysis_period}}</strong></label>
       <label class="hsc-scenario-select"><span>固定演示场景</span><select v-model="state.scenarioId" @change="switchScenario"><option v-for="item in hscScenarios" :key="item.id" :value="item.id">{{item.name}}</option></select></label>
       <label><span>数据完整度</span><strong :class="{warning:dataCoverage<90}">{{dataCoverage}}%</strong></label>
+      <details class="hsc-context-details"><summary>模型与说明</summary><div class="hsc-context-detail-body"><div class="hsc-header-actions">
+        <span class="hsc-model-badge">模型 {{HSC_MODEL_LABEL}}</span>
+        <span class="hsc-draft-badge">{{HSC_MODEL_STATUS}} · 待试点确认</span>
+        <button type="button" @click="resetDemo">重置示范数据</button>
+      </div><p>聚焦单体水力、混合絮凝、沉淀、药剂、排泥、能耗成本与优化验证。</p><p class="hsc-scenario-note"><b>{{view.scenario.name}}</b>{{view.scenario.summary}}<small>更新：{{view.scenario.updatedAt}}</small></p></div></details>
     </section>
-    <p class="hsc-scenario-note"><b>{{view.scenario.name}}</b>{{view.scenario.summary}}<small>更新：{{view.scenario.updatedAt}}</small></p>
 
     <UnitAnalysisTabs v-model="activeTab" :tabs="tabs" label="高效沉淀池分析页面" />
 

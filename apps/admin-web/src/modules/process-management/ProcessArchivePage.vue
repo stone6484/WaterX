@@ -70,7 +70,11 @@ async function download(){if(!report.value)return;await run(async()=>{const data
         <WxField label="分析日期"><WxSelect v-model="recordId" :disabled="busy" @change="selectRecord"><option v-for="r in records" :key="r.id" :value="r.id">{{r.business_date}} · {{r.confirmed_version?`确认 V${r.confirmed_version}`:'尚未确认'}}{{r.analysisBlocked?' · 暂停新分析':''}}</option></WxSelect></WxField>
         <WxField v-if="generateAllowed" label="分析 / 保存说明"><WxInput v-model="note" placeholder="分析目的、异常说明或核查意见" /></WxField>
       </template>
-      <div class="archive-actions" :class="{'archive-report-actions':!parameterPage}">
+      <template v-if="parameterPage">
+        <WxField label="指标分类"><WxSelect v-model="category"><option v-for="c in categories" :key="c">{{c}}</option></WxSelect></WxField>
+        <WxField label="查找指标"><WxInput v-model="search" placeholder="名称、分类或编码" /></WxField>
+      </template>
+      <div class="archive-actions">
         <WxField v-if="!parameterPage&&reports.length" label="日报版本"><WxSelect :model-value="report?.id||''" :disabled="busy" @update:model-value="openReport"><option v-for="r in reports" :key="r.id" :value="r.id">V{{r.version}} · {{r.status==='SAVED'?'已保存':'待保存'}}</option></WxSelect></WxField>
         <WxButton v-if="!parameterPage&&generateAllowed" :disabled="busy||blocked||!record||record.analysisBlocked||!note.trim()" @click="generate">重新计算</WxButton>
         <WxButton v-if="!parameterPage&&generateAllowed&&report?.canSave" variant="primary" :disabled="busy||blocked||!note.trim()" @click="saveReport">保存日报</WxButton>
@@ -84,18 +88,20 @@ async function download(){if(!report.value)return;await run(async()=>{const data
       </div>
     </div>
     <template v-if="parameterPage">
+      <div class="archive-parameter-fields">
       <div v-if="!draftSelected" class="archive-parameter-summary">
         <strong>{{form.name||'未维护名称'}}</strong><span>{{form.from}} 至 {{form.to}}</span>
         <span>{{form.status==='ACTIVE'?'启用':'停用'}}</span><span v-if="!history" class="pending">尚未发布</span>
       </div>
       <div v-else class="archive-edit-fields" @input="dirty=editable||dirty" @change="dirty=editable||dirty">
         <WxField label="名称"><WxInput v-model="form.name" :disabled="!editable" /></WxField>
-        <WxField label="生效起始日期"><WxInput v-model="form.from" type="date" :disabled="!editable" /></WxField>
-        <WxField label="生效截止日期"><WxInput v-model="form.to" type="date" :disabled="!editable" /></WxField>
+        <WxField label="开始日期"><WxInput v-model="form.from" type="date" :disabled="!editable" /></WxField>
+        <WxField label="结束日期"><WxInput v-model="form.to" type="date" :disabled="!editable" /></WxField>
         <WxField label="使用状态"><WxSelect v-model="form.status" :disabled="!editable"><option value="ACTIVE">启用</option><option value="RETIRED">停用该日期范围</option></WxSelect></WxField>
         <WxField label="变更影响"><WxSelect v-model="form.impact" :disabled="!editable"><option value="ROUTINE">授权范围内日常调整</option><option value="MAJOR">重大边界变更（待配置审批）</option></WxSelect></WxField>
         <WxField label="依据"><WxInput v-model="form.basis" :disabled="!editable" placeholder="设计文件、工艺方案或经核实的运行依据" /></WxField>
         <WxField label="修订原因"><WxInput v-model="form.reason" :disabled="!editable" /></WxField>
+      </div>
       </div>
       <p v-if="form.impact==='MAJOR'" class="pm-message">重大边界变更可以保存草稿；必要审批尚未配置，当前不能发布生效。</p>
       <p v-if="dirty" class="archive-unsaved" role="status">有未保存的参数修改。</p>
@@ -107,10 +113,7 @@ async function download(){if(!report.value)return;await run(async()=>{const data
         <p>变更影响：{{form.impact==='MAJOR'?'重大边界变更':'授权范围内日常调整'}}</p>
       <template v-if="parameter?.events?.length"><h3>办理历史</h3><WxTableSurface><table class="pm-table"><thead><tr><th>修订</th><th>人员</th><th>动作</th><th>原因</th><th>时间</th></tr></thead><tbody><tr v-for="e in parameter.events" :key="e.revision"><td>R{{e.revision}}</td><td>{{e.actor_name}}</td><td>{{e.action==='PUBLISH'?'发布版本':'保存草稿'}}</td><td>{{e.note}}</td><td>{{new Date(e.created_at).toLocaleString('zh-CN',{hour12:false})}}</td></tr></tbody></table></WxTableSurface></template>
       </div>
-      <div class="pm-toolbar">
-        <WxField label="指标分类"><WxSelect v-model="category"><option v-for="c in categories" :key="c">{{c}}</option></WxSelect></WxField>
-        <WxField label="查找指标"><WxInput v-model="search" placeholder="名称、分类或编码" /></WxField>
-      </div>
+
       <MetricEditor :metrics="visibleMetrics" :mode="kind==='DESIGN'?'design':'condition'" :values="designValues" :targets="form.targets||{}" :cells="{}" :editable="editable" @design="setDesign" @target="setTarget" />
     </template>
     <template v-else>
@@ -146,14 +149,13 @@ async function download(){if(!report.value)return;await run(async()=>{const data
 .process-archive .pm-toolbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;border-bottom:0;padding:0}
 .process-archive .pm-toolbar .wx-field{min-width:0}
 .process-archive .pm-toolbar :deep(.wx-field-control){width:160px}
-.archive-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
-.archive-report-actions{flex-basis:100%}
+.archive-actions{display:contents}
 .process-archive .pm-muted{padding:0}
 .archive-parameter-summary,.archive-result-summary{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;font-size:13px;min-height:28px}
 .archive-parameter-summary>span{color:var(--wx-n500)}
 .archive-result-summary{justify-content:space-between}
 .archive-counts{display:flex;flex-wrap:wrap;gap:8px 16px}
-.archive-edit-fields{display:flex;flex-wrap:wrap;gap:8px 12px;padding:0}
+.archive-parameter-fields{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}.archive-edit-fields,.process-archive .archive-parameter-filters{display:contents}
 .archive-edit-fields .wx-field{grid-template-columns:72px 160px;flex:none}
 .archive-edit-fields :deep(.wx-input),.archive-edit-fields :deep(.wx-select){min-width:0;width:100%}
 .archive-details{min-width:0;padding:12px 16px;background:var(--wx-n0);border:var(--wx-border-subtle);border-radius:var(--wx-radius-sm)}
