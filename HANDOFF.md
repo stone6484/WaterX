@@ -14,6 +14,9 @@
 
 #### CDS 北美迁移后：预构建适配（同日后续，优先于下方旧状态）
 
+- 22:00 左右续接：用户已完成 GitHub workflow 授权，补充 CDS 配置审批 `24b088c76897` 已批准。开发分支提交 `bd9fdef4a165a50aaa68a5bea45cf45b23cc0fdc` 已推送并创建 [PR #11](https://github.com/stone6484/WaterX/pull/11)，尚未合并。下方“推送阻塞／审批 pending”为历史时点，不再是当前状态。
+- GitHub 推送构建 `35102136639` 第二次尝试成功（首次 GHCR 上传出现 unknown blob，重试成功）；PR 构建 `35102175922` 通过。三个实际镜像均完成静态资源和后端临时库运行验证。用户仅授权 admin-web、mobile-h5、backend 三个程序镜像公开，回读这三个包均为 Public；不包含数据卷、附件或密码。
+- CDS main 与开发分支的三个服务已显式选用 express 预构建模式；不回退服务器源码编译。开发分支部署 `dr_a92eb460454b7a48d67f5159` 失败，后端报 URL must start with jdbc。脱敏核对确认 CDS 注入 PostgreSQL URI，而 Spring 需要 JDBC；不是账号、数据库内容或业务功能错误。新增镜像启动适配及 6 项测试，将 URI 转为 JDBC 并继续使用独立凭据，CI 临时数据库也改用相同 URI 验证。修复提交的远端构建、再次部署与公网验收仍待完成，不能宣称上线完成。
 - 用户已明确授权按 CDS 最新要求改造发布方式。目标仍为 `https://geole.me` / `505739583b45`，无跨项目操作。项目级授权已成功回读，凭据仅保存在被本地 Git 排除的 `.cds/credentials.json`（0600）。
 - GitHub 前一批已通过 PR #9、#10 合并，改造开始时 main 为 `648dc369aaf31b1a992f3ad7bf5ceb5756b064a2`，本地发布分支为 `9e5aab8f10cd5883394c5cb1dc288b9d1745c7eb`；两者文件树一致。本段部署适配是随后新增内容，不可误认为已包含在 PR #10。
 - 新增 `cds-compose.yml`、`.dockerignore`、`.github/workflows/branch-image.yml` 和 `deploy/cds/`：三服务独立预构建镜像，完整提交 SHA 标签，前端静态资源与版本校验，后端运行镜像及独立 CI 数据库启动验证。CDS 不再编译源码。没有修改业务页面、权限规则、数据库迁移或重建账号。

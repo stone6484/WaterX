@@ -13,6 +13,8 @@ LABEL org.opencontainers.image.source="https://github.com/stone6484/WaterX" \
       org.opencontainers.image.revision="${GIT_COMMIT}"
 COPY --from=build /src/target/safety-api-0.1.0-SNAPSHOT.jar /app/application.jar
 COPY --from=build /src/build-commit.txt /app/build-commit.txt
+COPY deploy/cds/backend-entrypoint.sh /app/backend-entrypoint.sh
 ENV JAVA_TOOL_OPTIONS="-XX:MaxRAMPercentage=75.0"
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "/app/application.jar"]
+ENTRYPOINT ["sh", "/app/backend-entrypoint.sh"]
+CMD ["java", "-jar", "/app/application.jar"]

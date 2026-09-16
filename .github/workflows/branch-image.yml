@@ -36,7 +36,7 @@ jobs:
           pnpm install --frozen-lockfile --config.strict-builds=false
           pnpm typecheck
           pnpm --filter @safety/admin-web check:ui
-          node --test deploy/cds/verify-static.test.mjs packages/safety-ui/archive.test.mjs
+          node --test deploy/cds/*.test.mjs packages/safety-ui/archive.test.mjs
           git diff --check
       - name: Backend tests
         run: mvn -B -f backend/pom.xml -Dlogging.level.org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration=ERROR test
@@ -78,7 +78,7 @@ jobs:
             sleep 1
           done
           docker exec waterx-ci-db pg_isready -U waterx_ci -d waterx_ci
-          docker run --rm -d --name waterx-ci-backend --network waterx-ci -p 127.0.0.1:18082:8080 -e SPRING_PROFILES_ACTIVE=prod -e DATABASE_URL=jdbc:postgresql://waterx-ci-db:5432/waterx_ci -e DATABASE_USERNAME=waterx_ci -e DATABASE_PASSWORD -e FILE_STORAGE_DIR=/tmp/waterx-ci-uploads waterx-backend:test
+          docker run --rm -d --name waterx-ci-backend --network waterx-ci -p 127.0.0.1:18082:8080 -e SPRING_PROFILES_ACTIVE=prod -e DATABASE_URL=postgresql://waterx-ci-db:5432/waterx_ci -e DATABASE_USERNAME=waterx_ci -e DATABASE_PASSWORD -e FILE_STORAGE_DIR=/tmp/waterx-ci-uploads waterx-backend:test
           node deploy/cds/verify-backend.mjs http://127.0.0.1:18082
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
         if: github.event_name != 'pull_request'
