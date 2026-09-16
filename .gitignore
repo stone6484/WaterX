@@ -10,7 +10,6 @@ dist/
 target/
 .env
 .cds.env
-cds-compose.yml
 *.log
 *.tsbuildinfo
 data/

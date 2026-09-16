@@ -1,0 +1,103 @@
+name: Branch Image
+
+on:
+  push:
+    branches: [main, codex/release-waterx-20260816]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: branch-image-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+          cache-dependency-path: backend/pom.xml
+      - name: Frontend and deployment checks
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.9.0 --activate
+          pnpm install --frozen-lockfile --config.strict-builds=false
+          pnpm typecheck
+          pnpm --filter @safety/admin-web check:ui
+          node --test deploy/cds/verify-static.test.mjs packages/safety-ui/archive.test.mjs
+          git diff --check
+      - name: Backend tests
+        run: mvn -B -f backend/pom.xml -Dlogging.level.org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration=ERROR test
+  images:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - name: Build all three images without publishing
+        env:
+          COMMIT: ${{ github.sha }}
+        run: |
+          docker build --build-arg GIT_COMMIT="$COMMIT" --target admin-web -f deploy/cds/Dockerfile.web -t waterx-admin:test .
+          docker build --build-arg GIT_COMMIT="$COMMIT" --target mobile-h5 -f deploy/cds/Dockerfile.web -t waterx-mobile:test .
+          docker build --build-arg GIT_COMMIT="$COMMIT" -f deploy/cds/Dockerfile.backend -t waterx-backend:test .
+      - name: Verify actual image entry pages and assets
+        env:
+          COMMIT: ${{ github.sha }}
+        run: |
+          docker run --rm -d --name waterx-ci-admin -p 127.0.0.1:18080:8080 waterx-admin:test
+          docker run --rm -d --name waterx-ci-mobile -p 127.0.0.1:18081:8080 waterx-mobile:test
+          node deploy/cds/verify-surface.mjs http://127.0.0.1:18080/ "$COMMIT"
+          node deploy/cds/verify-surface.mjs http://127.0.0.1:18081/h5/ "$COMMIT"
+          docker run --rm --entrypoint sh waterx-backend:test -c 'test -s /app/application.jar && test -s /app/build-commit.txt'
+      - name: Verify backend image against a disposable CI database
+        run: |
+          export POSTGRES_PASSWORD="$(openssl rand -hex 24)"
+          echo "::add-mask::$POSTGRES_PASSWORD"
+          export DATABASE_PASSWORD="$POSTGRES_PASSWORD"
+          docker network create waterx-ci
+          docker run --rm -d --name waterx-ci-db --network waterx-ci -e POSTGRES_USER=waterx_ci -e POSTGRES_DB=waterx_ci -e POSTGRES_PASSWORD postgres:16-alpine
+          for attempt in $(seq 1 60); do
+            if docker exec waterx-ci-db pg_isready -U waterx_ci -d waterx_ci; then break; fi
+            sleep 1
+          done
+          docker exec waterx-ci-db pg_isready -U waterx_ci -d waterx_ci
+          docker run --rm -d --name waterx-ci-backend --network waterx-ci -p 127.0.0.1:18082:8080 -e SPRING_PROFILES_ACTIVE=prod -e DATABASE_URL=jdbc:postgresql://waterx-ci-db:5432/waterx_ci -e DATABASE_USERNAME=waterx_ci -e DATABASE_PASSWORD -e FILE_STORAGE_DIR=/tmp/waterx-ci-uploads waterx-backend:test
+          node deploy/cds/verify-backend.mjs http://127.0.0.1:18082
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        if: github.event_name != 'pull_request'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish verified immutable commit tags
+        if: github.event_name != 'pull_request'
+        env:
+          COMMIT: ${{ github.sha }}
+        run: |
+          for service in admin-web mobile-h5 backend; do
+            case "$service" in
+              admin-web) source=waterx-admin:test ;;
+              mobile-h5) source=waterx-mobile:test ;;
+              backend) source=waterx-backend:test ;;
+            esac
+            target="ghcr.io/stone6484/waterx/$service:sha-$COMMIT"
+            docker tag "$source" "$target"
+            docker push "$target"
+          done
