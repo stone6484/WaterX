@@ -23,6 +23,8 @@
 - 第一次配置导入 `1438b2c0393c` 已由用户批准。回读三个 profile 均为 `prebuiltImage=true` 且具有 express 预构建模式，无重复服务。随后修正四项环境变量元数据为服务端实际支持的 `required`/`hint`（首次写法被识别为 auto；变量值未改变），补充审批 `24b088c76897` 已提交，续接时须回读其状态。
 - 本机未安装 Docker，不能把源码构建当作镜像运行通过。GitHub `Branch Image`、GHCR 镜像可拉取性、CDS 目标分支创建/部署、迁移后的存量数据与附件、真实入口与浏览器登录仍需逐项验证。GHCR 新包可能默认私有，不得擅自扩大公开权限或回退服务器编译。
 - 详细流程和检查边界见 [CDS 部署说明](deploy/cds/README.md)。在取得真实 API 入口及页面验收前，不交付推算地址、不称线上预览已恢复。
+- 本轮代码已本地提交为 `7eefda0`（构建：适配 CDS 预构建发布和三服务产物校验）。推送被 GitHub 拒绝：当前 OAuth 授权缺少 `workflow` scope，不能创建 `.github/workflows/branch-image.yml`。本次未推送成功、未创建 PR、未运行远端镜像任务；需用户补充工作流授权，禁止绕过或弱化发布检查。
+- 21:23 左右再次只读查询：服务端已出现 `waterx-2-main`，提交为前批 `648dc369aaf31b1a992f3ad7bf5ceb5756b064a2`，三个旧源码镜像报告 running，PostgreSQL 也为 running；本轮 Agent 未发起该部署。配置侧已是预构建，但实际运行仍为旧源码方式、`pendingPublish=true`。这不等于本轮改造已生效，也不证明存量业务数据和实际登录已验收。补充审批 `24b088c76897` 最近回读仍为 pending。
 
 #### 前一阶段发布记录
 
