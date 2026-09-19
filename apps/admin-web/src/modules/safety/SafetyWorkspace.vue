@@ -4,7 +4,7 @@ import type {ApiClient,SafetyContext,SafetyDirectory,WorkflowTask,WorkflowHazard
 import {WxButton,WxCard,WxTabs,WxTableSurface,WxDialog} from '../../components/waterx'
 import SafetyWorkflowPanel from '@safety/workflow-ui'
 import {hazardStatuses,levels,time,exportLedger,csv,resultNames,inspectionAnswer} from '@safety/workflow-ui/archive'
-const props=defineProps<{api:ApiClient;siteId:string;page:'inspection'|'hazard'}>()
+const props=defineProps<{api:ApiClient;siteId:string;page:'inspection'|'hazard';initialRecordId?:string;permissions?:string[]}>()
 const emit=defineEmits<{updated:[]}>()
 const api=props.api.forSite(props.siteId)
 const context=ref<SafetyContext|null>(null),directory=ref<SafetyDirectory>({employees:[],units:[],risks:[]})
@@ -24,8 +24,8 @@ const pending=computed(()=>hazards.value.filter(h=>h.status==='PENDING_ACCEPTANC
 const overdue=computed(()=>hazards.value.filter(h=>h.overdueDays>0).length)
 const employees=computed(()=>[...new Map(directory.value.employees.map(e=>[e.id,e])).values()])
 watch(()=>props.page,()=>{status.value='';search.value='';mine.value=false})
-async function refresh(){loading.value=true;error.value='';try{context.value=await api.safetyContext();[tasks.value,hazards.value,templates.value,plans.value]=await Promise.all([api.workflowTasks(),api.workflowHazards(),api.workflowTemplates(),api.inspectionPlans()]);if(context.value.canManage)directory.value=await api.safetyDirectory()}catch(e){error.value=(e as Error).message}finally{loading.value=false}}
-onMounted(refresh)
+async function refresh(){loading.value=true;error.value='';try{context.value=await api.safetyContext();const checks=!props.permissions||props.permissions.includes('inspection:read'),issues=!props.permissions||props.permissions.includes('hazard:read');[tasks.value,hazards.value,templates.value,plans.value]=await Promise.all([checks?api.workflowTasks():Promise.resolve([]),issues?api.workflowHazards():Promise.resolve([]),checks?api.workflowTemplates():Promise.resolve([]),checks?api.inspectionPlans():Promise.resolve([])]);if(context.value.canManage)directory.value=await api.safetyDirectory()}catch(e){error.value=(e as Error).message}finally{loading.value=false}}
+onMounted(async()=>{await refresh();if(error.value||!props.initialRecordId)return;if(props.page==='inspection'){const item=tasks.value.find(t=>t.id===props.initialRecordId);if(item)openTask(item);else error.value='该检查任务不在当前可见范围'}else{const item=hazards.value.find(h=>h.id===props.initialRecordId);if(item)openHazard(item);else error.value='该隐患不在当前可见范围'}})
 function openTask(t:WorkflowTask){selectedTask.value=t;panel.value='task'}
 function openHazard(h:WorkflowHazard){hazardId.value=h.id;panel.value='hazard'}
 async function saved(id?:string){if(panel.value==='report'||panel.value==='task'){panel.value=null;message.value='记录已保存；待办和历史已更新'}await refresh();emit('updated')}

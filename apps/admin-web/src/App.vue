@@ -1,8 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onMounted, reactive, ref, watch } from 'vue'
 import QRCode from 'qrcode'
 import { ApiClient, type Area, type AssessmentHistory, type ControlMeasureInput, type Employee, type EmployeeQualification, type EmployeeSafetyArchive, type Hazard, type InspectionPlan, type InspectionStatistics, type InspectionSummary, type InspectionTask, type InspectionTemplate, type InvestmentSummary, type OccupationalExam, type OccupationalFactor, type OccupationalHealthSummary, type OrgUnit, type RiskObject, type RiskSummary, type SafetyAsset, type SafetyAssetSummary, type SafetyAttachment, type SafetyBudget, type SafetyCommitment, type SafetyCommitmentTemplate, type SafetyExpense, type SafetyHazard, type Site, type TrainingAssignment, type TrainingCourse, type TrainingMaterial, type TrainingStatistics, type TrainingSummary, type VisitorBriefing, type VisitorRecord, type WorkPermit, type WorkPermitTemplate } from '@safety/api-client'
 import SafetyWorkspace from './modules/safety/SafetyWorkspace.vue'
+import PersonalWorkbench from './modules/workbench/PersonalWorkbench.vue'
+import ManagementCockpit from './modules/management-cockpit/ManagementCockpit.vue'
+import type { WorkbenchTarget } from './modules/workbench/model'
 import ManagementQualityPage from './modules/management-quality/ManagementQualityPage.vue'
 import WaterXLogin from './components/waterx/WaterXLogin.vue'
 import ImprovementDraftPanel from './modules/management-quality/ImprovementDraftPanel.vue'
@@ -29,12 +32,15 @@ import { isRemainingUnitPageId, remainingUnitPageMap } from './modules/unit-anal
 import type { RemainingUnitPageId } from './modules/unit-analysis/remaining-unit-config'
 
 const processDailyPreview = import.meta.env.VITE_PROCESS_DAILY_PREVIEW === 'true'
+const DigitalTwinPage = defineAsyncComponent(()=>import('./modules/digital-twin/DigitalTwinPage.vue'))
 const processArchivePreview = import.meta.env.VITE_PROCESS_ARCHIVE_PREVIEW === 'true'
 const dailyCollaboration = ref<InstanceType<typeof DailyCollaborationPage>|null>(null)
 const processArchive = ref<InstanceType<typeof ProcessArchivePage>|null>(null)
 const api = new ApiClient()
 const signedInPermissions=ref<string[]>([])
 const signedInDisplayName=ref('')
+const signedInUserId=ref('')
+const workbenchTarget=ref<WorkbenchTarget|null>(null)
 const token = ref(sessionStorage.getItem('accessToken') || '')
 const refreshToken = ref(sessionStorage.getItem('refreshToken') || '')
 api.onTokenRefresh(pair=>{token.value=pair.accessToken;refreshToken.value=pair.refreshToken;sessionStorage.setItem('accessToken',pair.accessToken);sessionStorage.setItem('refreshToken',pair.refreshToken)})
@@ -129,8 +135,8 @@ const plannedPages = {
   improvementAnalysis: { module:'改进提升', title:'改进分析', stage:'A', description:'分析问题结构、关闭效率和复发趋势，支持持续改进。', capabilities:['问题趋势','关闭周期','复发分析','改进成效'] }
 } as const
 type PlannedPageId = keyof typeof plannedPages
-type AppPage = 'platform' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'highEfficiencySedimentation' | 'vFilterAnalysis' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education' | PlannedPageId | QualityPageId | ProcessEvaluationPageId | RemainingUnitPageId | EfficiencyPlanningPageId
-const activePage = ref<AppPage>('platform')
+type AppPage = 'cockpit' | 'digitalTwin' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'highEfficiencySedimentation' | 'vFilterAnalysis' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education' | PlannedPageId | QualityPageId | ProcessEvaluationPageId | RemainingUnitPageId | EfficiencyPlanningPageId
+const activePage = ref<AppPage>('cockpit')
 const active = computed<AppPage>({get:()=>activePage.value,set:page=>{if(page===activePage.value||(dailyCollaboration.value?.canLeave()!==false&&processArchive.value?.canLeave()!==false))activePage.value=page}})
 const currentEfficiencyPlanningPage = computed(() => isEfficiencyPlanningPage(active.value) ? active.value : null)
 const currentPlannedPage = computed(()=>plannedPages[active.value as PlannedPageId])
@@ -140,13 +146,15 @@ const currentRemainingUnit = computed(()=>isRemainingUnitPageId(active.value) ? 
 const pendingImprovementDraft = ref<ImprovementDraft | null>(null)
 const safetyPages:AppPage[]=['overview','org','employee','area','risk','inspection','hazard','permit','training','asset','health','investment','education']
 const isSafetyPage = computed(()=>safetyPages.includes(active.value))
-const dashboardTaskTab = ref<'pending'|'processed'|'cc'|'started'>('pending')
-const dashboardTasks = {
-  pending: [{title:'审核一期生化线冬季工况调整',module:'生产运行',time:'今天 14:30',status:'待审核'},{title:'确认重点部位安全检查整改结果',module:'安全管理',time:'今天 17:00',status:'待处理'},{title:'复核二期进水 COD 异常数据',module:'化验管理',time:'明天 09:00',status:'待复核'}],
-  processed: [{title:'八月运行数据填报',module:'生产运行',time:'昨天 16:42',status:'已完成'},{title:'有限空间作业票审批',module:'安全管理',time:'昨天 11:08',status:'已通过'}],
-  cc: [{title:'2#鼓风机维护完成记录',module:'设备管理',time:'今天 10:20',status:'供查阅'},{title:'本周出水水质分析周报',module:'化验管理',time:'周一 08:30',status:'供查阅'}],
-  started: [{title:'发起夏季高负荷工况评审',module:'生产运行',time:'08-12 15:10',status:'审批中'},{title:'发起季度应急物资盘点',module:'安全管理',time:'08-10 09:15',status:'执行中'}]
+function openWorkbenchTarget(target:WorkbenchTarget) {
+  const allowed=target.page==='operationEntry'?signedInPermissions.value.some(p=>p.startsWith('process:daily:')):signedInPermissions.value.includes(target.page==='inspection'?'inspection:read':'hazard:read')
+  if(!allowed)return
+  active.value=target.page
+  if(active.value!==target.page)return
+  workbenchTarget.value=target
+  expandedModules.value[target.page==='operationEntry'?'process':'safety']=true
 }
+watch(active,()=>{if(active.value!==workbenchTarget.value?.page)workbenchTarget.value=null})
 const expandedModules = ref<Record<string, boolean>>({ operations:false, process:false, equipment:false, laboratory:false, safety:false, inventory:false, efficiency:false, business:false, evaluation:false, quality:false, improvement:false, basic:false })
 const sidebarCollapsed = ref(false)
 function openQualityPage(page:QualityPageId) {
@@ -1124,42 +1132,57 @@ async function loadSites() {
   api.setSession(token.value, selectedSite.value, refreshToken.value)
   sites.value = await api.sites()
   const signedInUser = await api.currentUser()
+  signedInUserId.value=signedInUser.userId
   signedInPermissions.value=signedInUser.permissions
   signedInDisplayName.value=signedInUser.displayName||signedInUser.username
   if(processDailyPreview){active.value='operationEntry';expandedModules.value.process=true}
-  else if(!signedInPermissions.value.includes('role:manage')&&signedInPermissions.value.includes('inspection:read')){active.value='inspection';expandedModules.value.safety=true}
+  else active.value='cockpit'
   processActor.value = signedInUser.displayName ? `${signedInUser.displayName}（${signedInUser.username}）` : signedInUser.username
-  if (!selectedSite.value && sites.value.length) selectedSite.value = sites.value[0].id
+  if (!sites.value.some(s=>s.id===selectedSite.value)) selectedSite.value = sites.value[0]?.id||''
   await changeSite()
 }
 
-async function refreshSafetyCounts(){try{inspectionSummary.value=await api.inspectionSummary()}catch(e){error.value=(e as Error).message}}
+async function refreshSafetyCounts(){
+  const site=selectedSite.value,user=signedInUserId.value,page=active.value
+  const current=()=>site===selectedSite.value&&user===signedInUserId.value&&page===active.value
+  try{const summary=await api.forSite(site).inspectionSummary();if(current())inspectionSummary.value=summary}
+  catch(e){if(current())error.value=(e as Error).message}
+}
 
+let siteReadGeneration=0
 async function changeSite() {
+  const ticket=++siteReadGeneration,site=selectedSite.value,user=signedInUserId.value,page=active.value
+  const current=()=>ticket===siteReadGeneration&&site===selectedSite.value&&user===signedInUserId.value&&page===active.value
+  const client=api.forSite(site)
+  workbenchTarget.value=null
   if (!selectedSite.value) return
   sessionStorage.setItem('siteId', selectedSite.value)
   api.setSite(selectedSite.value)
   loading.value = true; error.value = ''
   try {
-    if(processDailyPreview)return
+    // Scoped pages read their own sources, not the legacy management bundle.
+    if(processDailyPreview||!isSafetyPage.value||active.value==='inspection'||active.value==='hazard')return
     if(!signedInPermissions.value.includes('role:manage')){
       if(signedInPermissions.value.includes('inspection:read'))await refreshSafetyCounts()
       return
     }
-    [units.value, employees.value, riskSummary.value, hazards.value, riskObjects.value, areas.value, inspectionSummary.value, inspectionStatistics.value, inspectionTemplates.value, inspectionPlans.value, inspectionTasks.value, safetyHazards.value,workPermitTemplates.value,workPermits.value,trainingSummary.value,trainingCourses.value,trainingAssignments.value,qualifications.value,assetSummary.value,safetyAssets.value,healthSummary.value,occupationalFactors.value,occupationalExams.value,investmentSummary.value,safetyBudgets.value,safetyExpenses.value,commitments.value,commitmentTemplates.value,visitorBriefing.value,visitorRecords.value] = await Promise.all([
-      api.orgUnits(), api.employees(), api.riskSummary(), api.hazards(), api.riskObjects(), api.areas(), api.inspectionSummary(), api.inspectionStatistics(), api.inspectionTemplates(), api.inspectionPlans(), api.inspectionTasks(), api.safetyHazards(),api.workPermitTemplates(),api.workPermits(),api.trainingSummary(),api.trainingCourses(),api.trainingAssignments(),api.employeeQualifications(),api.safetyAssetSummary(),api.safetyAssets(),api.occupationalHealthSummary(),api.occupationalFactors(),api.occupationalExams(),api.investmentSummary(),api.safetyBudgets(),api.safetyExpenses(),api.safetyCommitments(),api.safetyCommitmentTemplates(),api.visitorBriefing(),api.visitorRecords()
+    const bundle = await Promise.all([
+      client.orgUnits(), client.employees(), client.riskSummary(), client.hazards(), client.riskObjects(), client.areas(), client.inspectionSummary(), client.inspectionStatistics(), client.inspectionTemplates(), client.inspectionPlans(), client.inspectionTasks(), client.safetyHazards(),client.workPermitTemplates(),client.workPermits(),client.trainingSummary(),client.trainingCourses(),client.trainingAssignments(),client.employeeQualifications(),client.safetyAssetSummary(),client.safetyAssets(),client.occupationalHealthSummary(),client.occupationalFactors(),client.occupationalExams(),client.investmentSummary(),client.safetyBudgets(),client.safetyExpenses(),client.safetyCommitments(),client.safetyCommitmentTemplates(),client.visitorBriefing(),client.visitorRecords()
     ])
-    const materialEntries=await Promise.all(trainingCourses.value.map(async c=>[c.id,await api.trainingMaterials(c.id)] as const));trainingMaterials.value=Object.fromEntries(materialEntries)
+    if(!current())return
+    [units.value, employees.value, riskSummary.value, hazards.value, riskObjects.value, areas.value, inspectionSummary.value, inspectionStatistics.value, inspectionTemplates.value, inspectionPlans.value, inspectionTasks.value, safetyHazards.value,workPermitTemplates.value,workPermits.value,trainingSummary.value,trainingCourses.value,trainingAssignments.value,qualifications.value,assetSummary.value,safetyAssets.value,healthSummary.value,occupationalFactors.value,occupationalExams.value,investmentSummary.value,safetyBudgets.value,safetyExpenses.value,commitments.value,commitmentTemplates.value,visitorBriefing.value,visitorRecords.value] = bundle
+    const materialEntries=await Promise.all(trainingCourses.value.map(async c=>[c.id,await client.trainingMaterials(c.id)] as const));if(!current())return;trainingMaterials.value=Object.fromEntries(materialEntries)
     visitorUrl.value=`${window.location.protocol}//${window.location.hostname}:5174/?visitor=${visitorBriefing.value.accessToken}`;visitorQr.value=await QRCode.toDataURL(visitorUrl.value,{width:220,margin:1,errorCorrectionLevel:'M'})
   }
-  catch (e) { error.value = e instanceof Error ? e.message : '数据加载失败' }
-  finally { loading.value = false }
+  catch (e) { if(current())error.value = e instanceof Error ? e.message : '数据加载失败' }
+  finally { if(ticket===siteReadGeneration)loading.value = false }
 }
 
 async function logout() {
   if(dailyCollaboration.value?.canLeave()===false||processArchive.value?.canLeave()===false)return
   try { if(token.value) await api.logoutSession() } catch { /* 本地会话仍需清理 */ }
-  sessionStorage.clear(); token.value = ''; refreshToken.value=''; sites.value = []; units.value = []; employees.value = []; hazards.value = []
+  sessionStorage.clear(); token.value = ''; refreshToken.value=''; sites.value = []; selectedSite.value=''; units.value = []; employees.value = []; hazards.value = []
+  signedInUserId.value='';signedInPermissions.value=[];signedInDisplayName.value='';workbenchTarget.value=null;error.value='';activePage.value='cockpit'
 }
 
 const riskColorName: Record<string, string> = { RED: '红色', ORANGE: '橙色', YELLOW: '黄色', BLUE: '蓝色' }
@@ -1297,6 +1320,7 @@ async function assignCommitment(){try{const f=commitmentAssignForm.value;await a
 async function openSafetyArchive(person:Employee){try{safetyArchive.value=await api.employeeSafetyArchive(person.id);showSafetyArchive.value=true}catch(e){error.value=e instanceof Error?e.message:'个人安全档案加载失败'}}
 const scheduleName:Record<string,string>={DAILY:'每日',WEEKLY:'每周',MONTHLY:'每月',ONCE:'一次性'}
 
+watch(active,(page,previous)=>{if(page!==previous&&isSafetyPage.value&&page!=='inspection'&&page!=='hazard')void changeSite()})
 onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
 </script>
 
@@ -1310,9 +1334,14 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
     </header>
     <aside>
       <button class="sidebar-toggle" :title="sidebarCollapsed?'展开导航':'收起导航'" :aria-label="sidebarCollapsed?'展开导航':'收起导航'" @click="sidebarCollapsed=!sidebarCollapsed"><span><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${sidebarCollapsed?'right':'left'}`" /></svg></span><b>收起导航</b></button>
-      <nav class="module-nav">
-        <button class="module-nav-home" :class="{selected:active==='platform'}" @click="active='platform'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#home'" /></svg></span><span>首页</span></button>
+<nav class="module-nav">
+        <button class="module-nav-home" aria-label="管理驾驶舱" title="管理驾驶舱" :class="{selected:active==='cockpit'}" @click="active='cockpit'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#home'" /></svg></span><span>管理驾驶舱</span></button>
+        <button class="module-nav-home" aria-label="数字孪生" title="数字孪生" :class="{selected:active==='digitalTwin'}" @click="active='digitalTwin'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#process'" /></svg></span><span>数字孪生</span></button>
 
+        <section class="nav-group">
+          <button class="nav-group-title" :class="{expanded:expandedModules.business}" @click="toggleModule('business')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#business'" /></svg></span><span>经营管理</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.business?'down':'right'}`" /></svg></i></button>
+          <div v-show="expandedModules.business" class="nav-children"><button :class="{selected:active==='businessTargets'}" @click="active='businessTargets'">经营目标 <small>规划</small></button><button :class="{selected:active==='businessPlan'}" @click="active='businessPlan'">生产计划 <small>规划</small></button><button :class="{selected:active==='businessBudget'}" @click="active='businessBudget'">预算管理 <small>规划</small></button><button :class="{selected:active==='businessExecution'}" @click="active='businessExecution'">执行分析 <small>规划</small></button><button :class="{selected:active==='businessCost'}" @click="active='businessCost'">成本收益 <small>规划</small></button><button :class="{selected:active==='businessReceivables'}" @click="active='businessReceivables'">回款管理 <small>规划</small></button></div>
+        </section>
         <section class="nav-group">
           <button class="nav-group-title" :class="{expanded:expandedModules.operations}" @click="toggleModule('operations')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#operations'" /></svg></span><span>生产运行</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.operations?'down':'right'}`" /></svg></i></button>
           <div v-show="expandedModules.operations" class="nav-children"><button :class="{selected:active==='operationsShift'}" @click="active='operationsShift'">班组与排班 <small>规划</small></button><button :class="{selected:active==='operationsHandover'}" @click="active='operationsHandover'">交接班管理 <small>规划</small></button><button :class="{selected:active==='operationsTasks'}" @click="active='operationsTasks'">当班任务 <small>规划</small></button><button :class="{selected:active==='operationsLog'}" @click="active='operationsLog'">运行日志 <small>规划</small></button></div>
@@ -1354,20 +1383,16 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
           <div v-show="expandedModules.inventory" class="nav-children"><button :class="{selected:active==='inventoryOverview'}" @click="active='inventoryOverview'">库存总览 <small>规划</small></button><button :class="{selected:active==='inventoryMaterials'}" @click="active='inventoryMaterials'">物资台账 <small>规划</small></button><button :class="{selected:active==='inventoryInbound'}" @click="active='inventoryInbound'">入库管理 <small>规划</small></button><button :class="{selected:active==='inventoryOutbound'}" @click="active='inventoryOutbound'">出库与领用 <small>规划</small></button><button :class="{selected:active==='inventoryStocktake'}" @click="active='inventoryStocktake'">库存盘点 <small>规划</small></button><button :class="{selected:active==='inventoryAlerts'}" @click="active='inventoryAlerts'">库存预警 <small>规划</small></button></div>
         </section>
         <section class="nav-group">
-          <button class="nav-group-title" :class="{expanded:expandedModules.business}" @click="toggleModule('business')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#business'" /></svg></span><span>经营管理</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.business?'down':'right'}`" /></svg></i></button>
-          <div v-show="expandedModules.business" class="nav-children"><button :class="{selected:active==='businessTargets'}" @click="active='businessTargets'">经营目标 <small>规划</small></button><button :class="{selected:active==='businessPlan'}" @click="active='businessPlan'">生产计划 <small>规划</small></button><button :class="{selected:active==='businessBudget'}" @click="active='businessBudget'">预算管理 <small>规划</small></button><button :class="{selected:active==='businessExecution'}" @click="active='businessExecution'">执行分析 <small>规划</small></button><button :class="{selected:active==='businessCost'}" @click="active='businessCost'">成本收益 <small>规划</small></button><button :class="{selected:active==='businessReceivables'}" @click="active='businessReceivables'">回款管理 <small>规划</small></button></div>
-        </section>
-        <section class="nav-group">
-          <button class="nav-group-title" :class="{expanded:expandedModules.efficiency}" @click="toggleModule('efficiency')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#efficiency'" /></svg></span><span>提质增效</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.efficiency?'down':'right'}`" /></svg></i></button>
-          <div v-show="expandedModules.efficiency" class="nav-children"><EfficiencyNavigation :active="active" @navigate="active=$event" /></div>
-        </section>
-        <section class="nav-group">
           <button class="nav-group-title" :class="{expanded:expandedModules.evaluation}" @click="toggleModule('evaluation')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#evaluation'" /></svg></span><span>过程评价</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.evaluation?'down':'right'}`" /></svg></i></button>
           <div v-show="expandedModules.evaluation" class="nav-children"><button :class="{selected:active==='evaluationResults'}" @click="active='evaluationResults'">评价结果管理</button><button :class="{selected:active==='evaluationOperations'}" @click="active='evaluationOperations'">运行管理评价</button><button :class="{selected:active==='evaluationEquipment'}" @click="active='evaluationEquipment'">设备管理评价</button><button :class="{selected:active==='evaluationLaboratory'}" @click="active='evaluationLaboratory'">化验管理评价</button><button :class="{selected:active==='evaluationSafety'}" @click="active='evaluationSafety'">安全管理评价</button><button :class="{selected:active==='evaluationComprehensive'}" @click="active='evaluationComprehensive'">综合管理评价</button><button :class="{selected:active==='evaluationRectification'}" @click="active='evaluationRectification'">问题与整改</button><button :class="{selected:active==='evaluationReport'}" @click="active='evaluationReport'">评价报告</button></div>
         </section>
         <section class="nav-group">
           <button class="nav-group-title" :class="{expanded:expandedModules.quality}" @click="toggleModule('quality')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#quality'" /></svg></span><span>管理质量</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.quality?'down':'right'}`" /></svg></i></button>
           <div v-show="expandedModules.quality" class="nav-children"><button :class="{selected:active==='qualityCompliance'}" @click="active='qualityCompliance'">合法合规</button><button :class="{selected:active==='qualityStable'}" @click="active='qualityStable'">稳定达标</button><button :class="{selected:active==='qualitySafety'}" @click="active='qualitySafety'">安全运行</button><button :class="{selected:active==='qualityEfficiency'}" @click="active='qualityEfficiency'">经济高效</button></div>
+        </section>
+        <section class="nav-group">
+          <button class="nav-group-title" :class="{expanded:expandedModules.efficiency}" @click="toggleModule('efficiency')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#efficiency'" /></svg></span><span>提质增效</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.efficiency?'down':'right'}`" /></svg></i></button>
+          <div v-show="expandedModules.efficiency" class="nav-children"><EfficiencyNavigation :active="active" @navigate="active=$event" /></div>
         </section>
         <section class="nav-group">
           <button class="nav-group-title" :class="{expanded:expandedModules.improvement}" @click="toggleModule('improvement')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#improvement'" /></svg></span><span>改进提升</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.improvement?'down':'right'}`" /></svg></i></button>
@@ -1383,13 +1408,11 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
       <article :class="{'safety-workspace':isSafetyPage}">
         <div v-if="isSafetyPage" class="page-title"><div><p class="eyebrow">{{currentSite?.code}}</p><h1>{{active==='overview' ? '安全态势总览' : active==='org' ? '组织架构' : active==='employee' ? '人员档案' : active==='area' ? '厂区区域管理' : active==='risk' ? '风险分级管控' : active==='inspection' ? '安全检查任务' : active==='hazard'?'隐患排查治理':active==='permit'?'危险作业审批':active==='training'?'安全培训与人员资质':active==='asset'?'设备设施与应急物资':active==='health'?'职业健康管理':active==='investment'?'安全投入管理':'安全承诺与访客告知' }}</h1></div><span class="date-chip">{{ new Date().toLocaleDateString('zh-CN') }}</span></div>
         <WxState v-if="error" kind="error" compact class="error banner">{{error}}</WxState>
-        <template v-if="active==='platform'">
-          <section class="dashboard-toolbar"><span>今日运营概览</span><div><WxButton variant="ghost" class="active">今日</WxButton><WxButton variant="ghost">本月</WxButton><WxButton variant="ghost">自定义</WxButton></div></section>
-          <div class="dashboard-kpis"><WxCard><span>今日处理水量</span><strong>6.82<small>万 m³</small></strong><em>较昨日 +2.6%</em></WxCard><WxCard><span>出水综合达标率</span><strong>99.6<small>%</small></strong><em>稳定达标</em></WxCard><WxCard><span>吨水综合电耗</span><strong>0.286<small>kWh/m³</small></strong><em class="down">较目标低 3.4%</em></WxCard><WxCard><span>未闭环事项</span><strong>7<small>项</small></strong><em class="warn">其中逾期 1 项</em></WxCard></div>
-          <div class="dashboard-chart-grid"><WxCard class="dashboard-card water-chart"><header><b>近七日处理水量</b><span>万 m³/d</span></header><div class="bar-chart"><div v-for="(value,index) in [78,84,72,90,86,82,88]" :key="index"><span :style="{height:`${value}%`}"></span><small>{{['09','10','11','12','13','14','15'][index]}}日</small></div></div></WxCard><WxCard class="dashboard-card trend-chart"><header><b>出水水质趋势</b><span><i></i> COD　<i></i> NH₃-N</span></header><svg viewBox="0 0 500 180" preserveAspectRatio="none"><g><line v-for="y in [30,70,110,150]" :key="y" x1="20" :y1="y" x2="485" :y2="y" /></g><polyline points="20,105 95,92 170,101 245,72 320,82 395,61 485,68"/><polyline class="second" points="20,132 95,125 170,129 245,116 320,121 395,108 485,112"/></svg></WxCard><WxCard class="dashboard-card structure-chart"><header><b>事项分布</b><span>当前</span></header><div class="donut-wrap"><div class="donut"><span>23<small>全部</small></span></div><ul><li><i></i>生产运行 <b>9</b></li><li><i></i>安全管理 <b>7</b></li><li><i></i>设备管理 <b>4</b></li><li><i></i>其他事项 <b>3</b></li></ul></div></WxCard></div>
-          <WxCard class="dashboard-card task-center"><header><b>我的事项</b><span>内容随当前用户和角色动态变化</span></header><WxTabs aria-label="我的事项分类"><button v-for="tab in [{key:'pending',name:'待处理'},{key:'processed',name:'已处理'},{key:'cc',name:'抄送我'},{key:'started',name:'我发起'}]" :key="tab.key" :class="{active:dashboardTaskTab===tab.key}" @click="dashboardTaskTab=tab.key as typeof dashboardTaskTab">{{tab.name}}<em>{{dashboardTasks[tab.key as keyof typeof dashboardTasks].length}}</em></button></WxTabs><div class="dashboard-task-list"><article v-for="task in dashboardTasks[dashboardTaskTab]" :key="task.title"><span>{{task.module}}</span><b>{{task.title}}</b><small>{{task.time}}</small><em>{{task.status}}</em></article></div>
-          </WxCard>
-        </template>
+        <ManagementCockpit v-if="active==='cockpit'" :key="signedInUserId+selectedSite">
+          <template #workbench><PersonalWorkbench :api="api" :site-id="selectedSite" :user-id="signedInUserId" :permissions="signedInPermissions" @navigate="openWorkbenchTarget" /></template>
+        </ManagementCockpit>
+        <DigitalTwinPage v-else-if="active==='digitalTwin'" :key="signedInUserId+selectedSite" :site-id="selectedSite" :user-id="signedInUserId" />
+        <DailyCollaborationPage v-else-if="active==='operationEntry'&&workbenchTarget?.page==='operationEntry'" ref="dailyCollaboration" :key="signedInUserId+selectedSite" :api="api" page="operationEntry" :site-id="selectedSite" :site-name="currentSite?.name||'当前项目'" :initial-record-id="workbenchTarget.id" :initial-line-id="workbenchTarget.lineId" @navigate="active=$event" />
         <ProcessEvaluationPage v-else-if="currentProcessEvaluationPage" :active-page="currentProcessEvaluationPage" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" @update:active-page="openProcessEvaluationPage" @navigate:app="handleProcessEvaluationNavigate" />
         <WholePlantPage v-else-if="active==='efficiencyWaterBalance' || active==='efficiencySludge' || active==='efficiencyEnergy' || active==='efficiencyChemical' || active==='efficiencyCapacity' || active==='efficiencyHydraulic'" :key="active+selectedSite" :topic="active==='efficiencyWaterBalance' ? 'water' : active==='efficiencySludge' ? 'sludge' : active==='efficiencyEnergy' ? 'energy' : active==='efficiencyChemical' ? 'chemical' : active==='efficiencyCapacity' ? 'capacity' : 'hydraulic'" :site-id="selectedSite" :actor="processActor" />
         <EfficiencyLandingPage v-else-if="currentEfficiencyPlanningPage" :page="currentEfficiencyPlanningPage" @navigate="active=$event" />
@@ -1647,7 +1670,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
             </table>
           </div>
         </template>
-        <SafetyWorkspace v-else-if="active==='inspection'||active==='hazard'" :key="selectedSite" :api="api" :site-id="selectedSite" :page="active" @updated="refreshSafetyCounts" />
+        <SafetyWorkspace v-else-if="active==='inspection'||active==='hazard'" :key="signedInUserId+selectedSite" :api="api" :site-id="selectedSite" :page="active" :permissions="signedInPermissions" :initial-record-id="workbenchTarget?.page===active?workbenchTarget.id:undefined" @updated="refreshSafetyCounts" />
         <template v-else-if="active==='permit'"><div class="safety-metrics"><section><span>作业类型</span><strong>{{workPermitTemplates.length}}</strong><small>统一作业票模板</small></section><section><span>待审批</span><strong>{{workPermits.filter(p=>p.status.startsWith('PENDING')).length}}</strong><small>安全审核或负责人批准</small></section><section class="hazard-accent"><span>已批准</span><strong>{{workPermits.filter(p=>p.status==='APPROVED').length}}</strong><small>等待实施或完工验收</small></section></div><div class="panel template-strip"><div><h2>危险作业类型</h2><small>当前10类历史配置；本批材料覆盖9类，许可规则待专项深化</small></div><span v-for="tpl in workPermitTemplates" :key="tpl.id"><b>{{tpl.name}}</b><small>{{tpl.measureCount}} 项预置措施</small></span></div><div class="panel table-panel"><div class="panel-head"><div><h2>危险作业票台账</h2><small>申请、审核、批准和完工验收全流程留痕</small></div><div class="panel-actions"><span>{{workPermits.length}} 张</span><button @click="openPermitForm">＋ 发起作业申请</button></div></div><table><thead><tr><th>作业票</th><th>类型与地点</th><th>作业内容</th><th>负责人 / 监护人</th><th>实施时间</th><th>状态 / 操作</th></tr></thead><tbody><tr v-for="item in workPermits" :key="item.id"><td><code>{{item.permitNo}}</code><small>{{item.workLevel.replace('LEVEL_','')}}级作业</small></td><td><b>{{item.permitTypeName}}</b><small>{{item.location}}</small></td><td>{{item.workContent}}<small>措施确认 {{item.confirmedCount}}/{{item.involvedCount}}</small></td><td>{{item.responsiblePerson}}<small>监护：{{item.guardian}}</small></td><td>{{new Date(item.startAt).toLocaleString('zh-CN')}}<small>至 {{new Date(item.endAt).toLocaleString('zh-CN')}}</small></td><td><span class="tag" :class="{green:item.status==='APPROVED'||item.status==='CLOSED',warning:item.status.startsWith('PENDING')}">{{permitStatusName[item.status]}}</span><div class="row-actions"><template v-if="item.status==='PENDING_SAFETY'||item.status==='PENDING_PRINCIPAL'"><button @click="reviewPermit(item,true)">审批通过</button><button class="danger" @click="reviewPermit(item,false)">退回</button></template><button v-if="item.status==='APPROVED'" @click="closePermit(item)">完工验收</button></div></td></tr></tbody></table></div></template>
         <template v-else-if="active==='training'">
           <div class="safety-metrics"><section><span>培训课程</span><strong>{{trainingSummary.courseCount}}</strong><small>覆盖入厂、专项和应急培训</small></section><section><span>待完成培训</span><strong>{{trainingSummary.pendingAssignments}}</strong><small>按时限跟踪学习与考试</small></section><section class="danger-accent"><span>证书预警</span><strong>{{trainingSummary.expiringQualifications}}</strong><small>已到期或进入复审提醒期</small></section></div>
