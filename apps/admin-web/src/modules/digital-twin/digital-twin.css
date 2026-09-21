@@ -41,3 +41,10 @@
 .digital-twin #riskReveal[data-severity="alarm"]{color:var(--wx-danger-strong)}.digital-twin #riskReveal[data-severity="normal"]{color:var(--wx-success-strong)}.digital-twin .risk-count.warning,.digital-twin .status.warn{color:var(--wx-warning-strong)}.digital-twin .risk-count.alarm,.digital-twin .status.alarm{color:var(--wx-danger-strong)}
 @media(max-width:950px){.digital-twin .process-selector{margin-left:auto}.digital-twin .details{width:260px}.digital-twin #riskPanel{width:240px}}
 @media(max-width:650px){.digital-twin{min-height:850px;height:calc(100dvh - 108px)}.digital-twin .twin-workspace{height:100%;min-height:0}.digital-twin #viewport{min-height:400px}.digital-twin .details{width:calc(50% - 24px)}.digital-twin #riskPanel{width:calc(50% - 24px)}.digital-twin .drawer-tools{flex-wrap:wrap;padding:6px}.digital-twin .details .tabs{flex-wrap:wrap}.digital-twin .detail-head,.digital-twin #detailContent{padding:8px}.digital-twin .risk-row-copy strong{white-space:normal}.digital-twin #riskCounts{flex-wrap:wrap;gap:2px}.digital-twin .kv div{flex-wrap:wrap;gap:2px}.digital-twin .risk-heading{flex-wrap:wrap}.digital-twin .process-dropdown{max-width:calc(100vw - 100px)}}
+
+/* Confirmed compact scene: symmetry with the risk orb, no hover reopening. */
+.digital-twin #detailReveal{width:44px;height:44px;padding:7px;border-radius:50%;display:grid;place-items:center;right:16px;top:16px;border:1px solid var(--line);background:#fff;color:var(--blue)}
+.digital-twin #detailReveal[hidden]{display:none}
+.digital-twin #detailReveal svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;border:0}
+.digital-twin .twin-host.is-fullscreen{position:fixed;inset:0;z-index:10000;height:100dvh;background:var(--light);overflow:auto}
+.digital-twin .twin-host.is-fullscreen .twin-workspace{height:100dvh;min-height:0}

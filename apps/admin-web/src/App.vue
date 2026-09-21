@@ -32,6 +32,7 @@ import { isRemainingUnitPageId, remainingUnitPageMap } from './modules/unit-anal
 import type { RemainingUnitPageId } from './modules/unit-analysis/remaining-unit-config'
 
 const processDailyPreview = import.meta.env.VITE_PROCESS_DAILY_PREVIEW === 'true'
+const ProcessOverviewPage = defineAsyncComponent(()=>import('./modules/process-overview/ProcessOverviewPage.vue'))
 const DigitalTwinPage = defineAsyncComponent(()=>import('./modules/digital-twin/DigitalTwinPage.vue'))
 const processArchivePreview = import.meta.env.VITE_PROCESS_ARCHIVE_PREVIEW === 'true'
 const dailyCollaboration = ref<InstanceType<typeof DailyCollaborationPage>|null>(null)
@@ -135,7 +136,7 @@ const plannedPages = {
   improvementAnalysis: { module:'改进提升', title:'改进分析', stage:'A', description:'分析问题结构、关闭效率和复发趋势，支持持续改进。', capabilities:['问题趋势','关闭周期','复发分析','改进成效'] }
 } as const
 type PlannedPageId = keyof typeof plannedPages
-type AppPage = 'cockpit' | 'digitalTwin' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'highEfficiencySedimentation' | 'vFilterAnalysis' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education' | PlannedPageId | QualityPageId | ProcessEvaluationPageId | RemainingUnitPageId | EfficiencyPlanningPageId
+type AppPage = 'cockpit' | 'processParameters' | 'digitalTwin' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'highEfficiencySedimentation' | 'vFilterAnalysis' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education' | PlannedPageId | QualityPageId | ProcessEvaluationPageId | RemainingUnitPageId | EfficiencyPlanningPageId
 const activePage = ref<AppPage>('cockpit')
 const active = computed<AppPage>({get:()=>activePage.value,set:page=>{if(page===activePage.value||(dailyCollaboration.value?.canLeave()!==false&&processArchive.value?.canLeave()!==false))activePage.value=page}})
 const currentEfficiencyPlanningPage = computed(() => isEfficiencyPlanningPage(active.value) ? active.value : null)
@@ -1348,7 +1349,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
         </section>
         <section class="nav-group">
           <button class="nav-group-title" :class="{expanded:expandedModules.process}" @click="toggleModule('process')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#process'" /></svg></span><span>工艺管理</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.process?'down':'right'}`" /></svg></i></button>
-          <div v-show="expandedModules.process" class="nav-children"><button :class="{selected:active==='processDesign'}" @click="active='processDesign'">工艺设计标准</button><button :class="{selected:active==='conditionMatrix'}" @click="active='conditionMatrix'">工况矩阵管理</button><button :class="{selected:active==='operationEntry'}" @click="active='operationEntry';loadOperationEntry()">运行数据填报</button><button :class="{selected:active==='processAnalysis'}" @click="active='processAnalysis'">工艺诊断分析</button><button :class="{selected:active==='processReport'}" @click="active='processReport'">工艺分析日报</button><button disabled>工艺调整记录 <small>规划中</small></button></div>
+          <div v-show="expandedModules.process" class="nav-children"><button :class="{selected:active==='processParameters'}" @click="active='processParameters'">工艺参数概览</button><button :class="{selected:active==='processDesign'}" @click="active='processDesign'">工艺设计标准</button><button :class="{selected:active==='conditionMatrix'}" @click="active='conditionMatrix'">工况矩阵管理</button><button :class="{selected:active==='operationEntry'}" @click="active='operationEntry';loadOperationEntry()">运行数据填报</button><button :class="{selected:active==='processAnalysis'}" @click="active='processAnalysis'">工艺诊断分析</button><button :class="{selected:active==='processReport'}" @click="active='processReport'">工艺分析日报</button><button disabled>工艺调整记录 <small>规划中</small></button></div>
         </section>
         <section class="nav-group">
           <button class="nav-group-title" :class="{expanded:expandedModules.equipment}" @click="toggleModule('equipment')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#equipment'" /></svg></span><span>设备管理</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.equipment?'down':'right'}`" /></svg></i></button>
@@ -1411,6 +1412,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
         <ManagementCockpit v-if="active==='cockpit'" :key="signedInUserId+selectedSite">
           <template #workbench><PersonalWorkbench :api="api" :site-id="selectedSite" :user-id="signedInUserId" :permissions="signedInPermissions" @navigate="openWorkbenchTarget" /></template>
         </ManagementCockpit>
+        <ProcessOverviewPage v-else-if="active==='processParameters'" :key="signedInUserId+selectedSite" />
         <DigitalTwinPage v-else-if="active==='digitalTwin'" :key="signedInUserId+selectedSite" :site-id="selectedSite" :user-id="signedInUserId" />
         <DailyCollaborationPage v-else-if="active==='operationEntry'&&workbenchTarget?.page==='operationEntry'" ref="dailyCollaboration" :key="signedInUserId+selectedSite" :api="api" page="operationEntry" :site-id="selectedSite" :site-name="currentSite?.name||'当前项目'" :initial-record-id="workbenchTarget.id" :initial-line-id="workbenchTarget.lineId" @navigate="active=$event" />
         <ProcessEvaluationPage v-else-if="currentProcessEvaluationPage" :active-page="currentProcessEvaluationPage" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" @update:active-page="openProcessEvaluationPage" @navigate:app="handleProcessEvaluationNavigate" />

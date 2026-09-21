@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict'
+import {createOverviewRenderer} from './renderer.js'
+const a=createOverviewRenderer(),b=createOverviewRenderer()
+assert.equal(a.metrics().length,8)
+assert.equal(a.metrics().find(m=>m[0]==='SVI')[1],112)
+assert.deepEqual(a.series('SS').values,[196,null,null,null,6.5,5.2])
+assert.equal((a.render().match(/data-series=/g)||[]).length,5)
+for(const name of ['COD','NH₃-N','TN','TP','SS'])a.select('pollutant',name)
+assert.equal((a.render().match(/data-series=/g)||[]).length,0)
+assert.match(a.render(),/请选择上方指标/)
+a.select('pollutant','TN');assert.equal((a.render().match(/data-series=/g)||[]).length,1)
+a.select('focus','internal');assert.match(a.render(),/data-focus="internal"/)
+assert.match(b.render(),/data-focus="all"/)
+assert.equal((b.render().match(/data-series=/g)||[]).length,5)
+a.select('scale','linear');assert.match(a.render(),/线性浓度轴/)
+a.select('focus','<script>');assert.match(a.render(),/data-focus="internal"/)
+assert.match(a.render(true),/退出全屏/);assert.match(a.render(),/全屏展示/)
+console.log('Process overview: 14 checks passed (8 metrics, missing samples, multiselect, scoped state, fullscreen)')
