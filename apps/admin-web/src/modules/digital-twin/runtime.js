@@ -22,7 +22,7 @@ function releaseGraphics(){
  geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());
  renderer?.renderLists.dispose();renderer?.dispose();renderer?.forceContextLoss();renderer?.domElement.remove();renderer=null;scene=null;camera=null;textureCache.clear();
 }
-function dispose(){if(disposed)return;disposed=true;listeners.forEach(off=>off());listeners.length=0;timers.forEach(id=>window.clearTimeout(id));timers.clear();urls.forEach(url=>URL.revokeObjectURL(url));urls.clear();keys.clear();$('businessDialog')?.close();releaseGraphics();host.replaceChildren();}
+function dispose(){if(disposed)return;disposed=true;if(document.fullscreenElement===host)void document.exitFullscreen().catch(()=>{});listeners.forEach(off=>off());listeners.length=0;timers.forEach(id=>window.clearTimeout(id));timers.clear();urls.forEach(url=>URL.revokeObjectURL(url));urls.clear();keys.clear();$('businessDialog')?.close();releaseGraphics();host.replaceChildren();}
 const $=id=>host.querySelector('#'+id);
 options.registerCleanup(dispose);
 const entities=new Map([...D.facilities,...D.equipment].map(x=>[x.id,x]));
@@ -98,7 +98,6 @@ function renderReadings(){
 function addSceneLabel(a){const el=document.createElement('button');el.className='map-label';el.type='button';el.dataset.object=a.id;el.setAttribute('aria-label','定位 '+a.name);el.onclick=()=>select(a.id,true);$('sceneLabels').append(el);const leader=document.createElementNS('http://www.w3.org/2000/svg','path');$('readingLeaders').append(leader);const equipment=a.type==='equipment';labelEntries.push({id:a.id,el,leader,equipment,signalIds:readingIds(a),width:0,height:0,pos:new THREE.Vector3(a.x,equipment?(a.y||0)+2:['building','admin'].includes(a.kind)?a.h+1:2,a.z)});}
 let drawerPinned=true,drawerTimer;
 function setDrawer(open,pinned=false){cancelTimer(drawerTimer);drawerPinned=open&&pinned;const drawer=$('detailDrawer');drawer.classList.toggle('open',open);drawer.inert=!open;$('detailReveal').hidden=open;$('detailReveal').setAttribute('aria-expanded',String(open));$('pinDetails').setAttribute('aria-pressed',String(drawerPinned));$('pinDetails').classList.toggle('active',drawerPinned);$('pinDetails').textContent=drawerPinned?'已固定':'固定';}
-on($('detailReveal'),'pointerenter',e=>{if(e.pointerType==='mouse')setDrawer(true,drawerPinned);});
 $('detailReveal').onclick=e=>{setDrawer(true,false);if(e.detail===0)$('pinDetails').focus({preventScroll:true});};
 
 on($('detailDrawer'),'pointerenter',()=>cancelTimer(drawerTimer));
@@ -308,7 +307,12 @@ function positionRiskMarkers(bounds){const occupied=[];
 }
 function setCut(value){cut=value;waterObjects.forEach(o=>o.visible=!cut);cutObjects.forEach(o=>o.visible=!cut);$('cut').classList.toggle('active',cut);$('cut').setAttribute('aria-pressed',String(cut));}
 $('cut').onclick=()=>setCut(!cut);
-$('labels').onclick=()=>{showLabels=!showLabels;$('labels').classList.toggle('active',showLabels);$('labels').setAttribute('aria-pressed',String(showLabels));};
+let twinFullscreen=false;
+function syncTwinFullscreen(){host.classList.toggle('is-fullscreen',twinFullscreen);$('twinFullscreen').textContent=twinFullscreen?'退出全屏':'全屏展示';$('twinFullscreen').setAttribute('aria-pressed',String(twinFullscreen));}
+$('twinFullscreen').onclick=async()=>{if(twinFullscreen){if(document.fullscreenElement===host)await document.exitFullscreen();twinFullscreen=false;}else{twinFullscreen=true;try{await host.requestFullscreen();}catch{/* Escapable full-window fallback. */}}if(!disposed)syncTwinFullscreen();};
+on(document,'fullscreenchange',()=>{twinFullscreen=document.fullscreenElement===host;syncTwinFullscreen();});
+on(document,'keydown',e=>{if(e.key==='Escape'&&twinFullscreen&&!document.fullscreenElement){twinFullscreen=false;syncTwinFullscreen();}});
+$('labels').onclick=()=>{showLabels=!showLabels;$('labels').classList.toggle('active',showLabels);$('labels').setAttribute('aria-pressed',String(showLabels));$('labels').textContent=showLabels?'隐藏名称':'显示名称';};
 host.querySelectorAll('[data-layer]').forEach(i=>i.onchange=()=>{if(pipeGroups[i.dataset.layer])pipeGroups[i.dataset.layer].visible=i.checked;});
 function updateCamera(){if(!camera||mode==='walk'||mode==='tour')return;const p=mode==='plan'?1.555:pitch;camera.position.set(target.x+distance*Math.cos(p)*Math.sin(yaw),target.y+distance*Math.sin(p),target.z+distance*Math.cos(p)*Math.cos(yaw));camera.lookAt(target.x,target.y,target.z);}
 function fitOverview(){if(!camera)return;distance=mode==='plan'?Math.max(470,600/camera.aspect):Math.max(620,680/camera.aspect);updateCamera();}
@@ -320,7 +324,7 @@ $('plan').onclick=()=>{setMode('plan');autoFit=true;target={x:0,y:0,z:0};yaw=0;f
 $('resetView').onclick=()=>{
  $('plan').click();setCut(false);setDrawer(true,true);setRiskPanel(true,true);selected=null;tab='asset';showLabels=true;closeProcessMenus();
  if(highlight){scene.remove(highlight);highlight.geometry.dispose();highlight.material.dispose();highlight=null;}
- $('labels').classList.add('active');$('labels').setAttribute('aria-pressed','true');
+ $('labels').classList.add('active');$('labels').setAttribute('aria-pressed','true');$('labels').textContent='隐藏名称';
  host.querySelectorAll('[data-tab]').forEach(b=>{const on=b.dataset.tab==='asset';b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));});
  renderList();renderDetail();$('detailContent').scrollTop=0;
 };

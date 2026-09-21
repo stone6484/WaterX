@@ -22,7 +22,6 @@ onBeforeUnmount(()=>instance?.dispose())
 </script>
 <template>
   <section class="digital-twin" aria-label="数字孪生示范">
-    <div class="twin-context"><strong>澄川示范水厂</strong><span>假想厂区 · 10万m³/d · A²/O · 全部信号为模拟</span><a href="/digital-twin/scenario.html" target="_blank" rel="noopener">案例资料 ↗</a></div>
     <WxState v-if="error" kind="error" compact>{{error}}</WxState>
     <!-- Trusted accepted local template only; never insert API or user HTML here. -->
     <div ref="host" class="twin-host" v-html="markup"></div>

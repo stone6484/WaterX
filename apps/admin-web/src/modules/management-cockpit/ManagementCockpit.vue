@@ -3,11 +3,15 @@ import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { WxButton } from '../../components/waterx'
 import { createDemoRenderer, topics as demoTopics } from './demo-renderer.js'
 import './cockpit.css'
+import {createIdleCarousel} from './idle-carousel.js'
 const topics=[['workbench','个人工作台'],...demoTopics] as const
 const root=ref<HTMLElement>(),content=ref<HTMLElement>(),topic=ref('workbench'),fullscreen=ref(false)
 const renderer=createDemoRenderer(),html=ref(''),filters=ref<Record<string,string>>({}),tip=ref(''),tipX=ref(0),tipY=ref(0),notice=ref('')
 let observer:ResizeObserver|undefined
 let generation=0
+const carousel=createIdleCarousel({canRun:()=>fullscreen.value&&!document.hidden,advance:()=>{const i=topics.findIndex(t=>t[0]===topic.value);topic.value=topics[(i+1)%topics.length]![0]}})
+watch(fullscreen,()=>carousel.reset())
+const activityEvents=['pointermove','click','wheel','keydown'] as const
 async function render(){
   const ticket=++generation
   observer?.disconnect();tip.value=''
@@ -32,8 +36,8 @@ function pointer(event:PointerEvent){const el=(event.target as Element).closest<
 async function toggleFullscreen(){if(fullscreen.value){if(document.fullscreenElement===root.value)await document.exitFullscreen();fullscreen.value=false;notice.value='';return}fullscreen.value=true;try{await root.value?.requestFullscreen()}catch{notice.value='当前浏览器使用专注布局，按 Esc 或退出全屏返回。'}}
 function syncFullscreen(){fullscreen.value=document.fullscreenElement===root.value}
 function escape(event:KeyboardEvent){if(event.key==='Escape'&&fullscreen.value&&!document.fullscreenElement){fullscreen.value=false;notice.value=''}}
-onMounted(()=>{void render();document.addEventListener('fullscreenchange',syncFullscreen);document.addEventListener('keydown',escape)})
-onBeforeUnmount(()=>{generation++;observer?.disconnect();document.removeEventListener('fullscreenchange',syncFullscreen);document.removeEventListener('keydown',escape)})
+onMounted(()=>{void render();activityEvents.forEach(event=>root.value?.addEventListener(event,carousel.reset,{capture:true,passive:true}));document.addEventListener('visibilitychange',carousel.reset);document.addEventListener('fullscreenchange',syncFullscreen);document.addEventListener('keydown',escape)})
+onBeforeUnmount(()=>{carousel.dispose();activityEvents.forEach(event=>root.value?.removeEventListener(event,carousel.reset,true));document.removeEventListener('visibilitychange',carousel.reset);if(document.fullscreenElement===root.value)void document.exitFullscreen().catch(()=>{});generation++;observer?.disconnect();document.removeEventListener('fullscreenchange',syncFullscreen);document.removeEventListener('keydown',escape)})
 </script>
 <template>
 <section ref="root" class="management-hub" :class="{'management-cockpit':topic!=='workbench','is-workbench':topic==='workbench','is-fullscreen':fullscreen}" @pointermove="pointer" @pointerleave="tip=''">
@@ -58,6 +62,7 @@ onBeforeUnmount(()=>{generation++;observer?.disconnect();document.removeEventLis
 .workbench-board{min-height:0;flex:1;display:flex;flex-direction:column}
 @media(min-width:850px) and (min-height:700px){.management-hub.is-workbench{height:calc(100dvh - 108px)}}
 .management-hub.is-fullscreen,.management-hub:fullscreen{position:fixed;inset:0;z-index:10000;max-width:none;margin:0;padding:14px;height:100dvh;overflow:auto;background:var(--wx-n50)}
+.management-hub.is-fullscreen>.topic-bar{position:sticky;top:0;z-index:20;flex-shrink:0;background:var(--wx-n50)}
 .mc-fullscreen-notice{font-size:11px;color:var(--wx-n500)}
 @container(max-width:900px){.management-hub .tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));flex-basis:80%}.management-hub .tab{font-size:11px;min-height:30px;padding:5px 3px}}
 @container(max-width:650px){.management-hub .tabs{grid-template-columns:repeat(4,minmax(0,1fr))}}
