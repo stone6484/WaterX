@@ -321,13 +321,6 @@ function setMode(m){mode=m;transition=null;keys.clear();$('inspection').hidden=m
 }
 $('overview').onclick=()=>{setMode('orbit');autoFit=true;target={x:0,y:0,z:0};yaw=.60;pitch=.85;fitOverview();};
 $('plan').onclick=()=>{setMode('plan');autoFit=true;target={x:0,y:0,z:0};yaw=0;fitOverview();};
-$('resetView').onclick=()=>{
- $('plan').click();setCut(false);setDrawer(true,true);setRiskPanel(true,true);selected=null;tab='asset';showLabels=true;closeProcessMenus();
- if(highlight){scene.remove(highlight);highlight.geometry.dispose();highlight.material.dispose();highlight=null;}
- $('labels').classList.add('active');$('labels').setAttribute('aria-pressed','true');$('labels').textContent='隐藏名称';
- host.querySelectorAll('[data-tab]').forEach(b=>{const on=b.dataset.tab==='asset';b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));});
- renderList();renderDetail();$('detailContent').scrollTop=0;
-};
 $('walk').onclick=()=>{setMode('walk');if(camera){camera.position.set(-111,2.2,87);walkYaw=-.06;walkPitch=0;updateWalkLook();}notify('已进入地面视角；先点击场景，再用方向键移动。');};
 function updateWalkLook(){if(!camera)return;camera.lookAt(camera.position.x+Math.sin(walkYaw)*Math.cos(walkPitch)*20,camera.position.y+Math.sin(walkPitch)*20,camera.position.z-Math.cos(walkYaw)*Math.cos(walkPitch)*20);}
 function moveTour(i){tourIndex=Math.max(0,Math.min(D.route.length-1,i));const r=D.route[tourIndex];setMode('tour');select(r.object,false);setCut(true);const eye=new THREE.Vector3(...r.eye),look=new THREE.Vector3(...r.look);if(camera){transition={from:camera.position.clone(),to:eye,look,start:performance.now()};}
