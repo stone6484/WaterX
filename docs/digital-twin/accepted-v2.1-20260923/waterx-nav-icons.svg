@@ -5,9 +5,6 @@
   <symbol id="operations" viewBox="0 0 24 24">
     <path d="M3 20h18M5 20V10l4 3V9l4 3V7l6 4v9"/><path d="M8 17h1m4 0h1m4 0h1"/>
   </symbol>
-  <symbol id="digital-twin" viewBox="0 0 24 24">
-    <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9"/>
-  </symbol>
   <symbol id="process" viewBox="0 0 24 24">
     <circle cx="5" cy="7" r="2.2"/><circle cx="19" cy="7" r="2.2"/><circle cx="12" cy="17" r="2.2"/><path d="M7.2 7h9.6M12 9.2v5.6"/>
   </symbol>

@@ -1337,7 +1337,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
       <button class="sidebar-toggle" :title="sidebarCollapsed?'展开导航':'收起导航'" :aria-label="sidebarCollapsed?'展开导航':'收起导航'" @click="sidebarCollapsed=!sidebarCollapsed"><span><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${sidebarCollapsed?'right':'left'}`" /></svg></span><b>收起导航</b></button>
 <nav class="module-nav">
         <button class="module-nav-home" aria-label="管理驾驶舱" title="管理驾驶舱" :class="{selected:active==='cockpit'}" @click="active='cockpit'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#home'" /></svg></span><span>管理驾驶舱</span></button>
-        <button class="module-nav-home" aria-label="数字孪生" title="数字孪生" :class="{selected:active==='digitalTwin'}" @click="active='digitalTwin'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#process'" /></svg></span><span>数字孪生</span></button>
+        <button class="module-nav-home" aria-label="数字孪生" title="数字孪生" :class="{selected:active==='digitalTwin'}" @click="active='digitalTwin'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#digital-twin'" /></svg></span><span>数字孪生</span></button>
 
         <section class="nav-group">
           <button class="nav-group-title" :class="{expanded:expandedModules.business}" @click="toggleModule('business')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#business'" /></svg></span><span>经营管理</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.business?'down':'right'}`" /></svg></i></button>
@@ -1405,7 +1405,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
         </section>
       </nav>
     </aside>
-    <section class="workspace">
+    <section class="workspace" :class="{'digital-twin-workspace':active==='digitalTwin'}">
       <article :class="{'safety-workspace':isSafetyPage}">
         <div v-if="isSafetyPage" class="page-title"><div><p class="eyebrow">{{currentSite?.code}}</p><h1>{{active==='overview' ? '安全态势总览' : active==='org' ? '组织架构' : active==='employee' ? '人员档案' : active==='area' ? '厂区区域管理' : active==='risk' ? '风险分级管控' : active==='inspection' ? '安全检查任务' : active==='hazard'?'隐患排查治理':active==='permit'?'危险作业审批':active==='training'?'安全培训与人员资质':active==='asset'?'设备设施与应急物资':active==='health'?'职业健康管理':active==='investment'?'安全投入管理':'安全承诺与访客告知' }}</h1></div><span class="date-chip">{{ new Date().toLocaleDateString('zh-CN') }}</span></div>
         <WxState v-if="error" kind="error" compact class="error banner">{{error}}</WxState>
