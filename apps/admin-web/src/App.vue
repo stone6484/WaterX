@@ -1337,7 +1337,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
       <button class="sidebar-toggle" :title="sidebarCollapsed?'展开导航':'收起导航'" :aria-label="sidebarCollapsed?'展开导航':'收起导航'" @click="sidebarCollapsed=!sidebarCollapsed"><span><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${sidebarCollapsed?'right':'left'}`" /></svg></span><b>收起导航</b></button>
 <nav class="module-nav">
         <button class="module-nav-home" aria-label="管理驾驶舱" title="管理驾驶舱" :class="{selected:active==='cockpit'}" @click="active='cockpit'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#home'" /></svg></span><span>管理驾驶舱</span></button>
-        <button class="module-nav-home" aria-label="数字孪生" title="数字孪生" :class="{selected:active==='digitalTwin'}" @click="active='digitalTwin'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#digital-twin'" /></svg></span><span>数字孪生</span></button>
+        <button class="module-nav-home" aria-label="数字孪生" title="数字孪生" :class="{selected:active==='digitalTwin'}" @click="active='digitalTwin'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg?v=20260923#digital-twin'" /></svg></span><span>数字孪生</span></button>
 
         <section class="nav-group">
           <button class="nav-group-title" :class="{expanded:expandedModules.business}" @click="toggleModule('business')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#business'" /></svg></span><span>经营管理</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.business?'down':'right'}`" /></svg></i></button>
