@@ -73,11 +73,12 @@ jobs:
           export DATABASE_PASSWORD="$POSTGRES_PASSWORD"
           docker network create waterx-ci
           docker run --rm -d --name waterx-ci-db --network waterx-ci -e POSTGRES_USER=waterx_ci -e POSTGRES_DB=waterx_ci -e POSTGRES_PASSWORD postgres:16-alpine
+          # Initialization starts a socket-only temporary server; wait for the final TCP listener.
           for attempt in $(seq 1 60); do
-            if docker exec waterx-ci-db pg_isready -U waterx_ci -d waterx_ci; then break; fi
+            if docker exec waterx-ci-db pg_isready -h 127.0.0.1 -U waterx_ci -d waterx_ci; then break; fi
             sleep 1
           done
-          docker exec waterx-ci-db pg_isready -U waterx_ci -d waterx_ci
+          docker exec waterx-ci-db pg_isready -h 127.0.0.1 -U waterx_ci -d waterx_ci
           docker run --rm -d --name waterx-ci-backend --network waterx-ci -p 127.0.0.1:18082:8080 -e SPRING_PROFILES_ACTIVE=prod -e DATABASE_URL=postgresql://waterx-ci-db:5432/waterx_ci -e DATABASE_USERNAME=waterx_ci -e DATABASE_PASSWORD -e FILE_STORAGE_DIR=/tmp/waterx-ci-uploads waterx-backend:test
           node deploy/cds/verify-backend.mjs http://127.0.0.1:18082
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
