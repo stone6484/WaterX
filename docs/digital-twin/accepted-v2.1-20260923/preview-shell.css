@@ -1,0 +1,37 @@
+@import url("design-tokens.css");
+.preview-shell .topbar{height:56px;background:var(--wx-deep-900);color:#e8f7ff;display:flex;justify-content:space-between;align-items:center;padding:0 24px 0 20px;position:fixed;inset:0 0 auto;z-index:30}
+.preview-shell .brand{display:flex;align-items:center;gap:16px}
+.preview-shell .brand img{width:82px;height:auto}
+.preview-shell .brand strong{border-left:1px solid #ffffff30;padding-left:16px;font-size:16px;font-weight:700}
+.preview-shell .top-actions{display:flex;align-items:center;gap:12px;font-size:12px}
+.preview-shell .project-label{font-size:10px;color:#a8c7d7}
+.preview-shell .top-actions b{font-weight:400}
+.preview-shell .top-divider{height:20px;border-left:1px solid #ffffff30;margin:0 5px}
+.preview-shell .demo-tag{font-size:10px;color:#cae9f5;border:1px solid #477182;border-radius:4px;padding:2px 7px}
+.preview-shell .user-avatar{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:#145974;color:#d6f1f8;font-size:12px;margin-left:8px}
+.preview-shell .sidebar{position:fixed;top:56px;bottom:0;left:0;width:var(--sidebar);background:var(--wx-sidebar);color:#b0cbd8;z-index:20;overflow:auto;transition:width .15s}
+.preview-shell .sidebar-toggle{height:46px;padding:0 20px;display:flex;gap:14px;align-items:center;width:100%;font-size:11px;color:#9dbccb}
+.preview-shell .sidebar-toggle svg,.preview-shell .nav-context svg{width:18px;height:18px;flex-shrink:0}
+.preview-shell .side-section{font-size:10px;letter-spacing:1px;padding:15px 22px 9px;color:#6fa0b7}
+.preview-shell .nav-context,.preview-shell .nav-current{height:42px;padding:0 19px;display:flex;align-items:center;gap:13px;font-size:13px;white-space:nowrap}
+.preview-shell .nav-context{opacity:.68}
+.preview-shell .nav-current{background:#0d6387;color:#fff;border-left:3px solid var(--wx-blue-500);padding-left:16px}
+.preview-shell .nav-current svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linejoin:round}
+.preview-shell .side-divider{margin:14px 20px;border-top:1px solid #ffffff12}
+.preview-shell .topbar{background:var(--wx-deep-900)}
+.preview-shell .sidebar{background:var(--wx-sidebar)}
+.preview-shell .nav-context{opacity:.86}
+.preview-shell .nav-current{background:#0d6387}
+.preview-shell .side-section{padding:8px 22px}
+.preview-shell .side-divider{margin:8px 20px}
+.preview-shell .nav-context,.preview-shell .nav-current{height:36px}
+.preview-shell .sidebar-toggle{height:38px}
+.preview-shell .top-actions{font-size:11px}
+.preview-shell .brand strong{font-size:15px}
+.preview-shell .topbar{padding-left:14px;padding-right:14px}
+.preview-shell .brand strong{font-size:13px}
+.preview-shell .top-actions{gap:8px;font-size:10px}
+.preview-shell .brand strong{font-size:11px}
+
+.preview-shell{--sidebar:180px;overflow:hidden}.preview-shell .topbar{border:0}.preview-shell .brand{flex-shrink:0}.preview-shell .sidebar a{text-decoration:none;color:inherit}.preview-shell .sidebar button{border:0;border-radius:0;background:transparent}.preview-shell .sidebar svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.7;flex-shrink:0}.preview-shell .demo-tag{background:transparent;margin:0}.preview-shell .sidebar-toggle{font-size:11px}.preview-shell .nav-context,.preview-shell .nav-current{font-size:13px}.preview-shell .twin-main{margin:56px 0 0 var(--sidebar);height:calc(100dvh - 56px);min-height:0}.preview-shell #viewport{min-height:0}.preview-shell .workspace{height:100%;min-height:0}.preview-shell .toolbar{flex-shrink:0}.preview-shell .sidebar a:hover{background:#174c69}.preview-shell.collapsed{--sidebar:64px}.preview-shell.collapsed .sidebar span,.preview-shell.collapsed .side-section{display:none}.preview-shell.collapsed .sidebar-toggle,.preview-shell.collapsed .nav-context,.preview-shell.collapsed .nav-current{justify-content:center;padding-left:0;padding-right:0}.preview-shell #detailReveal svg{stroke-width:2.8;width:26px;height:26px}.preview-shell .workspace.twin-fullscreen{height:100dvh}
+@media(max-width:1050px){.preview-shell .project-label,.preview-shell .user-label{display:none}.preview-shell .top-actions{gap:6px}.preview-shell .brand strong{font-size:13px}.preview-shell .topbar{padding:0 14px}.preview-shell .toolbar{padding:8px}.preview-shell .toolbar button{font-size:11px;padding:5px 7px}}

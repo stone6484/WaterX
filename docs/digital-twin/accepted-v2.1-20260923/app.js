@@ -1,57 +1,47 @@
-import THREE from './vendor/three.module.js'
-import {D,createSimulation} from './simulation.js'
-import {createPersonnel} from './personnel.js'
-import {createSurfaces} from './scene-surfaces.js'
-import {createEquipmentDetails} from './equipment-detail.js'
-import {createFacilityDetails} from './facility-detail.js'
-import {createLandscape} from './scene-landscape.js'
-import {createWorkers} from './scene-workers.js'
-import {batchStatic} from './scene-batching.js'
-import {siteRouting} from './site-routing.js'
-
-/** Fixed demo only. No API requests, production controls or real-object assumptions. */
-export function mountTwin(host,options){
-let cleanup=()=>{};
-try{return createTwin(host,{...options,registerCleanup:fn=>cleanup=fn});}
-catch(error){cleanup();throw error;}
-}
-function createTwin(host,options){
-let disposed=false,frame=0,observer;
-let scene,camera,renderer,root,highlight;
-const textureCache=new Map(),keys=new Set();
-let surfaces,equipmentDetails;
-const retainedGeometries=new Set(),retainedMaterials=new Set();
-function rememberGraphics(object){object?.traverse(o=>{if(o.geometry)retainedGeometries.add(o.geometry);for(const m of (Array.isArray(o.material)?o.material:o.material?[o.material]:[]))retainedMaterials.add(m);});}
-const listeners=[],timers=new Set(),urls=new Set();
-function on(target,event,handler,opts){target.addEventListener(event,handler,opts);listeners.push(()=>target.removeEventListener(event,handler,opts));}
-function later(fn,ms){const id=window.setTimeout(()=>{timers.delete(id);if(!disposed)fn()},ms);timers.add(id);return id;}
-function cancelTimer(id){window.clearTimeout(id);timers.delete(id);}
-function releaseGraphics(){
- observer?.disconnect();cancelAnimationFrame(frame);
- const geometries=new Set(retainedGeometries),materials=new Set(retainedMaterials),textures=new Set(textureCache.values());
- scene?.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of (Array.isArray(o.material)?o.material:o.material?[o.material]:[])){materials.add(m);for(const v of Object.values(m))if(v?.isTexture)textures.add(v)}if(o.isInstancedMesh)o.dispose();o.shadow?.dispose();});
- for(const m of materials)for(const v of Object.values(m))if(v?.isTexture)textures.add(v);
- geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());
- surfaces?.dispose();equipmentDetails?.dispose();retainedGeometries.clear();retainedMaterials.clear();
- renderer?.renderLists.dispose();renderer?.dispose();renderer?.forceContextLoss();renderer?.domElement.remove();renderer=null;scene=null;camera=null;textureCache.clear();
-}
-function dispose(){if(disposed)return;disposed=true;if(document.fullscreenElement===host)void document.exitFullscreen().catch(()=>{});listeners.forEach(off=>off());listeners.length=0;timers.forEach(id=>window.clearTimeout(id));timers.clear();urls.forEach(url=>URL.revokeObjectURL(url));urls.clear();keys.clear();$('businessDialog')?.close();releaseGraphics();host.replaceChildren();}
-const $=id=>host.querySelector('#'+id);
-options.registerCleanup(dispose);
-const personnel=createPersonnel(D,options.storageKey+':personnel');
-const people=personnel.people;
+/* WaterX independent demo. All objects, signals and business records are synthetic. */
+(() => {
+'use strict';
+const D=window.WATERX_DEMO, $=id=>document.getElementById(id);
+const people=window.WaterXPersonnel.people;
 const entities=new Map([...D.facilities,...D.equipment,...people].map(x=>[x.id,x]));
 const kindNames={facility:'构筑物 / 建筑',equipment:'设备 / 仪表',person:'人员'};
 let selected=null,tab='asset',scenario='alerts',tick=0,cut=false,showLabels=true,mode='orbit',tourIndex=0;
-let records=[];const storageKey=options.storageKey;
+let records=[];const storageKey='waterx-twin-demo-v1-inspections';
 try{const old=JSON.parse(localStorage.getItem(storageKey)||'[]');if(Array.isArray(old))records=old.filter(r=>r&&typeof r.object==='string'&&Array.isArray(r.checks));}catch{}
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const row=(a,b)=>`<div><dt>${escape(a)}</dt><dd>${escape(b)}</dd></div>`;
-function notify(msg){$('toast').textContent=msg;$('toast').style.display='block';cancelTimer(notify.timer);notify.timer=later(()=>$('toast').style.display='none',3500);}
-const simulation=createSimulation();
-const {currentTime,status,signalValue,displaySignal,activeRisks,riskValue}=simulation;
+function notify(msg){$('toast').textContent=msg;$('toast').style.display='block';clearTimeout(notify.timer);notify.timer=setTimeout(()=>$('toast').style.display='none',3500);}
+function currentTime(){const mins=480+tick*15;return `2026-09-19 ${String(Math.floor(mins/60)).padStart(2,'0')}:${String(mins%60).padStart(2,'0')}`;}
+function includesScenario(name){return scenario==='alerts'||scenario===name;}
+function status(a){if(a.id==='BL-02'&&includesScenario('fault'))return '故障停机';if(a.id==='DO-01'&&includesScenario('offline'))return '离线';if(a.id==='BL-01'&&includesScenario('temperature'))return '温度预警';if(a.id==='PRE-01'&&includesScenario('gas'))return '气体报警';return a.status||'示例运行';}
+function signalValue(s,t=tick){
+ const owner=entities.get(s.owner),tag=s.id.split('.').pop();
+ if(s.owner==='DO-01'&&includesScenario('offline'))return null;
+ if(s.id==='BL-01.TEMP'&&includesScenario('temperature'))return 78.4+Math.sin(t*.28)*.5;
+ if(s.id==='PRE-01.H2S'&&includesScenario('gas'))return 12.6+Math.sin(t*.28)*.2;
+ if(s.owner==='BL-02'&&includesScenario('fault')){
+  if(tag==='FAULT')return 1;
+  if(['RUN','CURRENT','FREQ'].includes(tag))return 0;
+ }
+ if(owner?.status==='备用'&&['CURRENT','FREQ'].includes(tag))return 0;
+ if(s.io==='DI'||s.io==='MANUAL'||['LEVEL','HOURS','MOISTURE'].includes(tag))return s.value;
+ let v=s.value;
+ if(includesScenario('fault')&&(s.id==='AIR-01.FLOW'||s.name==='供气流量'))v*=2/3;
+ const seed=[...s.id].reduce((a,c)=>a+c.charCodeAt(0),0);
+ const scale=s.unit==='无量纲'?.006:s.unit==='°C'?.01:.025;
+ return v*(1+Math.sin(t*.28+seed*.11)*scale);
+}
+function displaySignal(s,v){if(v===null)return '— 离线';if(s.io==='DI'){const tag=s.id.split('.').pop();return tag==='RUN'?(v?'运行':'停止'):tag==='FAULT'?(v?'故障':'无故障'):tag==='PROTECT'?(v?'报警':'无报警'):(v?'远程':'就地');}const decimals=['mg/L','m','mm/s','°C','无量纲'].includes(s.unit)?(Math.abs(v)<10?2:1):['Hz','ppm'].includes(s.unit)?1:0;return Number(v).toLocaleString('zh-CN',{maximumFractionDigits:decimals})+' '+s.unit;}
+const riskDefinitions=[
+ {id:'blower-fault',object:'BL-02',location:'AIR-01',level:'alarm',category:'设备',title:'2 号风机故障',signal:'BL-02.FAULT',test:v=>v===1,value:()=> '故障 = 1 · 已停机',basis:'故障信号 = 1；运行信号 = 0',impact:'可用供气能力下降，需核对机组状态与现场故障记录。',focus:'检查故障记录、关联供气数据及备用机组状态。'},
+ {id:'gas-alarm',object:'PRE-01',location:'PRE-01',level:'alarm',category:'安全',title:'进水泵房气体报警',signal:'PRE-01.H2S',test:v=>v!==null&&v>=10,basis:'模拟硫化氢 ≥ 10 ppm（仅演示触发线）',impact:'固定气体测点触发报警，提示关注现场环境风险。',focus:'交由现场人员按既有气体报警与安全处置程序核验；画面不构成人员进入许可。'},
+ {id:'bearing-temperature',object:'BL-01',location:'AIR-01',level:'warning',category:'设备',title:'1 号风机温度偏高',signal:'BL-01.TEMP',test:v=>v!==null&&v>=75,basis:'模拟轴承温度 ≥ 75 °C（仅演示触发线）',impact:'设备状态偏离示例基线，需要结合趋势、负荷和维护记录核验。',focus:'查看温度趋势、振动和维护档案；具体限值以实际设备配置为准。'},
+ {id:'do-offline',object:'DO-01',location:'BIO-01',level:'warning',category:'仪表',title:'1 组 DO 测点离线',signal:'DO-01.VALUE',test:v=>v===null,value:()=> '离线 · 数据缺失',basis:'模拟数据质量状态 = 离线',impact:'该测点无法反映当前溶解氧，不代表 DO 为零或工艺正常。',focus:'核对仪表通信与维护记录，必要时由现场人员补充检测。'}
+];
+function activeRisks(){return riskDefinitions.filter(r=>r.test(signalValue(D.signals.find(s=>s.id===r.signal))));}
+function riskValue(r){const s=D.signals.find(s=>s.id===r.signal);return r.value?r.value():displaySignal(s,signalValue(s));}
 function riskDetail(a){if(!a)return '';const relevant=activeRisks().filter(r=>r.object===a.id||r.location===a.id);return relevant.map(r=>`<section class="risk-detail ${r.level}"><strong>${r.level==='alarm'?'告警':'预警'} · ${escape(r.title)}</strong><b>${escape(riskValue(r))}</b><p>${escape(r.impact)}</p><dl><dt>触发依据</dt><dd>${escape(r.basis)}</dd><dt>关联信号</dt><dd>${escape(r.signal)}</dd><dt>核验方向</dt><dd>${escape(r.focus)}</dd></dl><small>模拟时刻 ${currentTime().slice(11)} · 未接真实报警系统</small></section>`).join('');}
-function focusRisk(r){tab='signals';host.querySelectorAll('[data-tab]').forEach(b=>{const on=b.dataset.tab===tab;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));});select(r.object,true);$('detailContent').scrollTop=0;}
+function focusRisk(r){tab='signals';document.querySelectorAll('[data-tab]').forEach(b=>{const on=b.dataset.tab===tab;b.classList.toggle('active',on);b.setAttribute('aria-selected',String(on));});select(r.object,true);$('detailContent').scrollTop=0;}
 function renderRiskPanel(){const risks=activeRisks(),alarms=risks.filter(r=>r.level==='alarm').length,warnings=risks.length-alarms;
  const severity=alarms?'alarm':warnings?'warning':'normal',summary=alarms?`告警 ${alarms} 项，预警 ${warnings} 项`:warnings?`预警 ${warnings} 项`:'无风险提示';$('riskReveal').dataset.severity=severity;$('riskReveal').setAttribute('aria-label','展开风险提示：'+summary);$('riskReveal').title=summary;
  $('riskCounts').innerHTML=`<span class="risk-count ${alarms?'alarm':''}">告警 <b>${alarms}</b></span><span class="risk-count ${warnings?'warning':''}">预警 <b>${warnings}</b></span>`;
@@ -60,15 +50,15 @@ function renderRiskPanel(){const risks=activeRisks(),alarms=risks.filter(r=>r.le
  $('riskFoot').textContent=risks.length?`${currentTime().slice(11)} · 点击定位对象 · 阈值仅为演示设定`:'正常情景仅用于对照，不代表真实厂区安全状态';
  if(scene)syncRiskMarkers(risks);
 }
-function closeProcessMenus(){host.querySelectorAll('.process-group').forEach(g=>{g.querySelector('.process-trigger').setAttribute('aria-expanded','false');g.querySelector('.process-dropdown').hidden=true;});}
+function closeProcessMenus(){document.querySelectorAll('.process-group').forEach(g=>{g.querySelector('.process-trigger').setAttribute('aria-expanded','false');g.querySelector('.process-dropdown').hidden=true;});}
 function openProcessMenu(group){closeProcessMenus();const panel=group.querySelector('.process-dropdown');panel.hidden=false;group.querySelector('.process-trigger').setAttribute('aria-expanded','true');panel.style.left='0px';const r=panel.getBoundingClientRect();panel.style.left=Math.min(0,window.innerWidth-r.right-12)+'px';}
 function bindProcessMenu(group){const trigger=group.querySelector('.process-trigger'),panel=group.querySelector('.process-dropdown');let timer;
-   on(group,'pointerenter',e=>{if(e.pointerType==='mouse'){cancelTimer(timer);timer=later(()=>{if(group.matches(':hover'))openProcessMenu(group);},180);}});
-   on(group,'pointerleave',()=>{cancelTimer(timer);timer=later(()=>{if(!group.contains(document.activeElement)){panel.hidden=true;trigger.setAttribute('aria-expanded','false');}},120);});
-   trigger.onclick=()=>{cancelTimer(timer);openProcessMenu(group);};
-   on(trigger,'keydown',e=>{if(e.key==='ArrowDown'){e.preventDefault();openProcessMenu(group);panel.querySelector('button,input')?.focus();}});
-   on(group,'focusout',e=>{if(!group.contains(e.relatedTarget)){panel.hidden=true;trigger.setAttribute('aria-expanded','false');}});
-   on(group,'keydown',e=>{if(e.key==='Escape'){e.preventDefault();closeProcessMenus();trigger.focus();}});
+   group.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse'){clearTimeout(timer);timer=setTimeout(()=>{if(group.matches(':hover'))openProcessMenu(group);},180);}});
+   group.addEventListener('pointerleave',()=>{clearTimeout(timer);timer=setTimeout(()=>{if(!group.contains(document.activeElement)){panel.hidden=true;trigger.setAttribute('aria-expanded','false');}},120);});
+   trigger.onclick=()=>{clearTimeout(timer);openProcessMenu(group);};
+   trigger.addEventListener('keydown',e=>{if(e.key==='ArrowDown'){e.preventDefault();openProcessMenu(group);panel.querySelector('button,input')?.focus();}});
+   group.addEventListener('focusout',e=>{if(!group.contains(e.relatedTarget)){panel.hidden=true;trigger.setAttribute('aria-expanded','false');}});
+   group.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();closeProcessMenus();trigger.focus();}});
 }
 bindProcessMenu($('layerMenu'));
 for(const person of people){const b=document.createElement('button');b.className='process-object facility-name';b.dataset.personChoice=person.id;b.textContent=person.name+' · '+person.role+(person.onSite?'':'（位置未知）');b.onclick=()=>{closeProcessMenus();select(person.id,true);};$('personOptions').append(b);}
@@ -92,8 +82,8 @@ function renderList(){const nav=$('processNav');
  nav.querySelectorAll('.process-group').forEach(g=>g.querySelector('.process-trigger').classList.toggle('current',parent?.group===g.dataset.group));
  nav.querySelectorAll('[data-id]').forEach(b=>{const on=b.dataset.id===selected?.id;b.classList.toggle('selected',on);if(on)b.setAttribute('aria-current','true');else b.removeAttribute('aria-current');});
 }
-on(document,'pointerdown',e=>{if(!host.querySelector('.process-selector').contains(e.target))closeProcessMenus();});
-on(window,'resize',closeProcessMenus);
+document.addEventListener('pointerdown',e=>{if(!document.querySelector('.process-selector').contains(e.target))closeProcessMenus();});
+window.addEventListener('resize',closeProcessMenus);
 function signalsFor(a){if(!a)return D.signals.filter(s=>['PRE-01.IN_Q','OUT-01.COD','OUT-01.NH4','AIR-01.FLOW','PWR-01.POWER'].includes(s.id));return D.signals.filter(s=>s.owner===a.id||(a.type==='facility'&&D.equipment.some(e=>e.parent===a.id&&e.id===s.owner)&&['DO-','BL-'].some(prefix=>s.owner.startsWith(prefix))));}
 function readingIds(a){
  if(!a)return [];
@@ -107,50 +97,50 @@ function readingIds(a){
  return D.signals.filter(s=>s.owner===a.id).slice(0,4).map(s=>s.id);
 }
 function readingName(s){const tag=s.id.split('.').pop();return {MLSS:'MLSS',ORP_A:'厌氧 ORP',ORP_N:'缺氧 ORP',IN_Q:'进水流量',Q:'出水流量',PH:'pH',COD:'COD',NH4:'氨氮',TN:'总氮',TP:'总磷',RUN:'状态',FREQ:'频率',CURRENT:'电流',PRESSURE:'压力',TEMP:s.owner.startsWith('BL-')?'轴承温度':'水温',VIB:'振动',H2S:'H₂S',CL:'余氯',BLANKET:'泥位',FLOW:'供气流量'}[tag]||(s.owner.startsWith('DO-')?'DO':s.name);}
-const personnelUI=personnel.createUI({select,notify,currentTime,refresh:renderDetail,entities,host});
+const personnelUI=window.WaterXPersonnelUI({select,notify,currentTime,refresh:renderDetail,entities});
 $('peopleRoster').onclick=()=>personnelUI.roster();
 function renderReadings(){
  const risks=activeRisks();
  for(const l of labelEntries){const a=entities.get(l.id),signals=(l.signalIds||[]).map(id=>D.signals.find(s=>s.id===id)).filter(Boolean);
-  if(a.type==='person'){l.el.classList.add('person-label');l.el.innerHTML=`<strong>${escape(a.name)}</strong><small>${escape(a.role)} · 示例</small>`;l.el.title=`${a.name} · ${a.role} · 待办 ${personnel.pending(a.id).length} · ${a.workplace}（示例位置）`;l.width=0;l.height=0;continue;}
+  if(a.type==='person'){l.el.classList.add('person-label');l.el.innerHTML=`<strong>${escape(a.name)}</strong><small>${escape(a.role)} · 示例</small>`;l.el.title=`${a.name} · ${a.role} · 待办 ${window.WaterXPersonnel.pending(a.id).length} · ${a.workplace}（示例位置）`;l.width=0;l.height=0;continue;}
   l.el.innerHTML=`<strong>${escape(a.name)}</strong>${signals.length?`<span class="reading-stamp">模拟 ${currentTime().slice(11)}</span><span class="spatial-values">${signals.map(s=>{const value=signalValue(s),risk=risks.find(r=>r.signal===s.id),prefix=a.id!==s.owner&&s.owner.startsWith('BL-')?s.owner.slice(-1)+'号机 · ':'';return `<span class="spatial-value ${value===null?'offline':risk?.level||''}" data-signal="${escape(s.id)}"><span>${escape(prefix+readingName(s))}</span><b>${escape(s.unit==='无量纲'&&value!==null?Number(value).toFixed(2):displaySignal(s,value))}</b></span>`;}).join('')}</span>`:''}`;
   l.el.classList.toggle('with-reading',signals.length>0);l.width=0;l.height=0;
  }
 }
 function addSceneLabel(a){const el=document.createElement('button');el.className=a.type==='person'?'map-label person-label':'map-label';el.type='button';el.dataset.object=a.id;el.setAttribute('aria-label','定位 '+a.name);el.onclick=()=>select(a.id,true);$('sceneLabels').append(el);const leader=document.createElementNS('http://www.w3.org/2000/svg','path');$('readingLeaders').append(leader);const equipment=a.type==='equipment';labelEntries.push({id:a.id,el,leader,equipment,person:a.type==='person',signalIds:a.type==='person'?[]:readingIds(a),width:0,height:0,pos:new THREE.Vector3(a.x,a.type==='person'?(a.y||0)+1.9:equipment?(a.y||0)+2:['building','admin'].includes(a.kind)?a.h+1:2,a.z)});}
 let drawerPinned=true,drawerTimer;
-function setDrawer(open,pinned=false){cancelTimer(drawerTimer);drawerPinned=open&&pinned;const drawer=$('detailDrawer');drawer.classList.toggle('open',open);drawer.inert=!open;$('detailReveal').hidden=open;$('detailReveal').setAttribute('aria-expanded',String(open));$('pinDetails').setAttribute('aria-pressed',String(drawerPinned));$('pinDetails').classList.toggle('active',drawerPinned);$('pinDetails').textContent=drawerPinned?'已固定':'固定';}
+function setDrawer(open,pinned=false){clearTimeout(drawerTimer);drawerPinned=open&&pinned;const drawer=$('detailDrawer');drawer.classList.toggle('open',open);drawer.inert=!open;$('detailReveal').hidden=open;$('detailReveal').setAttribute('aria-expanded',String(open));$('pinDetails').setAttribute('aria-pressed',String(drawerPinned));$('pinDetails').classList.toggle('active',drawerPinned);$('pinDetails').textContent=drawerPinned?'已固定':'固定';}
 // Match the left alarm orb: click to open, so closing never reopens under the pointer.
 $('detailReveal').onclick=e=>{setDrawer(true,false);if(e.detail===0)$('pinDetails').focus({preventScroll:true});};
 
-on($('detailDrawer'),'pointerenter',()=>cancelTimer(drawerTimer));
-function scheduleDrawerClose(){cancelTimer(drawerTimer);drawerTimer=later(()=>{const drawer=$('detailDrawer'),entry=$('detailReveal');if(!drawerPinned&&!drawer.contains(document.activeElement)&&document.activeElement!==entry&&!drawer.matches(':hover')&&!entry.matches(':hover'))setDrawer(false);},400);}
-on($('detailDrawer'),'pointerleave',scheduleDrawerClose);
-on($('detailReveal'),'pointerleave',scheduleDrawerClose);
-on($('detailDrawer'),'focusout',scheduleDrawerClose);
-on($('detailReveal'),'blur',scheduleDrawerClose);
+$('detailDrawer').addEventListener('pointerenter',()=>clearTimeout(drawerTimer));
+function scheduleDrawerClose(){clearTimeout(drawerTimer);drawerTimer=setTimeout(()=>{const drawer=$('detailDrawer'),entry=$('detailReveal');if(!drawerPinned&&!drawer.contains(document.activeElement)&&document.activeElement!==entry&&!drawer.matches(':hover')&&!entry.matches(':hover'))setDrawer(false);},400);}
+$('detailDrawer').addEventListener('pointerleave',scheduleDrawerClose);
+$('detailReveal').addEventListener('pointerleave',scheduleDrawerClose);
+$('detailDrawer').addEventListener('focusout',scheduleDrawerClose);
+$('detailReveal').addEventListener('blur',scheduleDrawerClose);
 $('pinDetails').onclick=e=>{setDrawer(true,!drawerPinned);if(e.detail)e.currentTarget.blur();};
 $('closeDetails').onclick=()=>{setDrawer(false);$('viewport').focus({preventScroll:true});};
-on($('detailDrawer'),'keydown',e=>{if(e.key==='Escape'){$('closeDetails').click();}});
+$('detailDrawer').addEventListener('keydown',e=>{if(e.key==='Escape'){$('closeDetails').click();}});
 let riskPinned=true,riskTimer;
-function setRiskPanel(open,pinned=false){cancelTimer(riskTimer);riskPinned=open&&pinned;const panel=$('riskPanel');panel.classList.toggle('open',open);panel.inert=!open;$('riskReveal').hidden=open;$('riskReveal').setAttribute('aria-expanded',String(open));$('pinRisk').setAttribute('aria-pressed',String(riskPinned));$('pinRisk').classList.toggle('active',riskPinned);$('pinRisk').textContent=riskPinned?'已固定':'固定';}
-function scheduleRiskClose(){cancelTimer(riskTimer);riskTimer=later(()=>{const panel=$('riskPanel');if(!riskPinned&&!panel.matches(':hover')&&!panel.contains(document.activeElement))setRiskPanel(false);},400);}
+function setRiskPanel(open,pinned=false){clearTimeout(riskTimer);riskPinned=open&&pinned;const panel=$('riskPanel');panel.classList.toggle('open',open);panel.inert=!open;$('riskReveal').hidden=open;$('riskReveal').setAttribute('aria-expanded',String(open));$('pinRisk').setAttribute('aria-pressed',String(riskPinned));$('pinRisk').classList.toggle('active',riskPinned);$('pinRisk').textContent=riskPinned?'已固定':'固定';}
+function scheduleRiskClose(){clearTimeout(riskTimer);riskTimer=setTimeout(()=>{const panel=$('riskPanel');if(!riskPinned&&!panel.matches(':hover')&&!panel.contains(document.activeElement))setRiskPanel(false);},400);}
 $('riskReveal').onclick=e=>{setRiskPanel(true,false);if(e.detail===0)$('pinRisk').focus({preventScroll:true});};
-on($('riskPanel'),'pointerenter',()=>cancelTimer(riskTimer));
-on($('riskPanel'),'pointerleave',scheduleRiskClose);
-on($('riskPanel'),'focusout',scheduleRiskClose);
+$('riskPanel').addEventListener('pointerenter',()=>clearTimeout(riskTimer));
+$('riskPanel').addEventListener('pointerleave',scheduleRiskClose);
+$('riskPanel').addEventListener('focusout',scheduleRiskClose);
 $('pinRisk').onclick=e=>{setRiskPanel(true,!riskPinned);if(e.detail)e.currentTarget.blur();};
 $('closeRisk').onclick=()=>{setRiskPanel(false);$('riskReveal').focus({preventScroll:true});};
-on($('riskPanel'),'keydown',e=>{if(e.key==='Escape')$('closeRisk').click();});
+$('riskPanel').addEventListener('keydown',e=>{if(e.key==='Escape')$('closeRisk').click();});
 function spark(s){const vals=Array.from({length:25},(_,i)=>signalValue(s,i));if(vals.some(v=>v===null)||s.io!=='AI')return '';const lo=Math.min(...vals),hi=Math.max(...vals),range=hi-lo||1;const pts=vals.map((v,i)=>`${i*10},${29-(v-lo)/range*23}`).join(' ');const x=tick*10,y=29-(vals[tick]-lo)/range*23;return `<svg viewBox="0 0 240 34" role="img" aria-label="08:00 至 14:00 的模拟变化趋势，纵轴自动缩放"><path d="M0 31H240" stroke="#e8f0f4" fill="none"/><polyline points="${pts}" fill="none" stroke="#078bc4" stroke-width="1.5"/><circle cx="${x}" cy="${y}" r="2.7" fill="#0877a7"/></svg>`;}
 function renderDetail(){const a=selected;renderReadings();
- host.querySelectorAll('[data-tab]').forEach(b=>{b.textContent=(a?.type==='person'?{asset:'待办任务',signals:'人员资料',business:'已完成'}:{asset:'对象台账',signals:'模拟信号',business:'业务关联'})[b.dataset.tab];b.classList.toggle('active',b.dataset.tab===tab);b.setAttribute('aria-selected',String(b.dataset.tab===tab));});
- host.querySelector('.detail-foot').textContent=a?.type==='person'?'人员、考勤、位置与任务均为示例；未连接真实定位和工作系统。':'模型与台账均为示例设定。业务关联未连接正式系统。';
+ document.querySelectorAll('[data-tab]').forEach(b=>{b.textContent=(a?.type==='person'?{asset:'待办任务',signals:'人员资料',business:'已完成'}:{asset:'对象台账',signals:'模拟信号',business:'业务关联'})[b.dataset.tab];b.classList.toggle('active',b.dataset.tab===tab);b.setAttribute('aria-selected',String(b.dataset.tab===tab));});
+ document.querySelector('.detail-foot').textContent=a?.type==='person'?'人员、考勤、位置与任务均为示例；未连接真实定位和工作系统。':'模型与台账均为示例设定。业务关联未连接正式系统。';
  $('detailKind').textContent=a?kindNames[a.type]:'全厂概览';$('detailTitle').textContent=a?.name||D.meta.name;$('detailCode').textContent=a?.id||D.meta.id;
  const content=$('detailContent');
  if(a?.type==='person'){personnelUI.render(a,tab);return;}
  if(tab==='asset'){
-  if(!a){content.innerHTML=`<p class="intro">一座可以走近、查看和巡检的示例 A²/O 水厂。</p><dl class="kv">${row('处理规模','100,000 m³/d')}${row('生化池组','4 组 × 25,000 m³/d')}${row('占地假设','420 × 280 m')}${row('设施 / 设备',`${D.facilities.length} / ${D.equipment.length}`)}${row('模拟信号',D.signals.length+' 项')}</dl><div class="subheading">浏览方式</div><p class="intro">点击池体进入工艺单元，点击设备查看台账。选择“巡检路线”，逐站核查并保存本地记录。</p><div class="note">工艺关系参考公开资料；总图、尺寸、设备参数均为示范设定。</div><a href="${import.meta.env.BASE_URL}digital-twin/scenario.html" target="_blank" rel="noopener">查看完整案例与来源 ↗</a>`;personnelUI.nearby(content,null);return;}
+  if(!a){content.innerHTML=`<p class="intro">一座可以走近、查看和巡检的示例 A²/O 水厂。</p><dl class="kv">${row('处理规模','100,000 m³/d')}${row('生化池组','4 组 × 25,000 m³/d')}${row('占地假设','420 × 280 m')}${row('设施 / 设备',`${D.facilities.length} / ${D.equipment.length}`)}${row('模拟信号',D.signals.length+' 项')}</dl><div class="subheading">浏览方式</div><p class="intro">点击池体进入工艺单元，点击设备查看台账。选择“巡检路线”，逐站核查并保存本地记录。</p><div class="note">工艺关系参考公开资料；总图、尺寸、设备参数均为示范设定。</div><a href="scenario.html" target="_blank" rel="noopener">查看完整案例与来源 ↗</a>`;personnelUI.nearby(content,null);return;}
   const state=status(a);content.innerHTML=`<p class="intro">${escape(a.description)}</p><span class="status ${state.includes('故障')||state.includes('报警')?'alarm':state.includes('预警')?'warn':state==='离线'?'off':''}">${escape(state)}</span><dl class="kv">${a.parent?row('所属单元',entities.get(a.parent)?.name||a.parent):''}${Object.entries(a.params).map(([k,v])=>row(k,v)).join('')}${a.type==='equipment'?row('设备厂商',a.manufacturer)+row('示例型号',a.model)+row('投运日期',a.commissioned):''}</dl>`;
   const children=D.equipment.filter(e=>e.parent===a.id);if(children.length){content.insertAdjacentHTML('beforeend',`<div class="subheading">设备与测点 · ${children.length}</div>`);for(const child of children){const b=document.createElement('button');b.className='child-link';b.textContent=child.name+' ↗';b.onclick=()=>select(child.id,true);content.append(b);}}
   if(a.parent){const b=document.createElement('button');b.className='child-link';b.textContent='返回所属单元';b.onclick=()=>select(a.parent,true);content.append(b);}
@@ -176,12 +166,12 @@ function openBusiness(key){const a=selected||{id:D.meta.id,name:D.meta.name},par
 }
 $('closeDialog').onclick=()=>$('businessDialog').close();
 
-host.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;host.querySelectorAll('[data-tab]').forEach(t=>{t.classList.toggle('active',t===b);t.setAttribute('aria-selected',String(t===b));});renderDetail();});
-$('timeline').oninput=e=>{tick=Number(e.target.value);simulation.setTick(tick);$('timeLabel').textContent=currentTime();renderDetail();renderRiskPanel();};
-$('scenario').onchange=e=>{scenario=e.target.value;simulation.setScenario(scenario);updateAppearance();renderDetail();renderRiskPanel();notify(scenario==='normal'?'已切换正常对照情景，模拟风险标记已清除。':'已切换风险示例，可点击主视图风险信息定位对象。');};
-const objectGroups=new Map(),pickables=[],labelEntries=[],waterObjects=[],cutObjects=[],equipmentMats=new Map(),pipeGroups={},flowMarkers=[],riskMarkers=new Map(),waterAnimations=[],rotors=[];
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{tab=b.dataset.tab;document.querySelectorAll('[data-tab]').forEach(t=>{t.classList.toggle('active',t===b);t.setAttribute('aria-selected',String(t===b));});renderDetail();});
+$('timeline').oninput=e=>{tick=Number(e.target.value);$('timeLabel').textContent=currentTime();renderDetail();renderRiskPanel();};
+$('scenario').onchange=e=>{scenario=e.target.value;updateAppearance();renderDetail();renderRiskPanel();notify(scenario==='normal'?'已切换正常对照情景，模拟风险标记已清除。':'已切换风险示例，可点击主视图风险信息定位对象。');};
+let scene,camera,renderer,root,highlight;const objectGroups=new Map(),pickables=[],labelEntries=[],waterObjects=[],cutObjects=[],equipmentMats=new Map(),pipeGroups={},flowMarkers=[],riskMarkers=new Map(),waterAnimations=[],rotors=[];
 let yaw=.60,pitch=.85,distance=620,target={x:0,y:0,z:0},walkYaw=0,walkPitch=0,transition=null,lastFrame=0;
-let autoFit=true;
+const keys=new Set();let autoFit=true;
 const colors={wall:0xc4d1d4,water:0x5faaa9,water2:0x78bbc4,metal:0x547a8c,concrete:0xdbdfe0,roof:0x527a8b,ground:0xdfe8df,road:0xc9d2d5};
 function select(id,focus=false){const a=entities.get(id);if(!a)return;if(a.type==='person'||selected?.type==='person'){if(a.type==='person'||selected?.id!==a.id)tab='asset';setDrawer(true,true);$('detailContent').scrollTop=0;}selected=a;renderList();renderDetail();if(!scene)return;
  if(highlight){scene.remove(highlight);highlight.geometry.dispose();highlight.material.dispose();}
@@ -191,9 +181,9 @@ function select(id,focus=false){const a=entities.get(id);if(!a)return;if(a.type=
  if(focus){setMode('orbit');autoFit=false;const size=a.type==='facility'?Math.max(a.w,a.d):a.type==='person'?16:a.kind==='blower'?19:a.kind==='diffuser'?42:12;target={x:a.x,y:a.type==='person'?a.y+1:a.type==='equipment'?a.y:0,z:a.z};distance=Math.max(size*(a.type==='facility'?1.85:2),24);pitch=.68;transition=null;updateCamera();}
 }
 // CC0 PBR textures and procedural liquid surfaces are isolated from the simulation.
-surfaces=createSurfaces(THREE,waterObjects,waterAnimations,import.meta.env.BASE_URL+'digital-twin/textures/');
+const surfaces=window.WaterXSurfaces(THREE,waterObjects,waterAnimations);
 const {material,waterSurface,sceneTexture}=surfaces;
-let facilityDetails;
+let facilityDetails,equipmentDetails;
 
 function flange(g,x,y,z,r,axis='y'){
  const f=new THREE.Group();cylinder(f,0,0,0,r*1.42,.16,0xa5b2b4,32);cylinder(f,0,.1,0,r,.035,0x485960,32);
@@ -277,25 +267,24 @@ function ground(parent=scene){const scene=new THREE.Group();parent.add(scene);
  const terrain=new THREE.ShapeGeometry(shape);const uv=terrain.attributes.uv,p=terrain.attributes.position;for(let i=0;i<p.count;i++)uv.setXY(i,p.getX(i)/7,p.getY(i)/7);const m=new THREE.Mesh(terrain,material(colors.ground));m.rotation.x=-Math.PI/2;m.position.y=-.05;m.receiveShadow=true;scene.add(m);box(scene,0,-6.8,0,420,1,280,0x9eadab);
  const road=(x,z,w,d)=>{box(scene,x,.03,z,w,.08,d,colors.road);const along=w>d,len=Math.max(w,d),width=Math.min(w,d);for(const side of [-1,1]){box(scene,x+(along?0:side*(width/2+.18)),.17,z+(along?side*(width/2+.18):0),along?len:.35,.27,along?.35:len,colors.concrete);}
  for(let t=-len/2+5;t<len/2-3;t+=9)box(scene,x+(along?t:0),.085,z+(along?0:t),along?3.5:.11,.008,along?.11:3.5,0xd7c699,{roughness:1});};
- for(const r of siteRouting.roads)road(...r);
- facilityDetails.site(scene,D);createLandscape({THREE,box,material,colors},scene,D);
+ for(const r of window.WaterXSiteRouting.roads)road(...r);
+ facilityDetails.site(scene,D);window.WaterXLandscape({THREE,box,material,colors},scene,D);
  textPlate(scene,'西 · 进水',-185,8,-96,23);textPlate(scene,'东 · 出水',193,8,70,23);return scene;
 }
 function createPipes(){const palette={water:0x078bc4,ras:0x9468ac,air:0xdfad47,sludge:0x8d735c,chemical:0x568d83};
  for(const layer of Object.keys(palette)){const g=new THREE.Group();g.visible=true;scene.add(g);pipeGroups[layer]=g;}
- for(const original of D.pipes){const p=siteRouting.reroute(original),g=pipeGroups[p.layer],pts=p.points;pipeDetail(g,pts,siteRouting.radius(p),palette[p.layer]);for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],len=Math.hypot(b[0]-a[0],b[2]-a[2]);if(Math.abs(a[1]-b[1])<.01&&a[1]>.5)for(let t=12;t<len;t+=24){const u=t/len,x=a[0]+(b[0]-a[0])*u,z=a[2]+(b[2]-a[2])*u;box(g,x,(a[1]-.35)/2,z,.65,a[1]-.35,.65,0x8d9798);}}const vectors=pts.map(p=>new THREE.Vector3(...p));const curve=new THREE.CurvePath();for(let i=1;i<vectors.length;i++)curve.add(new THREE.LineCurve3(vectors[i-1],vectors[i]));
+ for(const original of D.pipes){const p=window.WaterXSiteRouting.reroute(original),g=pipeGroups[p.layer],pts=p.points;pipeDetail(g,pts,window.WaterXSiteRouting.radius(p),palette[p.layer]);for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],len=Math.hypot(b[0]-a[0],b[2]-a[2]);if(Math.abs(a[1]-b[1])<.01&&a[1]>.5)for(let t=12;t<len;t+=24){const u=t/len,x=a[0]+(b[0]-a[0])*u,z=a[2]+(b[2]-a[2])*u;box(g,x,(a[1]-.35)/2,z,.65,a[1]-.35,.65,0x8d9798);}}const vectors=pts.map(p=>new THREE.Vector3(...p));const curve=new THREE.CurvePath();for(let i=1;i<vectors.length;i++)curve.add(new THREE.LineCurve3(vectors[i-1],vectors[i]));
   const arrow=new THREE.Mesh(new THREE.ConeGeometry(.65,1.8,8),material(palette[p.layer]));g.add(arrow);flowMarkers.push({arrow,curve,index:flowMarkers.length});
  }
 }
 function initScene(){scene=new THREE.Scene();scene.background=new THREE.Color(0xdce5e7);camera=new THREE.PerspectiveCamera(43,1,.1,2500);renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});renderer.setPixelRatio(Math.min(window.devicePixelRatio,1.6));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.02;$('viewport').append(renderer.domElement);
  scene.environment=surfaces.environment(renderer);scene.add(new THREE.HemisphereLight(0xdfeaf1,0x7a715a,1.2));const sun=new THREE.DirectionalLight(0xfff0d9,2.6);sun.position.set(-170,270,100);sun.castShadow=true;sun.shadow.mapSize.set(4096,4096);Object.assign(sun.shadow.camera,{left:-280,right:280,top:230,bottom:-230,near:10,far:700});sun.shadow.bias=-.00018;sun.shadow.normalBias=.16;scene.add(sun);
- const api={THREE,box,cylinder,line,pipeDetail,flange,gauge,nameplate,material,rotors,waterSurface,cutObjects,waterObjects,colors,sceneTexture,pipeMaterial:surfaces.pipeMaterial};facilityDetails=createFacilityDetails(api);equipmentDetails=createEquipmentDetails(api);
+ const api={THREE,box,cylinder,line,pipeDetail,flange,gauge,nameplate,material,rotors,waterSurface,cutObjects,waterObjects,colors,sceneTexture,pipeMaterial:surfaces.pipeMaterial};facilityDetails=window.WaterXFacilityDetails(api);equipmentDetails=window.WaterXDetailModels(api);
  root=new THREE.Group();scene.add(root);const siteRoot=ground();D.facilities.forEach(createFacility);D.equipment.forEach(createEquipment);createPipes();
- for(const [id,g] of createWorkers(THREE,root,people)){objectGroups.set(id,g);addSceneLabel(entities.get(id));}
+ for(const [id,g] of window.WaterXWorkers(THREE,root,people)){objectGroups.set(id,g);addSceneLabel(entities.get(id));}
  const dynamic=new Set([...waterObjects,...cutObjects,...rotors.map(r=>r.group)]);for(const g of objectGroups.values())g.traverse(m=>{if(m.isMesh&&[...equipmentMats.values()].some(e=>e.mat===m.material||e.lamp===m))dynamic.add(m);});
- rememberGraphics(scene);
- batchStatic(THREE,[...objectGroups.values(),siteRoot,...Object.values(pipeGroups)],new Set([...dynamic,...flowMarkers.map(f=>f.arrow)]));pickables.length=0;for(const [id,g] of objectGroups)g.traverse(m=>{if(m.isMesh){m.userData.id=id;pickables.push(m);}});updateAppearance();
- const resize=()=>{const b=$('viewport').getBoundingClientRect();renderer.setSize(b.width,b.height);camera.aspect=b.width/b.height;camera.updateProjectionMatrix();if(autoFit&&(mode==='orbit'||mode==='plan'))fitOverview();};observer=new ResizeObserver(resize);observer.observe($('viewport'));resize();updateCamera();bindCanvas();frame=requestAnimationFrame(animate);
+ window.WaterXBatchStatic(THREE,[...objectGroups.values(),siteRoot,...Object.values(pipeGroups)],new Set([...dynamic,...flowMarkers.map(f=>f.arrow)]));pickables.length=0;for(const [id,g] of objectGroups)g.traverse(m=>{if(m.isMesh){m.userData.id=id;pickables.push(m);}});updateAppearance();
+ const resize=()=>{const b=$('viewport').getBoundingClientRect();renderer.setSize(b.width,b.height);camera.aspect=b.width/b.height;camera.updateProjectionMatrix();if(autoFit&&(mode==='orbit'||mode==='plan'))fitOverview();};new ResizeObserver(resize).observe($('viewport'));resize();updateCamera();bindCanvas();requestAnimationFrame(animate);
 }
 function updateAppearance(){if(!scene)return;for(const e of D.equipment){const m=equipmentMats.get(e.id);if(!m)continue;const st=status(e);if(m.lamp)m.lamp.material.color.setHex(st==='故障停机'?0xd94a4a:e.status==='备用'?0x959d9f:0x43b985);m.mat.color.setHex(st==='故障停机'?0xd94a4a:st==='温度预警'?0xf28c28:st==='离线'?0x97a4ac:m.base);}}
 function syncRiskMarkers(risks){const groups=new Map();for(const r of risks){if(!groups.has(r.location))groups.set(r.location,[]);groups.get(r.location).push(r);}
@@ -317,12 +306,13 @@ function positionRiskMarkers(bounds){const occupied=[];
 function setCut(value){cut=value;waterObjects.forEach(o=>o.visible=!cut);cutObjects.forEach(o=>o.visible=!cut);$('cut').classList.toggle('active',cut);$('cut').setAttribute('aria-pressed',String(cut));}
 $('cut').onclick=()=>setCut(!cut);
 $('labels').onclick=()=>{showLabels=!showLabels;$('labels').classList.toggle('active',showLabels);$('labels').setAttribute('aria-pressed',String(showLabels));$('labels').textContent=showLabels?'隐藏名称':'显示名称';};
-let twinFullscreen=false;
-function syncTwinFullscreen(){host.classList.toggle('is-fullscreen',twinFullscreen);$('fullscreenText').textContent=twinFullscreen?'退出全屏':'全屏';$('twinFullscreen').setAttribute('aria-pressed',String(twinFullscreen));}
-$('twinFullscreen').onclick=async()=>{if(twinFullscreen){if(document.fullscreenElement===host)await document.exitFullscreen();twinFullscreen=false;}else{twinFullscreen=true;try{await host.requestFullscreen();}catch{/* Escapable full-window fallback. */}}if(!disposed)syncTwinFullscreen();};
-on(document,'fullscreenchange',()=>{twinFullscreen=document.fullscreenElement===host;syncTwinFullscreen();});
-on(document,'keydown',e=>{if(e.key==='Escape'&&twinFullscreen&&!document.fullscreenElement){twinFullscreen=false;syncTwinFullscreen();}});
-host.querySelectorAll('[data-layer]').forEach(i=>i.onchange=()=>{if(pipeGroups[i.dataset.layer])pipeGroups[i.dataset.layer].visible=i.checked;});
+// Fullscreen includes the complete workspace: toolbar, scene and playback controls.
+const twinWorkspace=document.querySelector('.workspace');
+function twinFullscreenState(on){twinWorkspace.classList.toggle('twin-fullscreen',on);$('fullscreenText').textContent=on?'退出全屏':'全屏';$('twinFullscreen').setAttribute('aria-pressed',String(on));}
+$('twinFullscreen').onclick=async()=>{const on=twinWorkspace.classList.contains('twin-fullscreen');if(on){if(document.fullscreenElement===twinWorkspace)await document.exitFullscreen();twinFullscreenState(false);}else{twinFullscreenState(true);try{await twinWorkspace.requestFullscreen();}catch{/* In-app browser fallback retains the same workspace bounds. */}}};
+document.addEventListener('fullscreenchange',()=>twinFullscreenState(document.fullscreenElement===twinWorkspace));
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!document.fullscreenElement)twinFullscreenState(false);});
+document.querySelectorAll('[data-layer]').forEach(i=>i.onchange=()=>{if(pipeGroups[i.dataset.layer])pipeGroups[i.dataset.layer].visible=i.checked;});
 function updateCamera(){if(!camera||mode==='walk'||mode==='tour')return;const p=mode==='plan'?1.555:pitch;camera.position.set(target.x+distance*Math.cos(p)*Math.sin(yaw),target.y+distance*Math.sin(p),target.z+distance*Math.cos(p)*Math.cos(yaw));camera.lookAt(target.x,target.y,target.z);}
 function fitOverview(){if(!camera)return;distance=mode==='plan'?Math.max(470,600/camera.aspect):Math.max(620,680/camera.aspect);updateCamera();}
 function setMode(m){mode=m;transition=null;keys.clear();$('inspection').hidden=m!=='tour';for(const [id,v] of [['overview','orbit'],['plan','plan'],['walk','walk'],['tour','tour']])$(id).classList.toggle('active',m===v);
@@ -331,29 +321,29 @@ function setMode(m){mode=m;transition=null;keys.clear();$('inspection').hidden=m
 $('overview').onclick=()=>{setMode('orbit');autoFit=true;target={x:0,y:0,z:0};yaw=.60;pitch=.85;fitOverview();};
 $('plan').onclick=()=>{setMode('plan');autoFit=true;target={x:0,y:0,z:0};yaw=0;fitOverview();};
 $('walk').onclick=()=>{setMode('walk');if(camera){camera.position.set(-111,2.2,87);walkYaw=-.06;walkPitch=0;updateWalkLook();}notify('已进入地面视角；先点击场景，再用方向键移动。');};
-function updateWalkLook(){if(!camera)return;camera.lookAt(camera.position.x+Math.sin(walkYaw)*Math.cos(walkPitch)*20,camera.position.y+Math.sin(walkPitch)*20,camera.position.z-Math.cos(walkYaw)*Math.cos(walkPitch)*20);}
+function updateWalkLook(){camera.lookAt(camera.position.x+Math.sin(walkYaw)*Math.cos(walkPitch)*20,camera.position.y+Math.sin(walkPitch)*20,camera.position.z-Math.cos(walkYaw)*Math.cos(walkPitch)*20);}
 function moveTour(i){tourIndex=Math.max(0,Math.min(D.route.length-1,i));const r=D.route[tourIndex];setMode('tour');select(r.object,false);setCut(true);const eye=new THREE.Vector3(...r.eye),look=new THREE.Vector3(...r.look);if(camera){transition={from:camera.position.clone(),to:eye,look,start:performance.now()};}
  $('stopTitle').textContent=`${String(tourIndex+1).padStart(2,'0')} / ${D.route.length} · ${r.name}`;$('progress').textContent=`已记录 ${new Set(records.map(r=>r.object)).size} / ${D.route.length} 站`;$('checks').innerHTML=r.checks.map((s,i)=>`<label><input type="checkbox" data-check="${i}"> ${escape(s)}</label>`).join('');$('inspectionNote').value='';$('saveMessage').textContent='';$('prevStop').disabled=tourIndex===0;$('nextStop').disabled=tourIndex===D.route.length-1;
 }
 $('tour').onclick=()=>moveTour(0);$('prevStop').onclick=()=>moveTour(tourIndex-1);$('nextStop').onclick=()=>moveTour(tourIndex+1);$('exitTour').onclick=()=>$('overview').click();
-$('saveInspection').onclick=()=>{const checks=[...host.querySelectorAll('[data-check]')].map(c=>c.checked);if(checks.some(c=>!c)){notify('请完成本站三项核查后保存。');return;}const r=D.route[tourIndex],record={id:'DEMO-'+Date.now(),object:r.object,station:r.name,checks,note:$('inspectionNote').value.trim(),savedAt:new Date().toLocaleString('zh-CN',{hour12:false}),scenario,simulationTime:currentTime(),source:'用户操作的本地示例记录，非正式巡检'};const updated=[...records,record];try{localStorage.setItem(storageKey,JSON.stringify(updated));records=updated;$('saveMessage').textContent='已保存到当前浏览器，可导出记录。';$('progress').textContent=`已记录 ${new Set(records.map(r=>r.object)).size} / ${D.route.length} 站`;notify('本站巡检记录已本地保存。');}catch{$('saveMessage').textContent='保存失败：浏览器存储不可用，请导出当前记录。';records=updated;notify('本地保存失败，记录暂留内存，请导出。');}};
-$('exportInspection').onclick=()=>{const blob=new Blob([JSON.stringify({site:D.meta.id,source:'数字孪生本地示例，非正式巡检',context:options.context,records},null,2)],{type:'application/json'});const a=document.createElement('a'),url=URL.createObjectURL(blob);urls.add(url);a.href=url;a.download='澄川示范水厂-巡检记录.json';a.click();later(()=>{URL.revokeObjectURL(url);urls.delete(url)},1000);};
-function bindCanvas(){const canvas=renderer.domElement;on(canvas,'webglcontextlost',e=>{if(disposed)return;e.preventDefault();cancelAnimationFrame(frame);keys.clear();host.dataset.webgl='lost';$('loadError').textContent='三维图形上下文已丢失，请重新进入本页。对象资料仍可查看。';$('loadError').hidden=false;});let down=null,moved=false;const ray=new THREE.Raycaster();
- on(canvas,'pointerdown',e=>{if(e.isPrimary===false)return;down={x:e.clientX,y:e.clientY,button:e.button,startX:e.clientX,startY:e.clientY};moved=false;canvas.setPointerCapture(e.pointerId);$('viewport').focus({preventScroll:true});});
- on(canvas,'pointermove',e=>{if(!down)return;autoFit=false;const dx=e.clientX-down.x,dy=e.clientY-down.y;if(Math.hypot(e.clientX-down.startX,e.clientY-down.startY)>4)moved=true;down.x=e.clientX;down.y=e.clientY;
+$('saveInspection').onclick=()=>{const checks=[...document.querySelectorAll('[data-check]')].map(c=>c.checked);if(checks.some(c=>!c)){notify('请完成本站三项核查后保存。');return;}const r=D.route[tourIndex],record={id:'DEMO-'+Date.now(),object:r.object,station:r.name,checks,note:$('inspectionNote').value.trim(),savedAt:new Date().toLocaleString('zh-CN',{hour12:false}),scenario,simulationTime:currentTime(),source:'用户操作的本地示例记录，非正式巡检'};const updated=[...records,record];try{localStorage.setItem(storageKey,JSON.stringify(updated));records=updated;$('saveMessage').textContent='已保存到当前浏览器，可导出记录。';$('progress').textContent=`已记录 ${new Set(records.map(r=>r.object)).size} / ${D.route.length} 站`;notify('本站巡检记录已本地保存。');}catch{$('saveMessage').textContent='保存失败：浏览器存储不可用，请导出当前记录。';records=updated;notify('本地保存失败，记录暂留内存，请导出。');}};
+$('exportInspection').onclick=()=>{const blob=new Blob([JSON.stringify({site:D.meta.id,source:'独立演示',records},null,2)],{type:'application/json'});const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download='澄川示范水厂-巡检记录.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);};
+function bindCanvas(){const canvas=renderer.domElement;let down=null,moved=false;const ray=new THREE.Raycaster();
+ canvas.addEventListener('pointerdown',e=>{if(e.isPrimary===false)return;down={x:e.clientX,y:e.clientY,button:e.button,startX:e.clientX,startY:e.clientY};moved=false;canvas.setPointerCapture(e.pointerId);$('viewport').focus({preventScroll:true});});
+ canvas.addEventListener('pointermove',e=>{if(!down)return;autoFit=false;const dx=e.clientX-down.x,dy=e.clientY-down.y;if(Math.hypot(e.clientX-down.startX,e.clientY-down.startY)>4)moved=true;down.x=e.clientX;down.y=e.clientY;
   if(mode==='walk'){walkYaw+=dx*.004;walkPitch=Math.max(-.7,Math.min(.7,walkPitch-dy*.004));updateWalkLook();}
   else if(mode!=='tour'){if(down.button===2||e.shiftKey){const scale=distance*.0015;target.x-=dx*Math.cos(yaw)*scale;target.z+=dx*Math.sin(yaw)*scale;target.x-=dy*Math.sin(yaw)*scale;target.z-=dy*Math.cos(yaw)*scale;}else if(mode!=='plan'){yaw-=dx*.006;pitch=Math.max(.12,Math.min(1.5,pitch+dy*.004));}else{target.x-=dx*distance*.0014;target.z-=dy*distance*.0014;}updateCamera();}
  });
- on(canvas,'pointerup',e=>{if(down&&!moved&&down.button===0){const b=canvas.getBoundingClientRect();ray.setFromCamera(new THREE.Vector2((e.clientX-b.left)/b.width*2-1,-(e.clientY-b.top)/b.height*2+1),camera);const hits=ray.intersectObjects(pickables,false).filter(h=>{for(let p=h.object;p;p=p.parent)if(!p.visible)return false;return true;});if(hits[0])select(hits[0].object.userData.id,false);}down=null;});
- on(canvas,'pointercancel',()=>down=null);on(canvas,'contextmenu',e=>e.preventDefault());const handleSceneWheel=e=>{e.preventDefault();autoFit=false;if(mode==='walk'){camera.position.x+=Math.sin(walkYaw)*e.deltaY*.03;camera.position.z-=Math.cos(walkYaw)*e.deltaY*.03;updateWalkLook();}else if(mode!=='tour'){distance=Math.max(35,Math.min(1600,distance*Math.exp(e.deltaY*.001)));updateCamera();}};
+ canvas.addEventListener('pointerup',e=>{if(down&&!moved&&down.button===0){const b=canvas.getBoundingClientRect();ray.setFromCamera(new THREE.Vector2((e.clientX-b.left)/b.width*2-1,-(e.clientY-b.top)/b.height*2+1),camera);const hits=ray.intersectObjects(pickables,false).filter(h=>{for(let p=h.object;p;p=p.parent)if(!p.visible)return false;return true;});if(hits[0])select(hits[0].object.userData.id,false);}down=null;});
+ canvas.addEventListener('pointercancel',()=>down=null);canvas.addEventListener('contextmenu',e=>e.preventDefault());const handleSceneWheel=e=>{e.preventDefault();autoFit=false;if(mode==='walk'){camera.position.x+=Math.sin(walkYaw)*e.deltaY*.03;camera.position.z-=Math.cos(walkYaw)*e.deltaY*.03;updateWalkLook();}else if(mode!=='tour'){distance=Math.max(35,Math.min(1600,distance*Math.exp(e.deltaY*.001)));updateCamera();}};
  // Projected labels share the scene wheel behavior; floating panels retain their own scrolling.
- for(const surface of [canvas,$('sceneLabels'),$('riskMarkers')])on(surface,'wheel',handleSceneWheel,{passive:false});
- on($('viewport'),'keydown',e=>{if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){keys.add(e.key);e.preventDefault();}if(e.key==='Escape')$('overview').click();});on(window,'keyup',e=>keys.delete(e.key));on(window,'blur',()=>keys.clear());
+ for(const surface of [canvas,$('sceneLabels'),$('riskMarkers')])surface.addEventListener('wheel',handleSceneWheel,{passive:false});
+ $('viewport').addEventListener('keydown',e=>{if(['w','a','s','d','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){keys.add(e.key);e.preventDefault();}if(e.key==='Escape')$('overview').click();});window.addEventListener('keyup',e=>keys.delete(e.key));window.addEventListener('blur',()=>keys.clear());
 }
 function positionLabels(){const bounds=$('viewport').getBoundingClientRect(),used=positionRiskMarkers(bounds),parent=selected?.parent||selected?.id;
  const priority=l=>l.id===selected?.id?1000:l.person?120:l.equipment&&entities.get(l.id).parent===parent?800:({'BIO-01':90,'OUT-01':85,'PRE-01':80,'AIR-01':75,'BIO-02':70,'BIO-03':65,'BIO-04':60}[l.id]|| (l.signalIds.length?30:0));
  const entries=[...labelEntries].sort((a,b)=>priority(b)-priority(a));
- const c=new THREE.Vector3(target.x,0,target.z).project(camera),n=new THREE.Vector3(target.x,0,target.z-20).project(camera);const angle=Math.atan2((n.x-c.x)*bounds.width,(n.y-c.y)*bounds.height)*180/Math.PI;host.querySelector('.north').innerHTML=`北 N <span style="display:inline-block;transform:rotate(${angle}deg)">↑</span>`;
+ const c=new THREE.Vector3(target.x,0,target.z).project(camera),n=new THREE.Vector3(target.x,0,target.z-20).project(camera);const angle=Math.atan2((n.x-c.x)*bounds.width,(n.y-c.y)*bounds.height)*180/Math.PI;document.querySelector('.north').innerHTML=`北 N <span style="display:inline-block;transform:rotate(${angle}deg)">↑</span>`;
  for(const l of entries){const a=entities.get(l.id),isSelected=l.id===selected?.id,near=camera.position.distanceTo(l.pos)<125;
   const eligible=showLabels&&(!l.equipment||(cut&&near)||isSelected)&&(!(mode==='walk'||mode==='tour')||near||isSelected);
   l.leader.style.display='none';l.el.style.visibility='hidden';l.el.style.display=eligible?'block':'none';if(!eligible)continue;
@@ -369,15 +359,14 @@ function positionLabels(){const bounds=$('viewport').getBoundingClientRect(),use
  }
 }
 
-function animate(now){if(disposed)return;frame=requestAnimationFrame(animate);const dt=Math.min((now-lastFrame)/1000,.05)||.016;lastFrame=now;
+function animate(now){requestAnimationFrame(animate);const dt=Math.min((now-lastFrame)/1000,.05)||.016;lastFrame=now;
  if(mode==='walk'){const f=(keys.has('w')||keys.has('ArrowUp')?1:0)-(keys.has('s')||keys.has('ArrowDown')?1:0),s=(keys.has('d')||keys.has('ArrowRight')?1:0)-(keys.has('a')||keys.has('ArrowLeft')?1:0);if(f||s){camera.position.x=Math.max(-208,Math.min(208,camera.position.x+(Math.sin(walkYaw)*f+Math.cos(walkYaw)*s)*dt*12));camera.position.z=Math.max(-138,Math.min(138,camera.position.z+(-Math.cos(walkYaw)*f+Math.sin(walkYaw)*s)*dt*12));updateWalkLook();}}
  if(transition){const t=Math.min((now-transition.start)/800,1),e=t*t*(3-2*t);camera.position.lerpVectors(transition.from,transition.to,e);camera.lookAt(transition.look);if(t>=1)transition=null;}
  for(const f of flowMarkers){if(!f.arrow.parent.visible)continue;const u=((now*.000045+f.index*.137)%1);f.arrow.position.copy(f.curve.getPointAt(u));const tangent=f.curve.getTangentAt(u).normalize();f.arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),tangent);}
  for(const w of waterAnimations){w.clock.value=now*.001;w.map.offset.x=now*.000004*(w.speed||1);w.map.offset.y=now*.000002*(w.speed||1);}for(const r of rotors){if(status(entities.get(r.id))==='运行')r.group.rotation.z=now*.002;}positionLabels();renderer.render(scene,camera);
 }
-try{initScene();host.dataset.webgl='ready';}catch(err){releaseGraphics();host.dataset.webgl='unavailable';$('loadError').hidden=false;for(const id of ['overview','plan','walk','tour','cut','labels'])$(id).disabled=true;}
+try{if(!window.THREE)throw new Error('Three.js missing');initScene();}catch(err){$('loadError').hidden=false;console.error(err);}
 setDrawer(true,true);setRiskPanel(true,true);renderList();renderDetail();renderRiskPanel();
 // Read-only diagnostic snapshot, used for focused demo verification.
-const snapshot=()=>({selected:selected?.id,tab,scenario,mode,cut,records:records.length,facilities:D.facilities.length,equipment:D.equipment.length,signals:D.signals.length,webgl:!!renderer,camera:camera?.position.toArray(),risks:activeRisks().map(r=>({id:r.id,object:r.object,level:r.level,value:riskValue(r)})),signalValues:D.signals.filter(s=>['DO-01.VALUE','BL-02.RUN','BL-02.FAULT','BL-02.FREQ','AIR-01.FLOW','BL-01.TEMP','PRE-01.H2S'].includes(s.id)).map(s=>({id:s.id,value:signalValue(s)}))});
-return {dispose,snapshot};
-}
+window.waterxDemoSnapshot=()=>({selected:selected?.id,tab,scenario,mode,cut,records:records.length,facilities:D.facilities.length,equipment:D.equipment.length,signals:D.signals.length,webgl:!!renderer,camera:camera?.position.toArray(),risks:activeRisks().map(r=>({id:r.id,object:r.object,level:r.level,value:riskValue(r)})),signalValues:D.signals.filter(s=>['DO-01.VALUE','BL-02.RUN','BL-02.FAULT','BL-02.FREQ','AIR-01.FLOW','BL-01.TEMP','PRE-01.H2S'].includes(s.id)).map(s=>({id:s.id,value:signalValue(s)}))});
+})();

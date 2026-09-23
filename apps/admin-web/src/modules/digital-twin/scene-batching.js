@@ -1,0 +1,11 @@
+// Combine only static meshes of the same object/material; preserve selectable objects,
+// water, cutaway groups, status lamps and moving rotors as independent scene nodes.
+export function batchStatic(THREE,groups,excluded){
+ for(const group of groups){group.updateMatrixWorld(true);const inverse=group.matrixWorld.clone().invert(),buckets=new Map();
+  group.traverse(m=>{if(!m.isMesh||m.isInstancedMesh||Array.isArray(m.material)||m.material.transparent)return;for(let p=m;p&&p!==group;p=p.parent)if(excluded.has(p))return;if(!m.geometry.attributes.position||!m.geometry.attributes.normal||!m.geometry.attributes.uv)return;const key=m.material.uuid+':'+m.castShadow+':'+m.receiveShadow;if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(m);});
+  for(const members of buckets.values()){if(members.length<3)continue;let count=0;for(const m of members)count+=m.geometry.index?m.geometry.index.count:m.geometry.attributes.position.count;const positions=new Float32Array(count*3),normals=new Float32Array(count*3),uvs=new Float32Array(count*2);let offset=0;const p=new THREE.Vector3(),n=new THREE.Vector3();
+   for(const m of members){const matrix=inverse.clone().multiply(m.matrixWorld),normal=new THREE.Matrix3().getNormalMatrix(matrix),g=m.geometry,pa=g.attributes.position,na=g.attributes.normal,uv=g.attributes.uv,index=g.index,vertices=index?index.count:pa.count;for(let i=0;i<vertices;i++){const j=index?index.getX(i):i;p.fromBufferAttribute(pa,j).applyMatrix4(matrix);n.fromBufferAttribute(na,j).applyMatrix3(normal).normalize();positions.set([p.x,p.y,p.z],offset*3);normals.set([n.x,n.y,n.z],offset*3);uvs.set([uv.getX(j),uv.getY(j)],offset*2);offset++;}}
+   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));geometry.setAttribute('normal',new THREE.BufferAttribute(normals,3));geometry.setAttribute('uv',new THREE.BufferAttribute(uvs,2));geometry.computeBoundingSphere();const sample=members[0],merged=new THREE.Mesh(geometry,sample.material);merged.castShadow=sample.castShadow;merged.receiveShadow=sample.receiveShadow;merged.userData.id=group.userData.id;members.forEach(m=>m.removeFromParent());group.add(merged);
+  }
+ }
+};
