@@ -11,6 +11,7 @@ const { parse, compileScript } = require('vue/compiler-sfc')
 const filename = fileURLToPath(new URL('./DailyCollaborationPage.vue', import.meta.url))
 const script = compileScript(parse(fs.readFileSync(filename, 'utf8')).descriptor, { id: 'daily-integration' })
 const compiled = ts.transpileModule(script.content, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
+const selectionCode = ts.transpileModule(fs.readFileSync(new URL('./indicator-selection.ts',import.meta.url),'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
 const line = { id: 'line-a', name: '验收工艺线', permissions: ['process:daily:execute'], actors: [], template: [] }
 const record = { id: 'record-a', line_id: line.id, revision: 1, state: 'DRAFT', cells: {}, template: [], actions: ['save', 'submit'], versions: [], events: [], assignee_id: 'owner', reviewer_id: 'reviewer', confirmed_version: 0 }
 const pending = () => { let resolve, reject; const promise = new Promise((yes, no) => { resolve = yes; reject = no }); return { promise, resolve, reject } }
@@ -21,8 +22,10 @@ function mount(overrides = {}) {
   const cleanups = [], listeners = new Map(), output = { exports: {} }
   const scope = vue.effectScope()
   const fakeWindow = { confirm: () => false, addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener: name => listeners.delete(name) }
+  const saved = new Map(), selection = { exports: {} }
+  vm.runInNewContext(selectionCode,{exports:selection.exports,module:selection,require,localStorage:{getItem:key=>saved.get(key)??null,setItem:(key,value)=>saved.set(key,value)}})
   const context = { exports: output.exports, module: output, window: fakeWindow, console, setTimeout,
-    require: name => name === 'vue' ? { ...vue, onBeforeUnmount: fn => cleanups.push(fn) } : name === './types' ? { businessToday: () => '2026-09-07' } : {} }
+    require: name => name === 'vue' ? { ...vue, onBeforeUnmount: fn => cleanups.push(fn) } : name === './indicator-selection' ? selection.exports : name === './types' ? { businessToday: () => '2026-09-07' } : {} }
   vm.runInNewContext(compiled, context, { filename })
   let exposed
   const state = scope.run(() => output.exports.default.setup(props, { expose: value => { exposed = value }, emit: () => {} }))

@@ -1,5 +1,6 @@
 import { dataStatusMeta, qualityDimensions, qualityMetricRules } from './rules'
 import { qualityScenarios } from './demo-data'
+import { calculateQualitySample } from './builtin-calculations'
 import type { QualityDataStatus, QualityDimensionView, QualityScenarioView } from './types'
 
 const unavailableStatuses: QualityDataStatus[] = ['insufficient_data','data_abnormal','calculation_invalid']
@@ -9,18 +10,24 @@ function round(value:number, digits = 1) {
   return Math.round(value * base) / base
 }
 
-export function getQualityScenarioView(scenarioId:string): QualityScenarioView {
+export function getQualityScenarioView(scenarioId:string, calculated = false): QualityScenarioView {
   const scenario = qualityScenarios.find(item=>item.id===scenarioId) ?? qualityScenarios[0]
   const samples = new Map(scenario.metrics.map(item=>[item.code,item]))
   const metrics = qualityMetricRules.map(rule=>{
     const sample = samples.get(rule.code)
     if (!sample) throw new Error(`管理质量样例数据缺失：${rule.code}`)
     const dimension = qualityDimensions.find(item=>item.id===rule.dimension)
+    const calculation = calculateQualitySample(rule.code,scenario.id)
+    const score=calculated?calculation.score:sample.score
     return {
       ...rule,
       ...sample,
+      calculation,
+      ...(calculated?{actual:calculation.actual??'未取得',score,period:calculation.period,baseline:'待项目校核（讨论稿）',
+        deviation:'待核查',status:score===null?'insufficient_data' as const:'normal_applicable' as const,
+        riskLevel:'unavailable' as const,statusNote:calculation.note,interpretation:calculation.note,trend:[],trendLabels:[]}:{}),
       dimensionName:dimension?.name ?? rule.dimension,
-      scoreText:sample.score===null ? '暂不出分' : `${round(sample.score)}/${rule.maxScore}`
+      scoreText:score===null ? '暂不出分' : `${round(score)}/${rule.maxScore}${calculated?'（试算）':'（示例）'}`
     }
   })
 
@@ -70,6 +77,6 @@ export function getQualityScenarioView(scenarioId:string): QualityScenarioView {
     coverageRate:round(coverageCount / metrics.length * 100,0),
     statusCounts,
     mainLosses,
-    trendSummary
+    trendSummary:calculated?'尚无连续同口径计算序列，暂不生成趋势结论。':trendSummary
   }
 }

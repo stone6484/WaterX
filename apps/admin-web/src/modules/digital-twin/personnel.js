@@ -1,5 +1,5 @@
 /* Local example personnel. Stable IDs align with the WaterX V0.2 job-role vocabulary. */
-export function createPersonnel(D,storageKey,storage) {
+export function createPersonnel({D,storageKey,storage=localStorage}) {
 const roles={operator:['运行工','执行层','现场巡视、运行数据填报与交接；异常及时上报。'],maintenance:['维修工','执行层','设备巡检、故障核查与计划维保；按审批后的方案作业。'],lab:['化验员','执行层','采样、检测、质量控制与原始记录提交。'],safety:['安全员','执行层','现场安全检查、隐患上报与本人获派事项办理。'],process:['工艺经理','经理层','组织工艺运行工作，独立复核日数据与工艺分析。'],safety_manager:['安全经理','经理层','组织安全检查、协调整改与独立复查。'],production:['生产负责人','管理层','查看生产进度与异常处置结果，协调资源。'],director:['厂长','管理层','统筹运营目标、资源保障与重大事项。'],admin:['系统管理员','系统管理','维护系统配置与授权；不默认具有生产业务办理权限。']};
 const specs=[
  ['op1','陈晨','operator','BIO-01',-25,.15,-43.85,'生化池南侧巡检步道','07:48','巡视 DO 测点并记录现场状态','DO-01','进行中','09:00'],
@@ -8,24 +8,24 @@ const specs=[
  ['op4','赵宇','operator','DWT-01',-41,.15,-104.1,'脱水间入口','07:51','核对脱水机运行与泥饼外运记录','DWT-01','待接单','10:00'],
  ['fix','王磊','maintenance','AIR-01',-43,.15,123,'鼓风机房入口','07:43','核查 2 号风机故障记录','BL-02','待接单','08:45'],
  ['safe','刘宁','safety','CHEM-01',131,.15,123,'加药间外侧通道','07:47','检查加药间洗眼器与通道','CHEM-01','进行中','09:00'],
- ['lab','林悦','lab','OUT-01',189.3,.15,86,'出水监测间西侧步道','07:45','完成出水采样与样品交接','OUT-01','待接单','09:00'],
+ ['lab','林悦','lab','OUT-01',172.3,.15,81,'出水监测间西侧步道','07:45','完成出水采样与样品交接','OUT-01','待接单','09:00'],
  ['pm','许青','process','BIO-02',-78,.15,-5,'生化池组间步道','07:40','复核上一班运行数据及异常说明','BIO-02','待复核','09:30'],
- ['sm','杨帆','safety_manager','ADM-01',-187,.15,125,'综合楼东南侧通道','07:44','复查上一班护栏整改记录','CLR-01','待复核','10:00'],
- ['prod','郑明','production','ADM-01',-160,.15,125,'综合楼南侧通道','07:42','查看风机检修进度并协调资源','AIR-01','待办理','10:00'],
- ['boss','宋岚','director','ADM-01',-145,.15,114,'综合楼东侧通道','07:38','审阅今日运营重点事项','ADM-01','待办理','10:30'],
+ ['sm','杨帆','safety_manager','ADM-01',-187,.15,127.0,'综合楼东南侧通道','07:44','复查上一班护栏整改记录','CLR-01','待复核','10:00'],
+ ['prod','郑明','production','ADM-01',-160,.15,127.0,'综合楼南侧通道','07:42','查看风机检修进度并协调资源','AIR-01','待办理','10:00'],
+ ['boss','宋岚','director','ADM-01',-145,.15,116.0,'综合楼东侧通道','07:38','审阅今日运营重点事项','ADM-01','待办理','10:30'],
  ['admin','顾言','admin',null,null,null,null,'远程支持 · 未提供现场位置',null,'核对人员任职与授权变更申请',null,'待办理','11:00']
 ];
 const people=specs.map(([key,name,roleId,parent,x,y,z,workplace,clockIn,title,object,state,due])=>({id:'PERSON-'+key,employeeId:'EMP_'+key,type:'person',kind:'person',name,roleId,role:roles[roleId][0],level:roles[roleId][1],responsibility:roles[roleId][2],parent,x,y,z,angle:Math.PI,workplace,clockIn,shift:'08:00–16:00',positionTime:parent?'2026-09-19 08:00':null,positionSource:parent?'预设场景坐标（示例）':'未接入定位',onSite:!!parent,seed:{title,object,state,due}}));
 const seedTasks=people.flatMap(p=>[{id:'TASK-'+p.id,ownerId:p.id,kind:p.roleId==='admin'?'配置事项':'岗位任务',...p.seed,createdAt:'2026-09-19 07:55',note:'示例任务；现场执行与验收以本厂制度和正式任务流程为准。',source:'预设示例'},...(p.roleId==='maintenance'?[{id:'TASK-fix-2',ownerId:p.id,kind:'维保工单',title:'检查 1 号风机温度测点及维护记录',object:'BL-01',state:'待接单',due:'10:00',note:'先核对测点与历史记录，检修按能源隔离和作业许可流程执行。',source:'预设示例'}]:[]),{id:'DONE-'+p.id,ownerId:p.id,kind:'岗位任务',title:p.roleId==='admin'?'完成上一工作日配置备份核验':'完成班前交接记录核对',object:p.parent,state:'已完成',due:'07:55',completedAt:'2026-09-19 07:55',note:'预设完成记录，不证明真实人员完成工作。',source:'预设示例'}]);
 const byId=new Map(people.map(p=>[p.id,p]));let localTasks=[],storageIssue='';
-try{storage??=globalThis.localStorage;const raw=storage.getItem(storageKey);if(raw){const value=JSON.parse(raw);if(!Array.isArray(value)||value.some(t=>!t||!byId.has(t.ownerId)||typeof t.id!=='string'||typeof t.title!=='string'||!['工作工单','工作指令'].includes(t.kind)||t.state!=='待接单'||!/^2026-09-19 (?:[01]\d|2[0-3]):[0-5]\d$/.test(t.deadline)||typeof t.note!=='string'||!D.facilities.concat(D.equipment).some(a=>a.id===t.object)))throw Error();localTasks=value;}}catch{storageIssue='本地派单记录读取失败；预设任务仍可查看。为避免覆盖旧记录，暂不允许新增。';}
+try{const raw=storage.getItem(storageKey);if(raw){const value=JSON.parse(raw);if(!Array.isArray(value)||value.some(t=>!t||!byId.has(t.ownerId)||typeof t.id!=='string'||typeof t.title!=='string'||!['工作工单','工作指令'].includes(t.kind)||t.state!=='待接单'||!/^2026-09-19 (?:[01]\d|2[0-3]):[0-5]\d$/.test(t.deadline)||!D.facilities.concat(D.equipment).some(a=>a.id===t.object)||typeof t.note!=='string'))throw Error();localTasks=value;}}catch{storageIssue='本地派单记录读取失败；预设任务仍可查看。为避免覆盖旧记录，暂不允许新增。';}
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const tasksFor=id=>[...localTasks,...seedTasks].filter(t=>t.ownerId===id);
 const pending=id=>tasksFor(id).filter(t=>t.state!=='已完成');
 function createTask(input){const p=byId.get(input.ownerId);if(!p||p.roleId==='admin')throw Error('请选择现场业务人员');if(storageIssue)throw Error(storageIssue);if(!['工作工单','工作指令'].includes(input.kind)||!input.title.trim()||input.title.trim().length>80||input.note.length>500)throw Error('请填写有效的任务名称和说明');if(!/^2026-09-19 (?:[01]\d|2[0-3]):[0-5]\d$/.test(input.deadline)||input.deadline<=input.createdAt)throw Error('截止时间应晚于当前模拟时刻');if(!D.facilities.concat(D.equipment).some(a=>a.id===input.object))throw Error('请选择关联设施或设备');
  const task={...input,id:'LOCAL-'+crypto.randomUUID(),title:input.title.trim(),note:input.note.trim(),state:'待接单',source:'本地模拟派发',savedAt:new Date().toISOString()};const next=[task,...localTasks];try{storage.setItem(storageKey,JSON.stringify(next));}catch{throw Error('浏览器保存失败，任务未派发。请检查本地存储后重试。');}localTasks=next;return task;
 }
-
+const personnel={people,roles,tasksFor,pending,createTask,storageKey};
 function createUI({select,notify,currentTime,refresh,entities,host}){
  const $=id=>host.querySelector('#'+id);const objectName=id=>entities.get(id)?.name||'全厂事务';
  function links(container){container.querySelectorAll('[data-person]').forEach(b=>b.onclick=()=>{if($('businessDialog').open)$('businessDialog').close();select(b.dataset.person,true);});container.querySelectorAll('[data-place]').forEach(b=>b.onclick=()=>select(b.dataset.place,true));}
@@ -45,5 +45,5 @@ function createUI({select,notify,currentTime,refresh,entities,host}){
  }
  return {render,nearby,roster};
 };
-return {people,roles,tasksFor,pending,createTask,storageKey,createUI};
+return {...personnel,createUI};
 }

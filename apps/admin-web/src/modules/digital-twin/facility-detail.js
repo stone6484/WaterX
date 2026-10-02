@@ -1,5 +1,5 @@
 /* Local demonstration geometry. Dimensions follow the fictional case, not construction drawings. */
-export function createFacilityDetails(api) {
+export const WaterXFacilityDetails = function (api) {
   const {THREE,box,cylinder,line,pipeDetail,material,waterSurface,cutObjects,waterObjects,colors} = api;
   const steel=0x8c9a9e, darkSteel=0x465258, glass=0x718e99, painted=0x607e87;
   const cube=new THREE.BoxGeometry(1,1,1), rod=new THREE.CylinderGeometry(1,1,1,8);
@@ -72,7 +72,7 @@ export function createFacilityDetails(api) {
     box(facade,0,.45+doorH/2,doorZ+.12,doorW,doorH,.12,admin?glass:0x7e8b8c,{roughness:admin?.24:.58,metalness:.3});
     box(facade,0,.45+doorH/2,doorZ+.21,.055,doorH,.045,0x364850);
     for(const x of [-.27,.27])box(facade,x,1.85,doorZ+.30,.055,.55,.08,0xc4cbca,{metalness:.8,roughness:.24});
-    box(g,0,.16,d/2+1.35,doorW+1.2,.32,2.3,colors.concrete);
+    box(g,0,.16,d/2+.85,doorW+1.2,.32,1.3,colors.concrete);
     const canopy=box(facade,0,doorH+.72,d/2+1.05,doorW+1.2,.14,1.6,painted,{metalness:.3});
     canopy.rotation.x=-.055;
     const joints=[];
@@ -102,14 +102,37 @@ export function createFacilityDetails(api) {
       }
       batch(facade,cube,steel,slats,{metalness:.5});
     }
+    if(f.id==='RAS-01'){
+      pipeDetail(g,[[-14,3.35,-6.5],[14,3.35,-6.5]],.48,0x9baaad);
+      for(const x of [-10,-5,0,5,10])pipeDetail(g,[[x-1.08,3.35,-4.2],[x-1.08,3.35,-6.5]],.30,0x9baaad);
+      pipeDetail(g,[[-12,3.35,3.3],[10,3.35,3.3]],.24,0x9baaad);
+      for(const x of [-5,5])pipeDetail(g,[[x-1.08,3.35,3.8],[x-1.08,3.35,3.3]],.24,0x9baaad);
+      for(const x of [-10,0,10]){box(g,x,1.65,-6.5,.12,2.5,.12,darkSteel);box(g,x,.48,-6.5,.65,.15,.65,steel);box(g,x,2.84,-6.5,1.2,.16,.40,steel);}
+    }
     if(f.id==='AIR-01'){
       pipeDetail(g,[[-19,7,-5],[19,7,-5]],.75,0xa5b2b4);
+      for(const z of [-d/2-.28,-d/2+.28]){const sleeve=cylinder(g,19,7,z,.67,.13,0x465258,32);sleeve.rotation.x=Math.PI/2;}
       // BL-01..04 outlet: equipment x + 1.9, global y 6.3, room-local z -5.
       for(const x of [-15.1,-4.1,6.9,17.9])pipeDetail(g,[[x,6.3,-5],[x,7,-5]],.47,0xa5b2b4);
       const supports=[];
       for(let x=-19;x<=19;x+=9.5){supports.push(beam([x,.45,-5],[x,6.3,-5],.1));box(g,x,6.1,-5,2.4,.18,.8,darkSteel);}
       batch(g,rod,steel,supports,{metalness:.55});
     }
+  }
+
+  function odor(g,f){
+    // Fans occupy an open maintenance bay; biofilter media cells sit beside it.
+    box(g,0,.13,0,f.w+1,.26,f.d+1,colors.concrete);
+    box(g,11,1.9,0,18,3.5,16,0xa1b7a4);
+    for(const z of [-5.35,0,5.35]){box(g,11,3.71,z,17.7,.15,5.15,0x657d68);for(const x of [5,11,17]){box(g,x,3.83,z,3.8,.16,3.2,0x93a28b);for(const dx of [-1.7,1.7])for(const dz of [-1.3,1.3])cylinder(g,x+dx,3.96,z+dz,.045,.09,steel,6);}}
+    for(const z of [-8,8])for(const x of [2,8,14,20]){box(g,x,1.9,z,.14,3.5,.15,steel);box(g,x,.30,z,.40,.2,.50,colors.concrete);}
+    pipeDetail(g,[[-15.61,5.2,-.1],[4,5.2,-.1],[4,3.3,-.1]],.45,0x909f9e);
+    for(const x of [-15,-3]){pipeDetail(g,[[x-.61,4.08,-.1],[x-.61,5.2,-.1]],.43,0x909f9e);pipeDetail(g,[[x-.95,2.25,1.08],[x-.95,2.25,5],[x-.95,-1,5]],.6,0x909f9e);}
+    cylinder(g,17,7,0,.85,14,0x8da0a1,40);for(const y of [.5,4.8,9.3]){api.flange(g,17,y,0,.85);}
+    pipeDetail(g,[[14,3.3,0],[17,3.3,0]],.65,0x909f9e);
+    for(const x of [16.65,17.35])line(g,[[x,.45,1],[x,13.3,1]],steel,.045);
+    for(let y=.6;y<13.2;y+=.35)line(g,[[16.65,y,1],[17.35,y,1]],steel,.035);
+    box(g,17,13.8,0,2.2,.13,2.2,steel);api.nameplate(g,'ODR · BIOFILTER',11,2.1,8.1,4.8);
   }
 
   function clarifier(g,f) {
@@ -208,5 +231,5 @@ export function createFacilityDetails(api) {
     batch(fixture,new THREE.CylinderGeometry(1,1,1,24),0x515c5a,covers,{roughness:.81,metalness:.3});
     return fixture;
   }
-  return {building,clarifier,site};
+  return {building,clarifier,site,odor};
 };

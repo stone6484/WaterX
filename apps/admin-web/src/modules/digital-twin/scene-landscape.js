@@ -1,6 +1,9 @@
+import {WaterXSiteGeometry} from './site-geometry.js'
+import {WaterXSiteRouting} from './site-routing.js'
 /* Lightweight roadside planting and service aprons for the local demonstration. */
-export function createLandscape(api,scene,D){
- const {THREE:T,box,material,colors}=api;
+export const WaterXLandscape=function(api,scene,D){
+ const {THREE:T,material,colors}=api;
+ const box=(g,x,y,z,w,h,d,c)=>{for(const [a,b,W,D] of WaterXSiteGeometry.subtract([x,z,w,d],WaterXSiteRouting.roads.map(([x,z,w,d])=>[x,z,w+.75,d+.75])))api.box(g,a,y,b,W,h,D,c);};
  for(const f of D.facilities){if(['clarifier','sludgetank'].includes(f.kind)){const mesh=new T.Mesh(new T.RingGeometry(f.w/2+.25,f.w/2+2,96),material(colors.concrete));mesh.rotation.x=-Math.PI/2;mesh.position.set(f.x,.06,f.z);mesh.receiveShadow=true;scene.add(mesh);}else if(!['building','admin','odor'].includes(f.kind)){for(const side of [-1,1]){box(scene,f.x,.08,f.z+side*(f.d/2+1.15),f.w+4,.14,1.5,colors.concrete);box(scene,f.x+side*(f.w/2+1.15),.08,f.z,1.5,.14,f.d,colors.concrete);}}}
  const c=document.createElement('canvas');c.width=c.height=256;const q=c.getContext('2d');let seed=419;const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};q.strokeStyle='#685b3f';q.lineWidth=3;q.beginPath();q.moveTo(128,246);q.bezierCurveTo(100,170,148,91,128,20);q.stroke();for(let i=0;i<180;i++){const a=rnd()*Math.PI*2,r=Math.sqrt(rnd())*107,x=128+Math.cos(a)*r,y=125+Math.sin(a)*r;q.fillStyle=['#516b3c','#687c47','#789358','#889e62','#435d35'][Math.floor(rnd()*5)];q.beginPath();q.ellipse(x,y,4+rnd()*6,2+rnd()*4,rnd()*Math.PI,0,Math.PI*2);q.fill();}const texture=new T.CanvasTexture(c);texture.colorSpace=T.SRGBColorSpace;
  const positions=[];for(let z=-119;z<129;z+=20){positions.push([-207,z],[207,z]);}for(let x=-188;x<190;x+=25){positions.push([x,-134],[x,134]);}

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
-import { WxDialog, WxTable, WxTableSurface } from '../../components/waterx'
+import { WxSelect, WxDialog, WxTable, WxTableSurface } from '../../components/waterx'
 import { getQualityScenarioView } from './adapter'
-import { DEFAULT_SCENARIO_ID } from './demo-data'
+import { DEFAULT_SCENARIO_ID, qualityScenarios } from './demo-data'
 import { QUALITY_RULE_VERSION, QUALITY_STANDARD_SCORE, dataStatusMeta, qualityPages } from './rules'
 import type { ImprovementDraft, QualityMetricView, QualityPageId, QualitySourceFact } from './types'
 
@@ -57,7 +57,9 @@ const riskMeta = {
   unavailable:{ label:'待核查', tone:'muted' }
 } as const
 
-const view = computed(()=>getQualityScenarioView(DEFAULT_SCENARIO_ID))
+const scenarioId=ref(DEFAULT_SCENARIO_ID), resultMode=ref('calculated')
+const view = computed(()=>getQualityScenarioView(scenarioId.value,resultMode.value==='calculated'))
+watch([scenarioId,resultMode],()=>closeMetric())
 const currentPage = computed(()=>qualityPages[props.activePage])
 const visibleMetrics = computed(()=>view.value.metrics.filter(metric=>metric.dimension===currentPage.value.dimension))
 
@@ -106,15 +108,15 @@ function valueWithoutUnit(value:string, unit:string) {
   <section class="mq-page">
     <section class="mq-score-dock" aria-label="管理质量评分导航">
       <article class="mq-period-card">
-        <span>评价周期</span>
+        <span>评价周期 · 固定样例</span>
         <strong>{{view.scenario.evaluationPeriod}}</strong>
-        <small>规则讨论稿 {{QUALITY_RULE_VERSION}} · 待验证参数</small>
+        <WxSelect v-model="resultMode" aria-label="结果口径"><option value="calculated">内置计算核查</option><option value="demo">旧版固定演示得分</option></WxSelect><WxSelect v-model="scenarioId" aria-label="示例场景"><option v-for="s in qualityScenarios" :key="s.id" :value="s.id">{{s.shortName}} · {{s.name}}</option></WxSelect>
       </article>
       <article class="mq-total-score" :class="{incomplete:view.totalScore===null}">
-        <span>标准总分</span>
+        <span>{{resultMode==='calculated'?'试算总分':'固定示例总分'}}</span>
         <strong>{{view.totalScore===null?'暂不发布':view.totalScore}}<small v-if="view.totalScore!==null"> / {{QUALITY_STANDARD_SCORE}}</small></strong>
-        <small v-if="view.totalScore===null">当前可用分 {{view.availableScore}}</small>
-        <small v-else>固定100分</small>
+        <small v-if="view.totalScore===null">{{resultMode==='calculated'?'已试算项合计':'当前可用分'}} {{view.availableScore}}</small>
+        <small v-else>固定样例，非当前项目评分</small>
       </article>
       <button v-for="dimension in view.dimensions" :key="dimension.id" type="button" class="mq-dimension-card" :class="{selected:currentPage.dimension===dimension.id}" :aria-pressed="currentPage.dimension===dimension.id" @click="emit('update:activePage',dimension.pageId)">
         <span>{{dimension.name}}<em>{{dimension.metricCount}}项</em></span>
@@ -135,7 +137,7 @@ function valueWithoutUnit(value:string, unit:string) {
               <td><span class="mq-deviation-value">{{metric.deviation}}</span></td>
               <td><strong>{{metric.scoreText}}</strong><i class="mq-score-track"><b :style="{width:scoreWidth(metric)}"></b></i></td>
               <td><span class="mq-status-chip" :class="riskMeta[metric.riskLevel].tone">{{riskMeta[metric.riskLevel].label}}</span></td>
-              <td><b>{{dataStatusMeta[metric.status].label}}</b><small>{{metric.statusNote}}</small></td>
+              <td><b>{{dataStatusMeta[metric.status].label}}</b><small :title="metric.statusNote">{{resultMode==='calculated'?(metric.calculation.score!==null?'样例试算，非正式评价':metric.calculation.actual!==null?'实际值已算，评分依据待补':'输入待补，点击指标查看'):metric.statusNote}}</small></td>
               <td><div class="mq-row-actions"><button type="button" @click="openMetric(metric,'standard')">评分标准</button><button type="button" @click="openMetric(metric,'interpretation')">结果解读</button><button v-if="metric.facts.length" type="button" @click="openFact(metric)">业务事实</button></div></td>
             </tr>
           </tbody></WxTable></div>
@@ -156,6 +158,7 @@ function valueWithoutUnit(value:string, unit:string) {
           </template>
 
           <template v-else-if="detailTab==='standard'">
+            <section class="mq-detail-card"><h3>内置计算核查</h3><dl><div><dt>执行版本</dt><dd>{{selectedMetric.calculation.version}}</dd></div><div><dt>输入来源</dt><dd>{{selectedMetric.calculation.source}}</dd></div><div><dt>输入周期</dt><dd>{{selectedMetric.calculation.period}}</dd></div><div><dt>实际值计算</dt><dd>{{selectedMetric.calculation.actual??'输入不足，未计算'}}</dd></div><div><dt>评分计算</dt><dd>{{selectedMetric.calculation.score===null?'暂不出分':selectedMetric.calculation.score+'（讨论稿试算）'}}</dd></div><div v-for="input in selectedMetric.calculation.inputs" :key="input.name"><dt>{{input.name}}</dt><dd>{{input.value}} {{input.unit}}</dd></div></dl><p>{{selectedMetric.calculation.note}}</p></section>
             <section class="mq-draft-warning"><b>规则讨论稿 {{QUALITY_RULE_VERSION}}</b><span>以下公式、阈值和适用条件用于DEMO验证，未经专家评审不得作为正式企业标准。</span></section>
             <section class="mq-detail-card"><h3>适用基线</h3><p>{{selectedMetric.baseline}}</p></section>
             <section class="mq-detail-card"><h3>计算公式</h3><p class="mq-formula">{{selectedMetric.formula}}</p></section>
@@ -167,7 +170,7 @@ function valueWithoutUnit(value:string, unit:string) {
           <template v-else-if="detailTab==='interpretation'">
             <section class="mq-result-callout" :class="selectedMetric.riskLevel"><span>本期结果</span><strong>{{selectedMetric.actual}} · {{selectedMetric.scoreText}}</strong><p>{{selectedMetric.interpretation}}</p></section>
             <section class="mq-detail-card"><h3>结果应该如何理解</h3><p>{{selectedMetric.resultMeaning}}</p></section>
-            <section class="mq-detail-card"><h3>历史趋势</h3><div class="mq-history-bars"><span v-for="(value,index) in selectedMetric.trend" :key="index"><i :style="{height:trendHeight(selectedMetric,value)}"></i><b>{{value}}</b><small>{{selectedMetric.trendLabels[index]}}</small></span></div></section>
+            <section class="mq-detail-card"><h3>历史趋势（固定示例）</h3><p v-if="!selectedMetric.trend.length">未接入同口径历史计算结果。</p><div class="mq-history-bars"><span v-for="(value,index) in selectedMetric.trend" :key="index"><i :style="{height:trendHeight(selectedMetric,value)}"></i><b>{{value}}</b><small>{{selectedMetric.trendLabels[index]}}</small></span></div></section>
             <section class="mq-detail-card"><h3>建议关注</h3><p>{{selectedMetric.statusNote}} 当前解释仅作为问题定位线索，不替代专业模块的业务诊断。</p></section>
           </template>
 

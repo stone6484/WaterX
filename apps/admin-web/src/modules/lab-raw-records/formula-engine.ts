@@ -1,6 +1,7 @@
 import type { LabCalculatedResult, LabQcCheck, LabQcStatus, LabRawRecord, LabTemplate } from './types'
 
-const n=(record:LabRawRecord,key:string)=>{const value=Number(record.observations[key]);return Number.isFinite(value)?value:NaN}
+// An absent observation is not a measured zero. Preserve explicit numeric zero.
+const n=(record:LabRawRecord,key:string)=>{const raw=record.observations[key];if(raw===null||raw===undefined||String(raw).trim()==='')return NaN;const value=Number(raw);return Number.isFinite(value)?value:NaN}
 const safe=(value:number)=>Number.isFinite(value)?value:null
 
 export function calculateLabResults(record:LabRawRecord,template:LabTemplate):LabCalculatedResult[]{
@@ -44,11 +45,15 @@ export function evaluateLabQc(record:LabRawRecord,template:LabTemplate,results:L
   checks.push({id:'required',label:'必填观测值完整性',status:missing.length?'待完成':'通过',message:missing.length?`缺少：${missing.map(item=>item.label).join('、')}`:'所有必填一手观测值已填写'})
   const invalid=results.filter(result=>result.value===null||result.value<0)
   checks.push({id:'formula',label:'受控公式有效性',status:invalid.length?'阻断':'通过',message:invalid.length?`无法形成有效结果：${invalid.map(item=>item.label).join('、')}`:`${template.formulaVersion} 计算有效`})
-  const obs=(key:string)=>Number(record.observations[key])
+  const obs=(key:string)=>n(record,key)
+  const qcInputs:Partial<Record<LabTemplate['code'],string[]>>={Y01:['reading1','reading2'],Y02:['d2'],Y04:['tare1','tare2','loaded1','loaded2'],Y09:['colonyCount']}
+  if((qcInputs[template.code]||[]).some(key=>!Number.isFinite(obs(key))))checks.push({id:'observation-qc',label:'专项观测质控',status:'待完成',message:'相关观测值缺失或无效，补齐后再核查；不按0计算。'})
+  else {
   if(template.code==='Y01')checks.push({id:'parallel',label:'pH平行示值差',status:Math.abs(obs('reading1')-obs('reading2'))<=0.10?'通过':'警告',message:`当前差值 ${Math.abs(obs('reading1')-obs('reading2')).toFixed(2)}，演示控制限 0.10`})
   if(template.code==='Y02')checks.push({id:'bod-residual',label:'培养后剩余溶解氧',status:obs('d2')>=1?'通过':'警告',message:`培养后 DO ${obs('d2')} mg/L；控制限为演示参数，待项目确认`})
   if(template.code==='Y04')checks.push({id:'constant-weight',label:'恒重差检查',status:Math.max(Math.abs(obs('tare1')-obs('tare2')),Math.abs(obs('loaded1')-obs('loaded2')))<=0.0005?'通过':'警告',message:'两次称量最大差应满足项目恒重控制要求（当前演示限值 0.0005 g）'})
   if(template.code==='Y09')checks.push({id:'colony-range',label:'滤膜可计数范围',status:obs('colonyCount')<=80?'通过':'警告',message:'菌落数过高时应调整稀释倍数并重新培养'})
+  }
   if(template.methodState!=='现行方法')checks.push({id:'method-state',label:'方法适用性状态',status:template.methodState==='待确认'?'警告':'通过',message:template.scopeNote||'使用受控项目方法，不显示为正式现行标准'})
   let status:LabQcStatus='通过'
   if(checks.some(item=>item.status==='阻断'))status='阻断';else if(checks.some(item=>item.status==='待完成'))status='待完成';else if(checks.some(item=>item.status==='警告'))status='警告'
