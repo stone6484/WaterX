@@ -1,6 +1,6 @@
 // Combine only static meshes of the same object/material; preserve selectable objects,
 // water, cutaway groups, status lamps and moving rotors as independent scene nodes.
-export function batchStatic(THREE,groups,excluded){
+export const WaterXBatchStatic=function(THREE,groups,excluded){
  for(const group of groups){group.updateMatrixWorld(true);const inverse=group.matrixWorld.clone().invert(),buckets=new Map();
   group.traverse(m=>{if(!m.isMesh||m.isInstancedMesh||Array.isArray(m.material)||m.material.transparent)return;for(let p=m;p&&p!==group;p=p.parent)if(excluded.has(p))return;if(!m.geometry.attributes.position||!m.geometry.attributes.normal||!m.geometry.attributes.uv)return;const key=m.material.uuid+':'+m.castShadow+':'+m.receiveShadow;if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(m);});
   for(const members of buckets.values()){if(members.length<3)continue;let count=0;for(const m of members)count+=m.geometry.index?m.geometry.index.count:m.geometry.attributes.position.count;const positions=new Float32Array(count*3),normals=new Float32Array(count*3),uvs=new Float32Array(count*2);let offset=0;const p=new THREE.Vector3(),n=new THREE.Vector3();

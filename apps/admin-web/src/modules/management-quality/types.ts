@@ -79,6 +79,7 @@ export interface QualityScenario {
 }
 
 export interface QualityMetricView extends QualityMetricRule, QualityMetricSample {
+  calculation: import('./builtin-calculations').QualityCalculation
   dimensionName: string
   scoreText: string
 }

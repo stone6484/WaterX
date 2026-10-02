@@ -67,6 +67,17 @@ add('加药控制','吨水药耗','(碳源投加量＋除磷药剂量)(t/d) × 1
 add('曝气控制','填料投加容积比','投加填料总体积 ÷ MBBR填料区池容 × 100（同为m³）',r=>div(r('曝气控制::投加填料总体积',true),r('曝气控制::MBBR填料区池容',true))*100)
 // Fluidization ratio stays unconfigured until flow measurement period and gas state are agreed.
 export function formulaDescription(m: Metric) { return formulas[m.id]?.description || (m.source==='CALCULATED'?'待补充项目模型、明确输入与公式；不得使用预置结果':'') }
+// Derive the read-only dependency catalog from the executed functions, not a second hand-written list.
+export function formulaDependencies(id:string) {
+  const deps=new Map<string,{id:string;design:boolean}>()
+  formulas[id]?.run((id,design=false)=>{deps.set(`${id}:${design}`,{id,design});return 1})
+  return [...deps.values()]
+}
+export function builtinProcessCatalog(metrics:Metric[]) {
+  return metrics.map(m=>({id:m.id,code:m.code,name:m.name,unit:m.unit,source:m.source,version:RULE_VERSION,
+    state:m.source!=='CALCULATED'?'DIRECT':formulas[m.id]?'BUILTIN':'PENDING',
+    formula:formulaDescription(m),inputs:formulaDependencies(m.id),period:'同工艺线、同业务日；设计输入按引用版本',scopes:[...m.scopes]}))
+}
 export function calculateRows(metrics: Metric[], design: Record<string,string>, targets: Record<string,Target> | undefined, cells: Record<string,Cell>): ResultRow[] {
   const cache=new Map<string,{value:string;data:ResultRow['data'];source:string;message:string}>()
   const visiting=new Set<string>()

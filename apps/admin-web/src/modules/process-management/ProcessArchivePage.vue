@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import CalculationInputs from "./CalculationInputs.vue"
+import IndicatorSelection from "./IndicatorSelection.vue"
+import { useIndicatorSelection } from "./indicator-selection"
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { ApiClient, type DailyLine, type DailySummary, type ProcessParameter, type ProcessParameterContent, type ProcessReport, type ProcessReportSummary } from '@safety/api-client'
 import { WxButton, WxField, WxInput, WxSelect, WxTableSurface } from '../../components/waterx'
@@ -7,6 +10,9 @@ import DiagnosisBoards from './DiagnosisBoards.vue'
 import { businessToday, dataLabels, stateLabels, type ProcessPage, type ResultRow, type Target } from './types'
 import './process-management.css'
 const props=defineProps<{api:ApiClient;siteId:string;siteName:string;page:ProcessPage}>()
+const { hidden, selectionError, saveSelection }=useIndicatorSelection(()=>props.siteId)
+const pickerOpen=ref(false)
+function selectIndicators(ids:string[]){if(saveSelection(ids))pickerOpen.value=false}
 const lines=ref<DailyLine[]>([]),lineId=ref(''),parameters=ref<ProcessParameter[]>([]),records=ref<DailySummary[]>([]),recordId=ref('')
 const reports=ref<ProcessReportSummary[]>([]),report=ref<ProcessReport|null>(null),selectedRow=ref<ResultRow|null>(null)
 const busy=ref(false),blocked=ref(false),dirty=ref(false),error=ref(''),notice=ref(''),note=ref(''),category=ref('全部'),search=ref(''),history=ref('draft')
@@ -26,7 +32,7 @@ const editable=computed(()=>maintain.value&&history.value==='draft'&&!busy.value
 const record=computed(()=>records.value.find(r=>r.id===recordId.value))
 const metrics=computed(()=>line.value?.template.filter(m=>m.scopes.includes(kind.value==='DESIGN'?'design':'condition'))||[])
 const categories=computed(()=>['全部',...new Set(metrics.value.map(m=>m.category))])
-const visibleMetrics=computed(()=>metrics.value.filter(m=>(category.value==='全部'||category.value===m.category)&&(!search.value||`${m.category} ${m.name} ${m.code}`.includes(search.value))))
+const visibleMetrics=computed(()=>metrics.value.filter(m=>!hidden.value.includes(m.id)&&(category.value==='全部'||category.value===m.category)&&(!search.value||`${m.category} ${m.name} ${m.code}`.includes(search.value))))
 const designReference=computed(()=>[...(parameters.value.find(p=>p.kind==='DESIGN')?.versions||[])].reverse().find(v=>v.content.from<=form.value.from&&v.content.to>=form.value.from)?.content)
 const designValues=computed(()=>kind.value==='DESIGN'?form.value.values||{}:designReference.value?.status==='ACTIVE'?designReference.value.values||{}:{})
 const meanings=computed(()=>Object.fromEntries((report.value?.source.entry.template||[]).map(m=>[m.id,m.meaning])))
@@ -40,7 +46,7 @@ window.addEventListener('beforeunload',beforeUnload)
 onBeforeUnmount(()=>{epoch++;window.removeEventListener('beforeunload',beforeUnload)})
 async function run(fn:()=>Promise<void>){if(busy.value)return;busy.value=true;error.value='';notice.value='';try{await fn()}catch(e){error.value=(e as Error).message;blocked.value=true}finally{busy.value=false}}
 function applyParameter(){const p=parameter.value;if(maintain.value){history.value='draft';form.value=clone(p?.draft||blank())}else{const latest=p?.versions.at(-1);history.value=latest?String(latest.version):'';form.value=clone(latest?.content||blank())}dirty.value=false}
-async function load(){const ticket=++epoch,api=client();busy.value=true;blocked.value=true;error.value='';report.value=null;reports.value=[];records.value=[];parameters.value=[];lines.value=[];try{const context=await api.processDailyContext();if(ticket!==epoch)return;lines.value=context;lineId.value=context.some(l=>l.id===lineId.value)?lineId.value:context[0]?.id||'';if(lineId.value){const p=await api.processParameters(lineId.value);if(ticket!==epoch)return;parameters.value=p;applyParameter();const list=await api.processDailyList(lineId.value);if(ticket!==epoch)return;records.value=list;recordId.value=list.some(r=>r.id===recordId.value)?recordId.value:list[0]?.id||'';if(recordId.value&&!parameterPage.value){const list=await api.processReports(recordId.value);if(ticket!==epoch)return;reports.value=list;if(list[0]){const r=await api.processReport(list[0].id);if(ticket!==epoch)return;report.value=r}}}blocked.value=false}catch(e){if(ticket===epoch)error.value=(e as Error).message}finally{if(ticket===epoch)busy.value=false}}
+async function load(){const ticket=++epoch,api=client();busy.value=true;blocked.value=true;error.value='';report.value=null;reports.value=[];records.value=[];parameters.value=[];lines.value=[];try{const context=await api.processDailyContext();if(ticket!==epoch)return;lines.value=context;lineId.value=context.some(l=>l.id===lineId.value)?lineId.value:context[0]?.id||'';if(lineId.value){const p=await api.processParameters(lineId.value);if(ticket!==epoch)return;parameters.value=p;applyParameter();const list=await api.processDailyList(lineId.value);if(ticket!==epoch)return;records.value=list;recordId.value=list.some(r=>r.id===recordId.value)?recordId.value:list[0]?.id||'';if(recordId.value&&!parameterPage.value){const list=await api.processReports(recordId.value);if(ticket!==epoch)return;reports.value=list;const selected=list[0];if(selected){const r=await api.processReport(selected.id);if(ticket!==epoch)return;report.value=r;selectedRow.value=null}}}blocked.value=false}catch(e){if(ticket===epoch)error.value=(e as Error).message}finally{if(ticket===epoch)busy.value=false}}
 watch(()=>props.siteId,()=>{void load()},{immediate:true})
 watch(busy,value=>{if(!value&&notice.value==='正在读取或保存，请完成后再离开。')notice.value=''})
 async function refresh(){if(dirty.value&&!window.confirm('当前参数尚未保存，刷新将放弃本次输入，是否继续？'))return;await run(load)}
@@ -56,6 +62,8 @@ async function saveReport(){if(!report.value)return;await run(async()=>{report.v
 async function download(){if(!report.value)return;await run(async()=>{const data=await client().processReportExport(report.value!.id);const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=`${props.siteName}-${data.source.date}-分析日报V${data.version}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notice.value='已导出日报结果与完整来源快照。'})}
 </script>
 <template>
+  <IndicatorSelection :open="pickerOpen" :metrics="line?.template||[]" :hidden="hidden" @close="pickerOpen=false" @save="selectIndicators" />
+  <p v-if="selectionError" role="alert">{{selectionError}}</p>
 <section class="pm-workspace process-archive">
   <p v-if="error" class="pm-message pm-error" role="alert">{{error}}。请核对最新状态后继续。</p>
   <p v-if="notice" class="pm-message" role="status">{{notice}}</p>
@@ -75,6 +83,7 @@ async function download(){if(!report.value)return;await run(async()=>{const data
         <WxField label="查找指标"><WxInput v-model="search" placeholder="名称、分类或编码" /></WxField>
       </template>
       <div class="archive-actions">
+        <WxButton @click="pickerOpen=true">选用指标</WxButton>
         <WxField v-if="!parameterPage&&reports.length" label="日报版本"><WxSelect :model-value="report?.id||''" :disabled="busy" @update:model-value="openReport"><option v-for="r in reports" :key="r.id" :value="r.id">V{{r.version}} · {{r.status==='SAVED'?'已保存':'待保存'}}</option></WxSelect></WxField>
         <WxButton v-if="!parameterPage&&generateAllowed" :disabled="busy||blocked||!record||record.analysisBlocked||!note.trim()" @click="generate">重新计算</WxButton>
         <WxButton v-if="!parameterPage&&generateAllowed&&report?.canSave" variant="primary" :disabled="busy||blocked||!note.trim()" @click="saveReport">保存日报</WxButton>
@@ -134,12 +143,12 @@ async function download(){if(!report.value)return;await run(async()=>{const data
           <p>生成：{{report.creator_name}} · {{new Date(report.created_at).toLocaleString('zh-CN',{hour12:false})}}</p>
           <p v-if="report.note">办理说明：{{report.note}}</p>
           <p>判定说明：缺失、异常、不适用及待配置项不会按正常计数。</p><p>设计：{{report.source.design.content.name}} · {{report.source.design.content.basis}} · 发布人 {{report.source.design.actor_name}}</p><p>目标：{{report.source.target.content.name}} · {{report.source.target.content.basis}} · 发布人 {{report.source.target.actor_name}}</p><p>确认说明：{{report.source.entry.reason}}</p><WxTableSurface><table class="pm-table"><thead><tr><th>日数据指标</th><th>确认值</th><th>记录状态</th><th>说明</th></tr></thead><tbody><tr v-for="(c,id) in report.source.entry.cells" :key="id"><td>{{id}}</td><td>{{c.value||'未取得'}}</td><td>{{c.state==='NA'?'不适用':c.state==='INVALID'?'数据异常':'已记录'}}</td><td>{{c.note}}</td></tr></tbody></table></WxTableSurface></div>
-        <DiagnosisBoards v-if="page==='processAnalysis'" :rows="report.rows" :meanings="meanings" :configurable="false" @detail="selectedRow=$event" />
+        <DiagnosisBoards v-if="page==='processAnalysis'" :rows="report.rows.filter(r=>!hidden.includes(r.id))" :meanings="meanings" :configurable="false" @detail="selectedRow=$event" />
         <WxTableSurface v-else><div class="pm-table-scroll"><table class="pm-table"><thead><tr><th>指标</th><th>单位</th><th>设计参考</th><th>运行目标</th><th>实际值</th><th>数据状态</th><th>判定</th><th>说明</th></tr></thead><tbody><tr v-for="r in report.rows" :key="r.id"><td>{{r.name}}<small>{{r.category}} · {{r.code}}</small></td><td>{{r.unit}}</td><td>{{r.design}}</td><td>{{r.target}}</td><td>{{r.actual||'未取得'}}</td><td>{{dataLabels[r.data]}}</td><td>{{stateLabels[r.state]}}</td><td><WxButton @click="selectedRow=r">规则与来源</WxButton></td></tr></tbody></table></div></WxTableSurface>
       </template>
     </template>
   </template>
-  <div v-if="selectedRow" class="pm-overlay" @click.self="selectedRow=null"><section class="pm-dialog" role="dialog" aria-modal="true" aria-label="指标规则与来源"><header><strong>{{selectedRow.name}}</strong><WxButton @click="selectedRow=null">关闭</WxButton></header><dl><dt>数据来源与状态</dt><dd>{{selectedRow.source}} · {{dataLabels[selectedRow.data]}}</dd><dt>公式</dt><dd>{{selectedRow.formula||'直接引用确认值'}}</dd><dt>规则</dt><dd>{{selectedRow.rule}}</dd><dt>结果说明</dt><dd>{{selectedRow.explanation||'缺少可用数据，暂不形成结论'}}</dd><dt>来源版本</dt><dd>日数据 V{{report?.source.entry.version}} / 设计 V{{report?.source.design.version}} / 目标 V{{report?.source.target.version}}</dd></dl></section></div>
+  <div v-if="selectedRow" class="pm-overlay" @click.self="selectedRow=null"><section class="pm-dialog" role="dialog" aria-modal="true" aria-label="指标规则与来源"><header><strong>{{selectedRow.name}}</strong><WxButton @click="selectedRow=null">关闭</WxButton></header><dl><dt>数据来源与状态</dt><dd>{{selectedRow.source}} · {{dataLabels[selectedRow.data]}}</dd><dt>公式</dt><dd>{{selectedRow.formula||'直接引用确认值'}}</dd><dt>规则</dt><dd>{{selectedRow.rule}}</dd><dt>结果说明</dt><dd>{{selectedRow.explanation||'缺少可用数据，暂不形成结论'}}</dd><dt>来源版本</dt><dd>日数据 V{{report?.source.entry.version}} / 设计 V{{report?.source.design.version}} / 目标 V{{report?.source.target.version}}</dd></dl><CalculationInputs :id="selectedRow.id" :version="report?.rule_version" :metrics="report?.source.entry.template||[]" :values="report?.source.design.content.values||{}" :cells="report?.source.entry.cells||{}" /></section></div>
 </section>
 </template>
 <style scoped>

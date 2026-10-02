@@ -1,5 +1,5 @@
 /* Selectable example staff; identities and work locations come from personnel.js. */
-export function createWorkers(T,parent,people){
+export const WaterXWorkers=function(T,parent,people){
  const groups=new Map();
  const materials=new Map();const mat=c=>{if(!materials.has(c))materials.set(c,new T.MeshStandardMaterial({color:c,roughness:.8,metalness:.02}));return materials.get(c);};
  function mesh(g,geo,color,x,y,z){const m=new T.Mesh(geo,mat(color));m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;}

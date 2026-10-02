@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {createPersonnel} from './personnel.js';
-import {siteRouting as routing} from './site-routing.js';
+import {WaterXSiteRouting as routing} from './site-routing.js';
 const data=JSON.parse(fs.readFileSync(new URL('./case-data.json',import.meta.url)));
 const key='waterx:twin:demo:v1:siteA:userA:personnel';
 function boot(raw=null,fail=false,k=key,shared=new Map()){
   if(raw!==null)shared.set(k,raw);
   const storage={getItem:id=>shared.get(id)||null,setItem:(id,v)=>{if(fail)throw Error('denied');shared.set(id,v)}};
-  return {p:createPersonnel(data,k,storage),mem:shared,storage};
+  return {p:createPersonnel({D:data,storageKey:k,storage}),mem:shared,storage};
 }
 let checks=0;function check(name,f){f();checks++;console.log('PASS '+name)}
 const {p,mem}=boot();
@@ -22,6 +22,6 @@ check('failed storage does not dispatch',()=>{const q=boot(null,true).p;assert.t
 check('corrupt storage is retained, not overwritten',()=>{const q=boot('{bad');assert.throws(()=>q.p.createTask(input),/读取失败/);assert.equal(q.mem.get(key),'{bad')});
 check('project, user and mode namespaces are isolated',()=>{for(const other of ['waterx:twin:demo:v1:siteB:userA:personnel','waterx:twin:demo:v1:siteA:userB:personnel','waterx:twin:other:v1:siteA:userA:personnel'])assert.equal(boot(null,false,other,mem).p.pending('PERSON-fix').length,2)});
 check('same names do not merge identities, instances do not share mutable people',()=>{p.people.find(p=>p.id==='PERSON-op1').name=p.people.find(p=>p.id==='PERSON-fix').name;assert.equal(p.pending('PERSON-op1').length,1);assert.notEqual(boot().p.people.find(p=>p.id==='PERSON-op1').name,p.people.find(p=>p.id==='PERSON-op1').name)});
-check('blocked storage read is contained',()=>{const q=createPersonnel(data,key,{getItem(){throw Error('denied')},setItem(){throw Error('must not write')}});assert.equal(q.people.length,12);assert.throws(()=>q.createTask(input),/读取失败/)});
+check('blocked storage read is contained',()=>{const q=createPersonnel({D:data,storageKey:key,storage:{getItem(){throw Error('denied')},setItem(){throw Error('must not write')}}});assert.equal(q.people.length,12);assert.throws(()=>q.createTask(input),/读取失败/)});
 check('bad persisted deadline and object are rejected without deleting data',()=>{for(const delta of [{deadline:'2026-09-19 25:00'},{object:'missing'}]){const raw=JSON.stringify([{...input,id:'LOCAL-example',state:'待接单',...delta}]);const q=boot(raw);assert.throws(()=>q.p.createTask(input),/读取失败/);assert.equal(q.mem.get(key),raw)}});
 console.log(checks+' personnel integration checks passed');

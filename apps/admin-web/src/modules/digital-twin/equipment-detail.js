@@ -2,11 +2,11 @@
    Geometry dimensions follow the existing illustrative layout, not shop drawings. */
 
   'use strict';
-  export function createEquipmentDetails(api) {
+  export const WaterXDetailModels = function (api) {
     const {THREE: T, nameplate, rotors} = api;
     const mats = new Map(), geos = new Map();
     const C = {steel:0xa7b5b8, edge:0x788a90, dark:0x34444c, black:0x222c30, shell:0xd4ddda, rubber:0x293135, blue:0x40788e, brass:0xb69b64};
-    function mat(color, extra = {}) { const key = color + JSON.stringify(extra); if (!mats.has(key)) mats.set(key,new T.MeshStandardMaterial({color,roughness:.43,metalness:.58,...extra})); return mats.get(key); }
+    function mat(color, extra = {}) { const key=color+JSON.stringify(extra);if(!mats.has(key)){const steel=[C.steel,C.edge,C.brass].includes(color),rubber=[C.rubber,C.black].includes(color),m=api.pipeMaterial(color).clone();m.roughness=rubber?.89:steel?.38:.61;m.metalness=rubber?0:steel?.82:.18;m.bumpScale=rubber?.012:.004;Object.assign(m,extra);mats.set(key,m);}return mats.get(key); }
     function geo(key,create) { if(!geos.has(key))geos.set(key,create());return geos.get(key); }
     function mesh(g,geometry,material,x=0,y=0,z=0){const m=new T.Mesh(geometry,material);m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;}
     function b(g,x,y,z,w,h,d,color=C.steel,extra){return mesh(g,geo(`b${w},${h},${d}`,()=>new T.BoxGeometry(w,h,d)),mat(color,extra),x,y,z);}
@@ -18,7 +18,11 @@
     function sphere(g,x,y,z,r,color,sx=1,sy=1,sz=1){const m=mesh(g,geo('sphere',()=>new T.SphereGeometry(1,20,12)),mat(color),x,y,z);m.scale.set(r*sx,r*sy,r*sz);return m;}
     function ring(g,x,y,z,r,t,color=C.steel,axis='z'){const m=mesh(g,geo(`tor${r},${t}`,()=>new T.TorusGeometry(r,t,6,24)),mat(color),x,y,z);if(axis==='y')m.rotation.x=Math.PI/2;if(axis==='x')m.rotation.y=Math.PI/2;return m;}
     function rod(g,a,c,r=.06,color=C.steel){const p=new T.Vector3(...a),v=new T.Vector3(...c).sub(p);if(v.length()<.001)return;const m=mesh(g,geo('rod',()=>new T.CylinderGeometry(1,1,1,10)),mat(color));m.scale.set(r,v.length(),r);m.position.copy(p.addScaledVector(v,.5));m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),v.normalize());return m;}
-    function tubes(g,points,r=.12,color=C.steel){for(let i=1;i<points.length;i++){const m=rod(g,points[i-1],points[i],r,color);if(m)m.material=api.pipeMaterial(color);}for(let i=1;i<points.length-1;i++){const m=sphere(g,...points[i],r,color);m.material=api.pipeMaterial(color);}}
+    function tubes(g,points,r=.12,color=C.steel){
+      if(r>=.08)return api.pipeDetail(g,points,r,color);
+      const path=new T.CatmullRomCurve3(points.map(p=>new T.Vector3(...p)),false,'centripetal');
+      return mesh(g,new T.TubeGeometry(path,Math.max(12,Math.ceil(path.getLength()*5)),r,8,false),mat(color,{metalness:0,roughness:.86}));
+    }
     function batch(g,geometry,material,items){const m=new T.InstancedMesh(geometry,material,items.length);const o=new T.Object3D();items.forEach((it,i)=>{o.position.set(...it.p);o.rotation.set(...(it.r||[0,0,0]));o.scale.set(...(it.s||[1,1,1]));o.updateMatrix();m.setMatrixAt(i,o.matrix);});m.castShadow=true;m.receiveShadow=true;g.add(m);return m;}
     function boxes(g,items,color=C.steel){return batch(g,geo('unitbox',()=>new T.BoxGeometry(1,1,1)),mat(color),items);}
     function flange(g,x,y,z,r,axis='z'){
@@ -41,7 +45,12 @@
     }
     function motor(g,x,y,z,r,len,color,axis='x'){
       const m=cy(g,x,y,z,r,len,color,axis);fins(g,axis,len*.77,r*.97,12,color,[x,y,z]);
-      if(axis==='x'){cy(g,x+len/2,y,z,r*.96,.19,C.dark,'x');cy(g,x-len/2,y,z,r*.82,.22,color,'x');b(g,x,y+r+.2,z,len*.42,.38,r*.9,color);}
+      if(axis==='x'){cy(g,x+len/2,y,z,r*.96,.19,C.dark,'x');cy(g,x-len/2,y,z,r*.82,.22,color,'x');b(g,x,y+r+.2,z,len*.42,.38,r*.9,color);
+        ring(g,x+len/2+.12,y,z,r*.90,.027,color,'x');ring(g,x+len/2+.14,y,z,r*.48,.019,color,'x');
+        for(let i=0;i<12;i++){const a=i*Math.PI/6;rod(g,[x+len/2+.14,y+Math.sin(a)*r*.17,z+Math.cos(a)*r*.17],[x+len/2+.14,y+Math.sin(a)*r*.88,z+Math.cos(a)*r*.88],.014,color);}
+        for(const dx of [-len*.3,len*.3]){b(g,x+dx,y-r-.12,z,len*.18,.21,r*1.4,color);for(const dz of [-r*.55,r*.55])cy(g,x+dx,y-r+.02,z+dz,.038,.09,C.steel,'y',.038,6);}
+        cy(g,x+len*.1,y+r+.19,z+r*.49,.085,.15,C.dark,'z');tubes(g,[[x+len*.1,y+r+.2,z+r*.52],[x+len*.1,y+r*.95,z+r*.9],[x+len*.3,y-r*.6,z+r*.8]],.029,C.black);
+      }
       else {cy(g,x,y+len/2,z,r*.92,.17,C.dark);b(g,x+r*.83,y+.1,z,.48,.45,.55,color);}
       return m;
     }
@@ -69,7 +78,8 @@
     }
     function dryPump(g,e,base){
       const main=independent(motor(g,.15,-.5,0,.53,1.45,base,'x'));
-      rounded(g,-1.08,-.5,0,1.0,1.25,1.16,base,.16);cy(g,-1.59,-.53,0,.37,.75,C.edge,'x');flange(g,-1.98,-.53,0,.37,'x');
+      const volute=geo('pump-volute',()=>{const outline=new T.Shape();outline.moveTo(-.30,-.52);outline.bezierCurveTo(-.9,-.23,-.77,.67,-.04,.68);outline.bezierCurveTo(.65,.67,.74,-.30,.23,-.56);outline.closePath();const shape=new T.ExtrudeGeometry(outline,{depth:.64,bevelEnabled:true,bevelSize:.065,bevelThickness:.06,bevelSegments:3,curveSegments:20});shape.translate(0,0,-.32);shape.rotateY(Math.PI/2);return shape;});mesh(g,volute,mat(base),-1.08,-.48,0);
+      flange(g,-1.45,-.48,0,.55,'x');cy(g,-.54,-.50,0,.22,.38,C.steel,'x');rounded(g,-.52,-.42,0,.34,.6,.65,C.dark,.03);cy(g,-1.59,-.53,0,.37,.75,C.edge,'x');flange(g,-1.98,-.53,0,.37,'x');
       tubes(g,[[-1.08,.11,0],[-1.08,1.35,0],[-1.08,1.35,-1.20]],.30,C.edge);flange(g,-1.08,.55,0,.30,'y');
       b(g,0,-1.18,0,3.55,.23,1.6,C.dark);b(g,0,-1.46,0,3.8,.30,1.9,0xb2b1a8,{roughness:.9,metalness:0});feet(g,2.8,1.0,-1.29);dial(g,-.72,.77,.35,.18);nameplate(g,e.id,.26,-.45,.55,.8);return main;
     }
@@ -86,6 +96,8 @@
       const main=independent(rounded(g,0,.66,0,6.7,3.70,4.68,base,.10));rounded(g,0,2.56,0,6.84,.18,4.82,C.shell,.045);
       const louvers=[];for(const x of [-2.19,0,2.19]){rounded(g,x,.66,2.37,2.08,3.52,.10,C.shell,.035);rod(g,[x+.78,.30,2.46],[x+.78,.88,2.46],.038,C.dark);for(const y of [-.76,.06,.88,1.70]){cy(g,x-.9,y,2.445,.035,.045,C.edge,'z',.035,6);}}
       for(let j=0;j<10;j++)louvers.push({p:[-2.19,-.5+j*.19,2.46],r:[.16,0,0],s:[1.68,.075,.11]});for(let j=0;j<13;j++)louvers.push({p:[3.37,.12+j*.13,-.43],s:[.08,.055,2.45]});boxes(g,louvers,C.dark);
+      for(const x of [-2.98,-.82,1.38])for(const y of [-.52,1.60]){b(g,x,y,2.465,.13,.31,.08,C.edge);cy(g,x,y,2.52,.022,.04,C.steel,'z',.022,6);}
+      for(const x of [-2.7,2.7]){ring(g,x,2.78,0,.14,.045,C.steel);for(const z of [-1.8,1.8])cy(g,x,-1.41,z,.075,.18,C.steel,'y',.075,6);}
       screen(g,0,1.24,2.46,1.08,.65);status(main,g,e,-.29,.61,2.52);sphere(g,.27,.61,2.52,.09,0xb64734);nameplate(g,e.id,2.19,1.21,2.47,1.49);
       tubes(g,[[1.9,2.65,-.82],[1.9,4.3,-.82],[1.9,4.3,-5]],.47,C.steel);flange(g,1.9,3.16,-.82,.47,'y');flange(g,1.9,4.3,-3.42,.47,'z');
       cy(g,-2.03,3.10,-.93,.57,1.04,C.steel);cy(g,-2.03,3.65,-.93,.66,.13,C.dark);ring(g,-2.03,2.71,-.93,.57,.055,C.edge,'y');
@@ -115,7 +127,9 @@
       for(const x of [-.30,0,.30])cy(g,x,-.09,.336,.053,.04,x===-.30?0x50a185:C.dark,'z');
       const feetY=1.83-(e.y||0);rod(g,[0,-.37,-.15],[0,feetY,-.15],.075);b(g,0,feetY,-.15,.60,.12,.54);rod(g,[0,-.42,-.15],[.75,-.42,-.15],.06);
       rod(g,[.75,-.42,-.15],[.75,-3.65,-.15],.07);cy(g,.75,-3.88,-.15,.15,.58,C.steel);cy(g,.75,-4.2,-.15,.16,.12,C.black);sphere(g,.75,-4.29,-.15,.12,0x345d61,1,.5,1);
-      tubes(g,[[.25,-.3,0],[.57,-.62,.05],[.91,-.32,-.12],[.90,-3.59,-.15]],.027,C.black);nameplate(g,e.id,0,.93,.515,.72);return main;
+      for(const y of [-.42,-2.4]){ring(g,.75,y,-.15,.10,.021,C.edge,'y');b(g,.75,y,-.27,.26,.10,.07,C.edge);}
+      for(const x of [-.21,.21])for(const z of [-.32,.03])cy(g,x,feetY+.12,z,.035,.11,C.steel,'y',.035,6);
+      cy(g,.25,-.33,0,.062,.15,C.black);tubes(g,[[.25,-.3,0],[.57,-.62,.05],[.91,-.32,-.12],[.90,-3.59,-.15]],.027,C.black);nameplate(g,e.id,0,.93,.515,.72);return main;
     }
     function valve(g,e,base){
       const main=independent(cy(g,0,.02,0,.54,.42,base,'x'));cy(g,0,.02,0,.38,2.4,C.steel,'x');flange(g,-.36,.02,0,.43,'x');flange(g,.36,.02,0,.43,'x');
@@ -143,6 +157,8 @@
       for(const x of [-2.62,-.7,1.40])ring(g,x,.17,0,1.10,.040,C.edge,'x');b(g,.15,1.28,0,5.95,.13,.54,C.steel);for(const x of [-2.55,2.55])rod(g,[x,-.5,-.7],[x,-1.24,-.7],.18,C.edge);
       motor(g,-3.15,-.60,1.27,.51,1.95,base,'x');rounded(g,-4.31,-.04,.30,.42,2.13,2.95,C.dark,.12);cy(g,4.12,.17,0,.58,.48,base,'x');
       tubes(g,[[4.4,.18,0],[5.0,.18,0],[5.0,.18,-1.5]],.11,C.steel);b(g,2.82,-1.00,0,.80,.57,1.0,C.edge);b(g,-1.80,-1.0,0,.84,.57,.86,C.edge);
+      for(const x of [-2.52,2.5])for(let i=0;i<12;i++){const a=i*Math.PI/6;cy(g,x,.17+Math.sin(a)*1.02,Math.cos(a)*1.02,.042,.075,C.edge,'x',.042,6);}
+      for(const x of [-1.8,1.2]){ring(g,x,1.45,0,.12,.035,C.steel);b(g,x,1.32,0,.45,.08,.36,C.edge);}
       nameplate(g,e.id,0,.35,1.095,1.25);status(main,g,e,-2.02,.54,1.13);return main;
     }
     function thickener(g,e,base){
@@ -194,5 +210,5 @@
       nameplate(g,e.id,0,.21,.81,.83);return main;
     }
     const builders={pump:(g,e,c)=>e.id.startsWith('IRP-')?axialPump(g,e,c):e.parent==='CHEM-01'?metering(g,e,c):e.id.startsWith('P-IN-')?submersible(g,e,c):dryPump(g,e,c),blower,mixer,sensor,valve,tank,dewater,screen:screenModel,cabinet,filter,diffuser,scraper};
-    return {dispose(){geos.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());screenTexture?.dispose();dialTexture?.dispose();geos.clear();mats.clear();rotors.length=0;},build(g,e,base){const fn=builders[e.kind];return fn?fn(g,e,base):independent(rounded(g,0,-.20,0,2.1,1.7,1.7,base));}};
+    return {dispose(){geos.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());geos.clear();mats.clear();},build(g,e,base){const fn=builders[e.kind];return fn?fn(g,e,base):independent(rounded(g,0,-.20,0,2.1,1.7,1.7,base));}};
   };

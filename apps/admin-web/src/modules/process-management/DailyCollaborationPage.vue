@@ -3,12 +3,17 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue'
 import { ApiClient, type DailyLine, type DailyRecord, type DailySummary, type DailyCell } from '@safety/api-client'
 import { WxButton, WxField, WxInput, WxSelect, WxTableSurface } from '../../components/waterx'
 import MetricEditor from './MetricEditor.vue'
+import IndicatorSelection from './IndicatorSelection.vue'
+import { useIndicatorSelection } from './indicator-selection'
 import type { Metric, ProcessPage } from './types'
 import { businessToday } from './types'
 import './process-management.css'
 
 const props=defineProps<{api:ApiClient;siteId:string;siteName:string;page:ProcessPage;initialRecordId?:string;initialLineId?:string}>()
 const emit=defineEmits<{navigate:[page:ProcessPage]}>()
+const pickerOpen=ref(false)
+const {hidden,selectionError,saveSelection}=useIndicatorSelection(()=>props.siteId)
+function chooseIndicators(ids:string[]){if(saveSelection(ids))pickerOpen.value=false}
 const lines=ref<DailyLine[]>([]),lineId=ref(''),records=ref<DailySummary[]>([]),detail=ref<DailyRecord|null>(null)
 const error=ref(''),notice=ref(''),busy=ref(false),blocked=ref(false),dirty=ref(false)
 const date=ref(businessToday()),assignee=ref(''),reviewer=ref(''),note=ref(''),search=ref(''),stateFilter=ref('')
@@ -24,7 +29,7 @@ const category=ref('全部')
 const allEntryMetrics=computed(()=>(historical.value?historyTemplate.value:(detail.value?.template||line.value?.template||[])).filter(m=>m.source==='MANUAL'&&m.scopes.includes('entry')))
 const categories=computed(()=>['全部',...new Set(allEntryMetrics.value.map(m=>m.category))])
 const dataCounts=computed(()=>{const counts={filled:0,missing:0,invalid:0,na:0};for(const m of allEntryMetrics.value){const c=cells.value[m.id];if(c?.state==='NA')counts.na++;else if(c?.state==='INVALID')counts.invalid++;else if(c?.value.trim())counts.filled++;else counts.missing++}return counts})
-const metricList=computed(()=>(historical.value?historyTemplate.value:(detail.value?.template||line.value?.template||[])).filter(m=>m.source==='MANUAL'&&m.scopes.includes('entry')&&(category.value==='全部'||m.category===category.value)&&(!search.value||`${m.category} ${m.name} ${m.code}`.includes(search.value))))
+const metricList=computed(()=>(historical.value?historyTemplate.value:(detail.value?.template||line.value?.template||[])).filter(m=>(historical.value||!hidden.value.includes(m.id))&&m.source==='MANUAL'&&m.scopes.includes('entry')&&(category.value==='全部'||m.category===category.value)&&(!search.value||`${m.category} ${m.name} ${m.code}`.includes(search.value))))
 const listing=computed(()=>records.value.filter(r=>!stateFilter.value||r.state===stateFilter.value))
 const labels:Record<string,string>={DRAFT:'待填报',RETURNED:'已退回',SUBMITTED:'待审核',CONFIRMED:'已确认',CANCELLED:'候选已终止'}
 const actionLabels:Record<string,string>={create:'分派任务',assign:'改派责任人',save:'保存草稿',submit:'提交审核',return:'退回修改',confirm:'审核确认',correct:'发起更正',cancel:'终止候选'}
@@ -63,6 +68,8 @@ async function checkSource(){if(!detail.value)return;await run(async()=>{const s
 async function download(){if(!detail.value)return;await run(async()=>{const payload=await readCurrent(client().processDailyExport(detail.value!.id));const url=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=`${props.siteName}-${detail.value!.business_date}-日数据及历史.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);notice.value='已导出当前记录、确认版本及办理历史。'})}
 </script>
 <template>
+  <IndicatorSelection :open="pickerOpen" :hidden="hidden" :metrics="detail?.template||line?.template||[]" @close="pickerOpen=false" @save="chooseIndicators" />
+  <p v-if="selectionError" role="alert" class="pm-error">{{selectionError}}</p>
   <section class="pm-workspace daily-collaboration">
     <p v-if="error" class="pm-message pm-error" role="alert">{{error}}。请刷新核对最新状态后继续，未保存内容仍保留在当前表单。</p>
     <p v-if="notice" class="pm-message" role="status">{{notice}}</p>
@@ -86,7 +93,7 @@ async function download(){if(!detail.value)return;await run(async()=>{const payl
           <p v-if="detail.correction_reason" class="pm-muted">更正依据：{{detail.correction_reason}}</p><p v-if="detail.review_note" class="pm-message">审核意见：{{detail.review_note}}</p>
           <div class="pm-toolbar"><strong>{{historical?historyLabel:detail.state==='CONFIRMED'?`已确认 V${detail.confirmed_version}`:detail.state==='CANCELLED'?'已终止候选内容':'当前候选内容'}}</strong><WxButton v-if="historical" :disabled="busy" @click="apply(detail,false)">返回当前候选</WxButton><WxButton v-for="v in detail.versions" :key="v.version" :disabled="busy||dirty" @click="showVersion(v.version)">确认版 V{{v.version}}</WxButton><WxButton v-if="detail.actions.includes('export')" :disabled="busy||blocked" @click="download">导出记录与历史</WxButton></div>
           <p v-if="detail.confirmed_version&&detail.analysisBlocked" class="pm-message">更正办理中。原确认版保留，新的业务分析暂停，直到更正被确认或终止。</p>
-          <div class="pm-toolbar"><WxField label="指标分类"><WxSelect v-model="category"><option v-for="c in categories" :key="c" :value="c">{{c}}</option></WxSelect></WxField><WxField label="查找指标"><WxInput v-model="search" placeholder="指标名称、分类或编码" /></WxField></div><p class="pm-muted">整份记录：已填 {{dataCounts.filled}} · 缺失 {{dataCounts.missing}} · 异常 {{dataCounts.invalid}} · 不适用 {{dataCounts.na}}。确认代表记录已复核，不能据此推定全部数据完整或指标达标。</p>
+          <div class="pm-toolbar"><WxField label="指标分类"><WxSelect v-model="category"><option v-for="c in categories" :key="c" :value="c">{{c}}</option></WxSelect></WxField><WxField label="查找指标"><WxInput v-model="search" placeholder="指标名称、分类或编码" /></WxField><WxButton v-if="!historical" @click="pickerOpen=true">选用指标</WxButton><span v-if="!historical&&hidden.length" class="pm-muted">显示已筛选，完整性仍按整份记录校核</span></div><p class="pm-muted">整份记录：已填 {{dataCounts.filled}} · 缺失 {{dataCounts.missing}} · 异常 {{dataCounts.invalid}} · 不适用 {{dataCounts.na}}。确认代表记录已复核，不能据此推定全部数据完整或指标达标。</p>
           <MetricEditor :metrics="metricList" mode="entry" :values="{}" :targets="{}" :cells="cells" :editable="editable&&!busy" @cell="setCell" />
           <p v-if="dirty" class="pm-message">有未保存修改，请先保存草稿，再提交审核。</p>
           <div v-if="!sourcePage&&!historical&&actions.some(a=>a!=='export')" class="daily-actions">

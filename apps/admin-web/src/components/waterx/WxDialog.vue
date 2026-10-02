@@ -7,7 +7,8 @@ const props = withDefaults(defineProps<{
   placement?: 'center' | 'right'
   closeOnBackdrop?: boolean
   closeOnEscape?: boolean
-}>(), { placement: 'center', closeOnBackdrop: true, closeOnEscape: true })
+  teleportTo?: string | HTMLElement
+}>(), { placement: 'center', closeOnBackdrop: true, closeOnEscape: true, teleportTo: 'body' })
 const emit = defineEmits<{ close: [] }>()
 const dialog = ref<HTMLDialogElement | null>(null)
 let returnFocus: HTMLElement | null = null
@@ -68,7 +69,7 @@ onBeforeUnmount(() => { dialog.value?.close(); releasePage() })
 </script>
 
 <template>
-  <Teleport to="body">
+  <Teleport :to="teleportTo">
     <dialog ref="dialog" :class="['wx-dialog', `is-${placement}`]" :aria-label="label" tabindex="-1"
       @cancel="cancel" @close="nativeClose"
       @keydown="keepFocus"

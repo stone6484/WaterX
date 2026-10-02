@@ -295,7 +295,6 @@ const alongCourseSeries = [
   { name:'MLSS', unit:'mg/L', values:['—','—','7110','—','6998','—','6815','—','—','—'], trend:'沿程浓度稳定' },
   { name:'碱度', unit:'mg/L', values:['178','—','163','—','150','—','—','132','—','135'], trend:'硝化过程持续消耗' }
 ]
-const showNewMetricForm = ref(false)
 const customMetrics = reactive<DiagnosisMetric[]>(JSON.parse(localStorage.getItem('waterx-custom-diagnosis-metrics') || '[]'))
 const customProcessMetrics = reactive<DiagnosisMetric[]>(JSON.parse(localStorage.getItem('waterx-custom-process-metrics') || '[]'))
 const resultCategories = ['进水水质','进水特征','出水水质','处理效能','污泥性状','沿程分析']
@@ -305,7 +304,6 @@ const metricCategoryPrefixes: Record<string,string> = {
   '水量控制':'FLW', '曝气控制':'AIR', '回流控制':'RFL',
   '排泥控制':'WSL', '加药控制':'CHE', '搅拌控制':'MIX', '沿程分析':'PRF'
 }
-const newMetricForm = reactive({ category: '进水水质', name: '', unit: 'mg/L', meaning: '', dataType: 'DECIMAL', valueSource: 'MANUAL', required: false, fillSpec: '' })
 const allDiagnosisMetrics = computed(() => [...diagnosisMetrics, ...expertResultMetrics, ...customMetrics])
 function metricKey(metric: Pick<DiagnosisMetric, 'category' | 'name'>) { return `${metric.category}::${metric.name}` }
 const calculatedMetricFormulas: Record<string,string> = {
@@ -405,7 +403,6 @@ const moduleMetricDefaultScopes: Record<string,MetricModuleKey[]> = {
 const activeModuleMetricManager = ref<MetricModuleKey|null>(null)
 const activeMetricBoard = ref('')
 const metricDraftSnapshot = ref<{settings:string;overrides:string;custom:string;customProcess:string}|null>(null)
-const metricCreationTargetModule = ref<MetricModuleKey|null>(null)
 const moduleMetricSearch = ref('')
 const moduleMetricOverrides = reactive<Record<MetricModuleKey,Record<string,boolean>>>(JSON.parse(localStorage.getItem('waterx-module-metric-overrides') || 'null') || { design:{}, condition:{}, entry:{}, diagnosis:{} })
 function moduleMetricDefaultEnabled(metric: Pick<DiagnosisMetric,'category'|'name'>, module: MetricModuleKey) {
@@ -422,7 +419,7 @@ function isMetricEnabledInModule(metric: Pick<DiagnosisMetric,'category'|'name'>
 function setMetricEnabledInModule(metric: Pick<DiagnosisMetric,'category'|'name'>, module: MetricModuleKey|null, enabled: boolean) { if (module) moduleMetricOverrides[module][metricKey(metric)] = enabled }
 function openModuleMetricManager(module: MetricModuleKey, board = '') {
   metricDraftSnapshot.value={settings:JSON.stringify(metricSettings),overrides:JSON.stringify(moduleMetricOverrides),custom:JSON.stringify(customMetrics),customProcess:JSON.stringify(customProcessMetrics)}
-  activeModuleMetricManager.value=module; activeMetricBoard.value=board; moduleMetricSearch.value=''; if(board)newMetricForm.category=board
+  activeModuleMetricManager.value=module; activeMetricBoard.value=board; moduleMetricSearch.value=''
 }
 function closeModuleMetricManager() {
   const snapshot=metricDraftSnapshot.value
@@ -432,25 +429,11 @@ function closeModuleMetricManager() {
     customMetrics.splice(0,customMetrics.length,...JSON.parse(snapshot.custom)); customProcessMetrics.splice(0,customProcessMetrics.length,...JSON.parse(snapshot.customProcess))
     localStorage.setItem('waterx-custom-diagnosis-metrics',snapshot.custom); localStorage.setItem('waterx-custom-process-metrics',snapshot.customProcess)
   }
-  metricDraftSnapshot.value=null; activeModuleMetricManager.value=null; activeMetricBoard.value=''; showNewMetricForm.value=false
+  metricDraftSnapshot.value=null; activeModuleMetricManager.value=null; activeMetricBoard.value=''
 }
-function saveModuleMetricSettings() { localStorage.setItem('waterx-module-metric-overrides', JSON.stringify(moduleMetricOverrides)); saveMetricSettings(); metricDraftSnapshot.value=null; activeModuleMetricManager.value=null; activeMetricBoard.value=''; showNewMetricForm.value=false }
-function startMetricCreationFromModule() { metricCreationTargetModule.value=activeModuleMetricManager.value; showNewMetricForm.value=true }
-function cancelModuleMetricCreation() { metricCreationTargetModule.value=null; showNewMetricForm.value=false }
+function saveModuleMetricSettings() { localStorage.setItem('waterx-module-metric-overrides', JSON.stringify(moduleMetricOverrides)); saveMetricSettings(); metricDraftSnapshot.value=null; activeModuleMetricManager.value=null; activeMetricBoard.value='' }
 const visibleDiagnosisMetrics = computed(() => allDiagnosisMetrics.value.filter(metric => isMetricEnabledInModule(metric,'diagnosis')))
-function addCustomMetric() {
-  const metric: DiagnosisMetric = { code:nextMetricCode(newMetricForm.category), category:newMetricForm.category, name:newMetricForm.name, unit:newMetricForm.unit, meaning:newMetricForm.meaning, design:'—', target:'—', actual:'—', deviation:null, level:'normal' }
-  if (processCategories.includes(newMetricForm.category)) { customProcessMetrics.push(metric); localStorage.setItem('waterx-custom-process-metrics', JSON.stringify(customProcessMetrics)) }
-  else { customMetrics.push(metric); localStorage.setItem('waterx-custom-diagnosis-metrics', JSON.stringify(customMetrics)) }
-  metricSettings[metricKey(newMetricForm)] = { mode: 'CENTER', healthyPct: 10, warningPct: 50, dataType:newMetricForm.dataType, valueSource:newMetricForm.valueSource, required:newMetricForm.required, fillSpec:newMetricForm.fillSpec, hidden:false, displayName:'', displayUnit:'' }
-  ;(['design','condition','entry','diagnosis'] as MetricModuleKey[]).forEach(module => { moduleMetricOverrides[module][metricKey(metric)] = module===metricCreationTargetModule.value })
-  localStorage.setItem('waterx-custom-diagnosis-metrics', JSON.stringify(customMetrics))
-  saveMetricSettings()
-  localStorage.setItem('waterx-module-metric-overrides', JSON.stringify(moduleMetricOverrides))
-  Object.assign(newMetricForm, { category: activeMetricBoard.value || '进水水质', name: '', unit: 'mg/L', meaning: '', dataType: 'DECIMAL', valueSource: 'MANUAL', required:false, fillSpec:'' })
-  metricCreationTargetModule.value=null
-  showNewMetricForm.value = false
-}
+
 type DeviationMode = 'UPPER' | 'LOWER' | 'CENTER'
 type MetricSetting = { mode: DeviationMode; healthyPct: number; warningPct: number; dataType: string; valueSource: string; required: boolean; fillSpec: string; hidden: boolean; displayName: string; displayUnit: string }
 const savedMetricSettings = JSON.parse(localStorage.getItem('waterx-metric-settings') || '{}') as Record<string, MetricSetting>
@@ -890,7 +873,7 @@ const controlGroups: ControlGroup[] = [
 const builtInProcessMetrics = computed<DiagnosisMetric[]>(() => controlGroups.flatMap(group => group.indicators.map(indicator => ({ category:group.title, name:indicator.name, unit:indicator.unit, design:indicator.design||'—', target:indicator.target, actual:indicator.actual, deviation:indicator.deviation, level:indicator.level, meaning:indicator.meaning||`${group.title}过程控制指标` }))))
 const allManagedMetrics = computed(() => [...allDiagnosisMetrics.value, ...builtInProcessMetrics.value, ...customProcessMetrics])
 const processMvpPage = computed(() => (['processDesign','conditionMatrix','operationEntry','processAnalysis','processReport'].includes(active.value) ? active.value as ProcessPage : null))
-const processMvpCatalog = computed<LegacyMetric[]>(() => allManagedMetrics.value.map(metric => ({...metric, code:metricCode(metric), formula:defaultFormulaFor(metric), scopes:(['design','condition','entry','diagnosis'] as MetricModuleKey[]).filter(scope=>isMetricEnabledInModule(metric,scope))})))
+const processMvpCatalog = computed<LegacyMetric[]>(() => allManagedMetrics.value.map(metric => ({...metric, code:metricCode(metric), formula:defaultFormulaFor(metric), scopes:(['design','condition','entry','diagnosis'] as MetricModuleKey[]).filter(scope=>moduleMetricDefaultEnabled(metric,scope))})))
 const moduleConfigMetrics = computed(() => {
   const module = activeModuleMetricManager.value
   if (!module) return []
@@ -907,12 +890,7 @@ function metricCode(metric: Pick<DiagnosisMetric,'category'|'name'> & Partial<Pi
   const index = siblings.findIndex(item => metricKey(item)===metricKey(metric))
   return `${prefix}-${String(Math.max(1,index+1)).padStart(3,'0')}`
 }
-function nextMetricCode(category: string) {
-  const prefix = metricCategoryPrefixes[category] || 'GEN'
-  const numbers = allManagedMetrics.value.filter(item=>item.category===category).map(item=>Number(metricCode(item).split('-').at(-1))).filter(Number.isFinite)
-  return `${prefix}-${String((numbers.length ? Math.max(...numbers) : 0)+1).padStart(3,'0')}`
-}
-const newMetricCodePreview = computed(() => nextMetricCode(newMetricForm.category))
+
 const displayControlGroups = computed<ControlGroup[]>(() => controlGroups.map(group => ({ ...group, indicators:[...group.indicators, ...customProcessMetrics.filter(metric=>metric.category===group.title).map(metric=>({code:metric.code,name:metric.name,unit:metric.unit,target:metric.target,actual:metric.actual,deviation:metric.deviation,level:metric.level}))].filter(indicator=>isMetricEnabledInModule({category:group.title,name:indicator.name},'diagnosis')) })))
 const activeResultCategory = ref('进水水质')
 const activeAnalysisGroup = computed(()=>analysisGroups.value.find(group=>group.category===activeResultCategory.value)||analysisGroups.value[0])
@@ -1710,17 +1688,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
   <div v-if="activeModuleMetricManager" class="modal-mask module-metric-mask">
     <section class="module-metric-dialog">
       <header class="module-metric-head"><div><p class="eyebrow">{{moduleMetricLabels[activeModuleMetricManager]}}</p><h2>{{activeMetricBoard||moduleMetricLabels[activeModuleMetricManager]}} · 指标配置</h2><small>配置完成并保存前，后台页面保持锁定。</small></div><button @click="closeModuleMetricManager">×</button></header>
-      <form v-if="showNewMetricForm" class="module-new-metric-form" @submit.prevent="addCustomMetric">
-        <label v-if="!activeMetricBoard">指标分类<select v-model="newMetricForm.category"><optgroup label="结果指标"><option v-for="category in resultCategories" :key="category">{{category}}</option></optgroup><optgroup label="过程控制"><option v-for="category in processCategories" :key="category">{{category}}</option></optgroup></select></label>
-        <label>指标名称<input v-model="newMetricForm.name" required placeholder="例如：吨水电耗" /></label>
-        <label>单位<input v-model="newMetricForm.unit" required placeholder="kWh/m³" /></label>
-        <label>数据类型<select v-model="newMetricForm.dataType"><option value="DECIMAL">小数</option><option value="INTEGER">整数</option><option value="PERCENT">百分比</option><option value="TEXT">文本</option><option value="BOOLEAN">是/否</option><option value="DATE">日期</option></select></label>
-        <label class="compact-check"><input v-model="newMetricForm.required" type="checkbox" /> 必填</label>
-        <label class="module-metric-meaning">填写规范<input v-model="newMetricForm.fillSpec" placeholder="例如：保留两位小数，范围 0～100" /></label>
-        <label class="module-metric-meaning">指标说明<input v-model="newMetricForm.meaning" placeholder="指标用途或定义" /></label>
-        <div class="module-new-metric-actions"><button type="button" @click="cancelModuleMetricCreation">取消</button><button class="primary">添加到本模块</button></div>
-      </form>
-      <div class="module-metric-toolbar"><input v-model="moduleMetricSearch" placeholder="搜索指标名称或说明" /><span>当前显示 {{moduleConfigMetrics.filter(metric=>isMetricEnabledInModule(metric,activeModuleMetricManager)).length}} 项</span><button @click="startMetricCreationFromModule">＋ 新增指标</button></div>
+      <div class="module-metric-toolbar"><input v-model="moduleMetricSearch" placeholder="搜索指标名称或说明" /><span>当前显示 {{moduleConfigMetrics.filter(metric=>isMetricEnabledInModule(metric,activeModuleMetricManager)).length}} 项</span></div>
       <div class="module-metric-table-wrap"><table class="module-metric-table"><thead><tr><th>显示</th><th>指标名称</th><th>单位</th><th>数据类型</th><th>必填</th><th>填写规范</th><th>偏差规则</th><th>正常范围</th><th>预警范围</th><th>隐藏</th><th>操作</th></tr></thead><tbody>
         <tr v-for="metric in moduleConfigMetrics" :key="metricKey(metric)" :class="{hiddenMetric:settingFor(metric).hidden}">
           <td><input type="checkbox" :checked="isMetricEnabledInModule(metric,activeModuleMetricManager)" :disabled="settingFor(metric).hidden" @change="setMetricEnabledInModule(metric,activeModuleMetricManager,($event.target as HTMLInputElement).checked)" /></td>
