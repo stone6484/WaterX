@@ -34,6 +34,7 @@ import type { RemainingUnitPageId } from './modules/unit-analysis/remaining-unit
 const processDailyPreview = import.meta.env.VITE_PROCESS_DAILY_PREVIEW === 'true'
 const ProcessOverviewPage = defineAsyncComponent(()=>import('./modules/process-overview/ProcessOverviewPage.vue'))
 const DigitalTwinPage = defineAsyncComponent(()=>import('./modules/digital-twin/DigitalTwinPage.vue'))
+const GisMapPage = defineAsyncComponent(()=>import('./modules/gis-map/GisMapPage.vue'))
 const processArchivePreview = import.meta.env.VITE_PROCESS_ARCHIVE_PREVIEW === 'true'
 const dailyCollaboration = ref<InstanceType<typeof DailyCollaborationPage>|null>(null)
 const processArchive = ref<InstanceType<typeof ProcessArchivePage>|null>(null)
@@ -136,7 +137,7 @@ const plannedPages = {
   improvementAnalysis: { module:'改进提升', title:'改进分析', stage:'A', description:'分析问题结构、关闭效率和复发趋势，支持持续改进。', capabilities:['问题趋势','关闭周期','复发分析','改进成效'] }
 } as const
 type PlannedPageId = keyof typeof plannedPages
-type AppPage = 'cockpit' | 'processParameters' | 'digitalTwin' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'highEfficiencySedimentation' | 'vFilterAnalysis' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education' | PlannedPageId | QualityPageId | ProcessEvaluationPageId | RemainingUnitPageId | EfficiencyPlanningPageId
+type AppPage = 'cockpit' | 'gisMap' | 'processParameters' | 'digitalTwin' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'highEfficiencySedimentation' | 'vFilterAnalysis' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education' | PlannedPageId | QualityPageId | ProcessEvaluationPageId | RemainingUnitPageId | EfficiencyPlanningPageId
 const activePage = ref<AppPage>('cockpit')
 const active = computed<AppPage>({get:()=>activePage.value,set:page=>{if(page===activePage.value||(dailyCollaboration.value?.canLeave()!==false&&processArchive.value?.canLeave()!==false))activePage.value=page}})
 const currentEfficiencyPlanningPage = computed(() => isEfficiencyPlanningPage(active.value) ? active.value : null)
@@ -1315,7 +1316,8 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
       <button class="sidebar-toggle" :title="sidebarCollapsed?'展开导航':'收起导航'" :aria-label="sidebarCollapsed?'展开导航':'收起导航'" @click="sidebarCollapsed=!sidebarCollapsed"><span><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${sidebarCollapsed?'right':'left'}`" /></svg></span><b>收起导航</b></button>
 <nav class="module-nav">
         <button class="module-nav-home" aria-label="管理驾驶舱" title="管理驾驶舱" :class="{selected:active==='cockpit'}" @click="active='cockpit'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#home'" /></svg></span><span>管理驾驶舱</span></button>
-        <button class="module-nav-home" aria-label="数字孪生" title="数字孪生" :class="{selected:active==='digitalTwin'}" @click="active='digitalTwin'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg?v=20260923#digital-twin'" /></svg></span><span>数字孪生</span></button>
+        <button class="module-nav-home" aria-label="GIS 一张图" title="GIS 一张图" :class="{selected:active==='gisMap'}" @click="active='gisMap'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg?v=20261008-v3#gis-map'" /></svg></span><span>GIS 一张图</span></button>
+        <button class="module-nav-home" aria-label="数字孪生" title="数字孪生" :class="{selected:active==='digitalTwin'}" @click="active='digitalTwin'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg?v=20261008-v11#digital-twin'" /></svg></span><span>数字孪生</span></button>
 
         <section class="nav-group">
           <button class="nav-group-title" :class="{expanded:expandedModules.business}" @click="toggleModule('business')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#business'" /></svg></span><span>经营管理</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.business?'down':'right'}`" /></svg></i></button>
@@ -1383,7 +1385,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
         </section>
       </nav>
     </aside>
-    <section class="workspace" :class="{'digital-twin-workspace':active==='digitalTwin'}">
+    <section class="workspace" :class="{'digital-twin-workspace':active==='digitalTwin','gis-workspace':active==='gisMap'}">
       <article :class="{'safety-workspace':isSafetyPage}">
         <div v-if="isSafetyPage" class="page-title"><div><p class="eyebrow">{{currentSite?.code}}</p><h1>{{active==='overview' ? '安全态势总览' : active==='org' ? '组织架构' : active==='employee' ? '人员档案' : active==='area' ? '厂区区域管理' : active==='risk' ? '风险分级管控' : active==='inspection' ? '安全检查任务' : active==='hazard'?'隐患排查治理':active==='permit'?'危险作业审批':active==='training'?'安全培训与人员资质':active==='asset'?'设备设施与应急物资':active==='health'?'职业健康管理':active==='investment'?'安全投入管理':'安全承诺与访客告知' }}</h1></div><span class="date-chip">{{ new Date().toLocaleDateString('zh-CN') }}</span></div>
         <WxState v-if="error" kind="error" compact class="error banner">{{error}}</WxState>
@@ -1392,6 +1394,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
         </ManagementCockpit>
         <ProcessOverviewPage v-else-if="active==='processParameters'" :key="signedInUserId+selectedSite" />
         <DigitalTwinPage v-else-if="active==='digitalTwin'" :key="signedInUserId+selectedSite" :site-id="selectedSite" :user-id="signedInUserId" />
+        <GisMapPage v-else-if="active==='gisMap'" :key="JSON.stringify([signedInUserId,selectedSite])" :site-id="selectedSite" :user-id="signedInUserId" @open-twin="active='digitalTwin'" />
         <DailyCollaborationPage v-else-if="active==='operationEntry'&&workbenchTarget?.page==='operationEntry'" ref="dailyCollaboration" :key="signedInUserId+selectedSite" :api="api" page="operationEntry" :site-id="selectedSite" :site-name="currentSite?.name||'当前项目'" :initial-record-id="workbenchTarget.id" :initial-line-id="workbenchTarget.lineId" @navigate="active=$event" />
         <ProcessEvaluationPage v-else-if="currentProcessEvaluationPage" :active-page="currentProcessEvaluationPage" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" @update:active-page="openProcessEvaluationPage" @navigate:app="handleProcessEvaluationNavigate" />
         <WholePlantPage v-else-if="active==='efficiencyWaterBalance' || active==='efficiencySludge' || active==='efficiencyEnergy' || active==='efficiencyChemical' || active==='efficiencyCapacity' || active==='efficiencyHydraulic'" :key="active+selectedSite" :topic="active==='efficiencyWaterBalance' ? 'water' : active==='efficiencySludge' ? 'sludge' : active==='efficiencyEnergy' ? 'energy' : active==='efficiencyChemical' ? 'chemical' : active==='efficiencyCapacity' ? 'capacity' : 'hydraulic'" :site-id="selectedSite" :actor="processActor" />

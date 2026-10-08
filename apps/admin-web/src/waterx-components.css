@@ -80,3 +80,32 @@
 @media (prefers-reduced-motion: reduce) {
   .wx-button-spinner { animation:none; }
 }
+/* Fullscreen actions share the confirmed digital-twin normal and pressed states. */
+#app .wx-fullscreen-action {
+  display:inline-flex;align-items:center;justify-content:center;gap:5px;
+  flex:0 0 auto;min-width:64px;height:34px;min-height:34px;
+  margin-left:6px;padding:6px 10px;box-sizing:border-box;
+  border:1px solid #174d66;border-radius:7px;background:#174d66;color:#fff;
+  font:650 12px/1.6 Inter,"PingFang SC","Microsoft YaHei",sans-serif;
+  white-space:nowrap;cursor:pointer;box-shadow:0 2px 5px #143e5324;filter:none;
+}
+#app .wx-fullscreen-action:hover { background:#0f657f;border-color:#0f657f;color:#fff;filter:none; }
+#app .wx-fullscreen-action[aria-pressed="true"] { background:#fff5e5;border-color:#bc7518;color:#8d5209; }
+#app .wx-fullscreen-action>span:first-child { font-size:20px;line-height:1; }
+#app .wx-fullscreen-action:focus-visible { outline:2px solid var(--wx-blue-700);outline-offset:2px; }
+
+/* Shared vertical scrollbars: design-token width; retain horizontal affordance. */
+html, body, #app, #app * {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(96,123,137,.24) transparent;
+}
+html::-webkit-scrollbar, body::-webkit-scrollbar, #app::-webkit-scrollbar, #app *::-webkit-scrollbar {
+  width: var(--wx-scrollbar-size, 1px);
+  height: var(--wx-scrollbar-horizontal-size, 6px);
+}
+html::-webkit-scrollbar-track, body::-webkit-scrollbar-track, #app *::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb, #app *::-webkit-scrollbar-thumb { background: rgba(96,123,137,.24); border-radius: 999px; }
+@supports selector(::-webkit-scrollbar) {
+  /* Standard thin would override the precise WebKit width. */
+  html, body, #app, #app * { scrollbar-width: auto !important; scrollbar-color: auto !important; }
+}

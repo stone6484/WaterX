@@ -52,7 +52,7 @@ onBeforeUnmount(()=>{carousel.dispose();activityEvents.forEach(event=>root.value
 </script>
 <template>
 <section ref="root" class="management-hub" :class="{'management-cockpit':topic!=='workbench','is-workbench':topic==='workbench','is-fullscreen':fullscreen}" @pointermove="pointer" @pointerleave="tip=''">
-  <div class="topic-bar"><div class="tabs" role="tablist" aria-label="管理驾驶舱专题" @keydown="keyboard"><button v-for="[id,name] in topics" :id="'mc-tab-'+id" :key="id" class="tab" :class="{active:topic===id}" role="tab" :aria-selected="topic===id" aria-controls="mc-board" :tabindex="topic===id?0:-1" @click="topic=id">{{name}}</button></div><WxButton @click="toggleFullscreen">{{fullscreen?'退出全屏':'全屏'}}</WxButton></div>
+  <div class="topic-bar"><div class="tabs" role="tablist" aria-label="管理驾驶舱专题" @keydown="keyboard"><button v-for="[id,name] in topics" :id="'mc-tab-'+id" :key="id" class="tab" :class="{active:topic===id}" role="tab" :aria-selected="topic===id" aria-controls="mc-board" :tabindex="topic===id?0:-1" @click="topic=id">{{name}}</button></div><button class="wx-fullscreen-action" :aria-pressed="fullscreen" @click="toggleFullscreen"><span aria-hidden="true">⛶</span><span>{{fullscreen?'退出全屏':'全屏'}}</span></button></div>
   <div v-if="topic==='workbench'" id="mc-board" class="workbench-board" role="tabpanel" aria-labelledby="mc-tab-workbench"><slot name="workbench" /></div>
   <template v-else>
     <div id="mc-board" ref="content" class="mc-content" role="tabpanel" :data-topic="topic" :aria-labelledby="'mc-tab-'+topic" @click="click" @focusin="focusTip" @focusout="tip=''" v-html="html"></div>
