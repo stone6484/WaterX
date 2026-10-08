@@ -317,7 +317,7 @@ function setCut(value){cut=value;waterObjects.forEach(o=>o.visible=!cut);cutObje
 $('cut').onclick=()=>setCut(!cut);
 $('labels').onclick=()=>{showLabels=!showLabels;$('labels').classList.toggle('active',showLabels);$('labels').setAttribute('aria-pressed',String(showLabels));$('labels').textContent=showLabels?'隐藏名称':'显示名称';};
 let twinFullscreen=false;
-function syncTwinFullscreen(){host.classList.toggle('is-fullscreen',twinFullscreen);$('fullscreenText').textContent=twinFullscreen?'退出全屏':'全屏展示';$('twinFullscreen').setAttribute('aria-pressed',String(twinFullscreen));}
+function syncTwinFullscreen(){host.classList.toggle('is-fullscreen',twinFullscreen);$('fullscreenText').textContent=twinFullscreen?'退出全屏':'全屏';$('twinFullscreen').setAttribute('aria-pressed',String(twinFullscreen));}
 $('twinFullscreen').onclick=async()=>{if(twinFullscreen){if(document.fullscreenElement===host)await document.exitFullscreen();twinFullscreen=false;}else{twinFullscreen=true;try{await host.requestFullscreen();}catch{/* Escapable full-window fallback. */}}if(!disposed)syncTwinFullscreen();};
 on(document,'fullscreenchange',()=>{twinFullscreen=document.fullscreenElement===host;syncTwinFullscreen();});
 on(document,'keydown',e=>{if(e.key==='Escape'&&twinFullscreen&&!document.fullscreenElement){twinFullscreen=false;syncTwinFullscreen();}});

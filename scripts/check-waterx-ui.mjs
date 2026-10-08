@@ -98,7 +98,7 @@ for (const { file, source } of sources) {
 }
 const sprite = readFileSync(join(app, 'public/waterx-nav-icons.svg'), 'utf8')
 const symbols = new Set([...sprite.matchAll(/<symbol\b[^>]*\bid="([^"]+)"/g)].map(match => match[1]))
-const requiredIcons = ['home', 'operations', 'process', 'equipment', 'laboratory', 'safety', 'inventory', 'business', 'efficiency', 'evaluation', 'quality', 'improvement', 'information', 'chevron-left', 'chevron-right', 'chevron-down']
+const requiredIcons = ['home', 'gis-map', 'operations', 'process', 'equipment', 'laboratory', 'safety', 'inventory', 'business', 'efficiency', 'evaluation', 'quality', 'improvement', 'information', 'chevron-left', 'chevron-right', 'chevron-down']
 for (const icon of requiredIcons) if (!symbols.has(icon)) failures.push(`导航图标缺失：${icon}`)
 if (failures.length) {
   console.error([...new Set(failures)].join('\n'))

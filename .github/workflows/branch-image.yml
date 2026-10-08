@@ -37,6 +37,7 @@ jobs:
           pnpm typecheck
           pnpm --filter @safety/admin-web check:ui
           node --test deploy/cds/*.test.mjs packages/safety-ui/archive.test.mjs
+          node --test apps/admin-web/src/modules/gis-map/gis.test.mjs apps/admin-web/src/modules/management-cockpit/enrichment.test.mjs apps/admin-web/src/modules/management-cockpit/idle-carousel.test.mjs
           git diff --check
       - name: Backend tests
         run: mvn -B -f backend/pom.xml -Dlogging.level.org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration=ERROR test
