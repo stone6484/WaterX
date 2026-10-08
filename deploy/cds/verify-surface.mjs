@@ -24,6 +24,7 @@ const manifest = await manifestResponse.json()
 assert.equal(manifest.commit, commit)
 assert.equal(manifest.base, base.pathname)
 const entries = [...html.matchAll(/(?:src|href)=["']([^"']+\.(?:js|css)(?:\?[^"']*)?)["']/g)].map(match => match[1])
+let entryScript = ''
 assert.ok(entries.some(path => /\.js(?:\?|$)/.test(path)))
 assert.deepEqual(entries.sort(), Object.keys(manifest.assets).sort())
 for (const path of entries) {
@@ -35,6 +36,20 @@ for (const path of entries) {
   const content = Buffer.from(await asset.arrayBuffer())
   assert.ok(content.length)
   assert.equal(createHash('sha256').update(content).digest('hex'), manifest.assets[path])
+  if (path.endsWith('.js')) entryScript = content.toString('utf8')
+}
+if (base.pathname === '/') {
+  const chunk = entryScript.match(/GisMapPage-[A-Za-z0-9_-]+\.js/)
+  assert.ok(chunk, 'GIS lazy chunk must be included in admin build')
+  const gisResponse = await fetch(new URL(`assets/${chunk[0]}`, base))
+  assert.equal(gisResponse.status, 200)
+  const gisScript = await gisResponse.text()
+  const worker = gisScript.match(/"(\/assets\/maplibre-gl-worker-[A-Za-z0-9_-]+\.mjs)"/)
+  assert.ok(worker, 'GIS must use the bundled worker URL')
+  const workerResponse = await fetch(new URL(worker[1], base))
+  assert.equal(workerResponse.status, 200)
+  assert.match(workerResponse.headers.get('content-type') ?? '', /(?:application|text)\/javascript/, 'Module worker MIME type')
+  assert.ok((await workerResponse.arrayBuffer()).byteLength > 100000)
 }
 for (const path of ['assets/does-not-exist.js', '../api/does-not-exist', '../actuator/health']) {
   assert.equal((await fetch(new URL(path, base))).status, 404, `Must not return SPA HTML for ${path}`)
