@@ -82,7 +82,9 @@ const semanticBindings = {
 }
 for (const [file, bindings] of Object.entries(semanticBindings)) {
   const { descriptor } = parse(readFileSync(join(app, 'src', file), 'utf8'))
-  const css = descriptor.styles.map(style => style.content).join('\n')
+  const css = descriptor.styles.map(style => style.src
+    ? readFileSync(join(dirname(join(app, 'src', file)), style.src), 'utf8')
+    : style.content).join('\n')
   for (const [selector, property, token] of bindings) {
     if (lastDeclaration(css, selector, property) !== `var(${token})`) failures.push(`${file}: ${selector} 的 ${property} 必须使用 ${token}`)
   }
