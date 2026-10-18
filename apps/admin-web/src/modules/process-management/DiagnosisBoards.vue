@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId, watch } from 'vue'
 import { WxTableSurface } from '../../components/waterx'
 import { type ResultRow, stateLabels, dataLabels } from './types'
+import { CONTROL_CATEGORIES } from './metric-boards'
 
 const props = withDefaults(defineProps<{ rows: ResultRow[]; meanings?: Record<string, string>; configurable?: boolean }>(), { meanings: () => ({}), configurable: true })
 const emit = defineEmits<{ detail: [row: ResultRow]; configure: [] }>()
@@ -9,7 +10,7 @@ const left = ref('进水水质'), right = ref('水量控制')
 const host = ref<HTMLElement | null>(null)
 const availableWidths = ref<number[]>([])
 const uid = useId()
-const processCategories = ['水量控制', '曝气控制', '回流控制', '排泥控制', '加药控制', '搅拌控制']
+const processCategories = CONTROL_CATEGORIES
 const headers = ['指标', '单位', '设计值', '目标值', '实际值', '偏差 / 状态', '指标意义']
 const boards = computed(() => [false, true].map(process => {
   const rows = props.rows.filter(r => processCategories.includes(r.category) === process)
@@ -127,53 +128,4 @@ onBeforeUnmount(() => observer?.disconnect())
   </div>
 </template>
 
-<style scoped>
-.pm-diagnosis-boards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--wx-board-gap)}
-.pm-board{position:relative;min-width:0;--pm-body-gutter:0px}
-.pm-board-tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;margin:0;overflow:visible}
-.pm-board-tabs button{min-width:0;height:var(--wx-table-row-height);display:flex;flex-wrap:wrap;align-content:center;align-items:center;justify-content:center;gap:2px 4px;padding:2px 3px;border:1px solid transparent;border-top:3px solid transparent;border-bottom:0;border-radius:14px 14px 0 0;background:var(--wx-n0);color:var(--wx-n700);font:inherit;font-size:12px;line-height:14px;cursor:pointer}
-.pm-tab-title{white-space:nowrap}
-.pm-board-tabs button:hover{background:var(--wx-n25);border-color:var(--wx-n200);border-top-color:var(--wx-n200)}
-.pm-board-tabs button.selected{background:var(--wx-n25);border-color:var(--wx-n300);border-top-color:var(--wx-blue-500);color:var(--wx-blue-700);font-weight:600}
-.pm-board-tabs .pm-tab-title,.pm-board-tabs .pm-tab-counts{margin:0;padding:0;background:none;border-radius:0;color:inherit;font-size:inherit}
-.pm-tab-counts{display:inline-flex;gap:3px}
-.pm-tab-counts i{width:14px;height:14px;display:grid;place-items:center;border-radius:50%;color:var(--wx-n0);font:600 8px/1 Inter,sans-serif}
-.pm-tab-counts i.warning{background:var(--wx-warning);color:var(--wx-n0)}
-.pm-tab-counts i.alarm{background:var(--wx-danger);color:var(--wx-n0)}
-.pm-board-table{overflow-x:auto;outline:0;scrollbar-width:auto;scrollbar-color:auto}
-.pm-fixed-head{position:relative;padding-right:var(--pm-body-gutter);background:var(--wx-n25);border-top:var(--wx-border-subtle);border-bottom:var(--wx-border-subtle)}
-.pm-board .pm-table{width:100%;table-layout:fixed;border-collapse:collapse;color:var(--wx-n700);font-size:12px}
-.pm-board .pm-table th,.pm-board .pm-table td{padding:7px;border:0;border-bottom:var(--wx-border-subtle);text-align:left;line-height:1.45;overflow-wrap:anywhere}
-.pm-board .pm-table th{position:static;height:calc(var(--wx-table-row-height) - 2px);background:var(--wx-n25);font-weight:400;color:var(--wx-n600);border:0}
-.pm-board .pm-table td{height:var(--wx-table-row-complex)}
-.pm-board .pm-table strong{color:var(--wx-n800);font-size:13px;font-weight:600}
-.pm-board .pm-link{font-size:12px;color:var(--wx-n700)!important;font-weight:500;line-height:1.45}
-.pm-board .pm-link:hover{color:var(--wx-blue-700)!important}
-.pm-board .pm-table small{font-size:10px;color:var(--wx-n500);line-height:1.45;margin-top:3px}
-.pm-board .pm-meaning{color:var(--wx-n500)}
-.pm-board-body{max-height:52vh;overflow-y:auto;overflow-x:hidden;scrollbar-width:auto;scrollbar-color:auto;overscroll-behavior:contain}
-.pm-board-table::-webkit-scrollbar{height:var(--wx-scrollbar-horizontal-size)}
-.pm-board-body::-webkit-scrollbar{width:var(--wx-scrollbar-size)}
-.pm-board-table::-webkit-scrollbar-track,.pm-board-body::-webkit-scrollbar-track{background:transparent}
-.pm-board-table::-webkit-scrollbar-thumb,.pm-board-body::-webkit-scrollbar-thumb{background:var(--wx-n200);border-radius:99px}
-.pm-accessible-head{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
-.pm-deviation{display:grid;gap:4px}
-.pm-deviation b{font-size:11px;font-weight:600;white-space:nowrap}
-.pm-deviation.normal{color:var(--wx-success-strong)}
-.pm-deviation.warning{color:var(--wx-warning-strong)}
-.pm-deviation.alarm{color:var(--wx-danger-strong)}
-.pm-deviation-track{height:3px;background:var(--wx-n100);border-radius:99px;overflow:hidden}
-.pm-deviation-track i{display:block;height:100%;background:var(--wx-success);border-radius:inherit}
-.pm-deviation.warning .pm-deviation-track i{background:var(--wx-warning)}
-.pm-deviation.alarm .pm-deviation-track i{background:var(--wx-danger)}
-.pm-range-chip{display:inline-block;border:var(--wx-border-default);border-radius:99px;padding:2px 7px;color:var(--wx-n600);background:var(--wx-n25);font-size:11px}
-.pm-range-chip.normal{color:var(--wx-success-strong);border-color:var(--wx-success-border);background:var(--wx-success-bg)}
-.pm-range-chip.warning{color:var(--wx-warning-strong);border-color:var(--wx-warning-border);background:var(--wx-warning-bg)}
-.pm-range-chip.alarm{color:var(--wx-danger-strong);border-color:var(--wx-danger-border);background:var(--wx-danger-bg)}
-.pm-board-configure{position:absolute;top:50%;transform:translateY(-50%);right:calc(var(--pm-body-gutter) + 4px);width:23px;height:23px;padding:1px;border:0;background:transparent;color:var(--wx-blue-700);cursor:pointer}
-.pm-board-configure svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.pm-meaning-head{padding-right:24px}
-.pm-board button:focus-visible,.pm-board-table:focus-visible,.pm-board-body:focus-visible{outline:2px solid var(--wx-blue-600);outline-offset:-2px}
-@supports not selector(::-webkit-scrollbar){.pm-board-body,.pm-board-table{scrollbar-width:thin;scrollbar-color:var(--wx-n200) transparent}}
-@media(max-width:1050px){.pm-diagnosis-boards{grid-template-columns:minmax(0,1fr)}}
-</style>
+<style scoped src="./metric-boards.css"></style>

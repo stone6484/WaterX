@@ -1,0 +1,2441 @@
+[
+  {
+    "code": "TREND-1",
+    "category": "进水水质",
+    "name": "COD",
+    "unit": "mg/L",
+    "design": "350",
+    "target": "280",
+    "actual": "302",
+    "meaning": "化学需氧量",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-2",
+    "category": "进水水质",
+    "name": "BOD₅",
+    "unit": "mg/L",
+    "design": "180",
+    "target": "160",
+    "actual": "172",
+    "meaning": "五日生化需氧量",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-3",
+    "category": "进水水质",
+    "name": "SS",
+    "unit": "mg/L",
+    "design": "220",
+    "target": "200",
+    "actual": "238",
+    "meaning": "悬浮物",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-4",
+    "category": "进水水质",
+    "name": "NH₃-N",
+    "unit": "mg/L",
+    "design": "32",
+    "target": "28",
+    "actual": "36.5",
+    "meaning": "氨氮（以N计）",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-5",
+    "category": "进水水质",
+    "name": "TN",
+    "unit": "mg/L",
+    "design": "45",
+    "target": "42",
+    "actual": "51.9",
+    "meaning": "总氮（以N计）",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-6",
+    "category": "进水水质",
+    "name": "TP",
+    "unit": "mg/L",
+    "design": "5",
+    "target": "4.5",
+    "actual": "5.2",
+    "meaning": "总磷（以P计）",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-7",
+    "category": "进水水质",
+    "name": "NO₃-N",
+    "unit": "mg/L",
+    "design": "0.5",
+    "target": "0.8",
+    "actual": "0.6",
+    "meaning": "硝酸盐氮（以N计）",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-8",
+    "category": "进水水质",
+    "name": "TKN",
+    "unit": "mg/L",
+    "design": "44",
+    "target": "40",
+    "actual": "49.8",
+    "meaning": "总凯氏氮（以N计）",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-9",
+    "category": "进水水质",
+    "name": "pH",
+    "unit": "无量纲",
+    "design": "6.5～8.0",
+    "target": "6.8～7.6",
+    "actual": "7.2",
+    "meaning": "酸碱度",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-10",
+    "category": "进水水质",
+    "name": "总碱度",
+    "unit": "mg/L",
+    "design": "250",
+    "target": "220",
+    "actual": "236",
+    "meaning": "以CaCO₃计",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-11",
+    "category": "进水水质",
+    "name": "Cl⁻",
+    "unit": "mg/L",
+    "design": "—",
+    "target": "≤250",
+    "actual": "86",
+    "meaning": "氯化物（以Cl⁻计）",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-12",
+    "category": "进水水质",
+    "name": "总硬度",
+    "unit": "mg/L",
+    "design": "250",
+    "target": "250",
+    "actual": "208",
+    "meaning": "以CaCO₃计",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-13",
+    "category": "进水水质",
+    "name": "色度",
+    "unit": "倍",
+    "design": "80",
+    "target": "80",
+    "actual": "72",
+    "meaning": "稀释倍数",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-14",
+    "category": "进水水质",
+    "name": "粪大肠菌群数",
+    "unit": "MPN/L",
+    "design": "10⁷",
+    "target": "10⁷",
+    "actual": "8.6×10⁶",
+    "meaning": "粪大肠菌群数",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-15",
+    "category": "进水水质",
+    "name": "PO₄-P",
+    "unit": "mg/L",
+    "design": "1.0",
+    "target": "1.0",
+    "actual": "0.86",
+    "meaning": "正磷酸盐磷（以P计）",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-16",
+    "category": "进水水质",
+    "name": "VFA",
+    "unit": "mg/L",
+    "design": "50",
+    "target": "50",
+    "actual": "48",
+    "meaning": "挥发性脂肪酸（以乙酸计）",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-17",
+    "category": "进水水质",
+    "name": "SCOD",
+    "unit": "mg/L",
+    "design": "40",
+    "target": "40",
+    "actual": "45",
+    "meaning": "溶解性化学需氧量",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-18",
+    "category": "进水特征",
+    "name": "VFA/COD",
+    "unit": "—",
+    "design": "0.14",
+    "target": "0.14",
+    "actual": "0.16",
+    "meaning": "易利用碳源占比",
+    "formula": "[INQ-016] ÷ [INQ-001]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-19",
+    "category": "进水特征",
+    "name": "SCOD/COD",
+    "unit": "—",
+    "design": "0.11",
+    "target": "0.11",
+    "actual": "0.15",
+    "meaning": "溶解性有机物占比",
+    "formula": "[INQ-017] ÷ [INQ-001]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-20",
+    "category": "进水特征",
+    "name": "BOD₅/COD",
+    "unit": "—",
+    "design": "0.51",
+    "target": "0.45",
+    "actual": "0.43",
+    "meaning": "污水可生化性",
+    "formula": "[INQ-002] ÷ [INQ-001]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-21",
+    "category": "进水特征",
+    "name": "SS/COD",
+    "unit": "—",
+    "design": "0.63",
+    "target": "0.63",
+    "actual": "0.79",
+    "meaning": "悬浮物与有机物比例",
+    "formula": "[INQ-003] ÷ [INQ-001]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-22",
+    "category": "进水特征",
+    "name": "COD/TN",
+    "unit": "—",
+    "design": "7.78",
+    "target": "7.00",
+    "actual": "5.82",
+    "meaning": "反硝化碳源条件",
+    "formula": "[INQ-001] ÷ [INQ-005]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-23",
+    "category": "进水特征",
+    "name": "BOD₅/TN",
+    "unit": "—",
+    "design": "4.00",
+    "target": "3.80",
+    "actual": "3.31",
+    "meaning": "可生化碳源与总氮比",
+    "formula": "[INQ-002] ÷ [INQ-005]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-24",
+    "category": "进水特征",
+    "name": "碱度/NH₃-N",
+    "unit": "—",
+    "design": "7.81",
+    "target": "7.50",
+    "actual": "6.47",
+    "meaning": "硝化碱度保障水平",
+    "formula": "[INQ-010] ÷ [INQ-004]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-25",
+    "category": "进水特征",
+    "name": "NH₃-N/TN",
+    "unit": "—",
+    "design": "0.71",
+    "target": "0.70",
+    "actual": "0.70",
+    "meaning": "氨氮占总氮比例",
+    "formula": "[INQ-004] ÷ [INQ-005]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-26",
+    "category": "进水特征",
+    "name": "COD/TP",
+    "unit": "—",
+    "design": "70",
+    "target": "65",
+    "actual": "58.1",
+    "meaning": "有机物与总磷比",
+    "formula": "[INQ-001] ÷ [INQ-006]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-27",
+    "category": "进水特征",
+    "name": "BOD₅/TP",
+    "unit": "—",
+    "design": "36",
+    "target": "35",
+    "actual": "33.1",
+    "meaning": "可生化有机物与总磷比",
+    "formula": "[INQ-002] ÷ [INQ-006]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-28",
+    "category": "进水特征",
+    "name": "PO₄-P/TP",
+    "unit": "—",
+    "design": "0.20",
+    "target": "0.20",
+    "actual": "0.17",
+    "meaning": "正磷酸盐磷占比",
+    "formula": "[INQ-015] ÷ [INQ-006]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-29",
+    "category": "进水特征",
+    "name": "有毒物质",
+    "unit": "定性",
+    "design": "无",
+    "target": "无",
+    "actual": "未检出",
+    "meaning": "生化系统毒性风险",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-30",
+    "category": "进水特征",
+    "name": "重金属抑制",
+    "unit": "定性",
+    "design": "无",
+    "target": "无",
+    "actual": "无抑制",
+    "meaning": "重金属对微生物抑制情况",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-31",
+    "category": "出水水质",
+    "name": "COD",
+    "unit": "mg/L",
+    "design": "50",
+    "target": "20",
+    "actual": "18",
+    "meaning": "低于控制目标，运行正常",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-32",
+    "category": "出水水质",
+    "name": "BOD₅",
+    "unit": "mg/L",
+    "design": "10",
+    "target": "8",
+    "actual": "6.8",
+    "meaning": "五日生化需氧量",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-33",
+    "category": "出水水质",
+    "name": "SS",
+    "unit": "mg/L",
+    "design": "10",
+    "target": "8",
+    "actual": "7.2",
+    "meaning": "悬浮物",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-34",
+    "category": "出水水质",
+    "name": "NH₃-N",
+    "unit": "mg/L",
+    "design": "5",
+    "target": "2.0",
+    "actual": "4.2",
+    "meaning": "超过工况目标，接近预警控制线",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-35",
+    "category": "出水水质",
+    "name": "TN",
+    "unit": "mg/L",
+    "design": "15",
+    "target": "12",
+    "actual": "14.8",
+    "meaning": "总氮（以N计）",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-36",
+    "category": "出水水质",
+    "name": "TP",
+    "unit": "mg/L",
+    "design": "0.5",
+    "target": "0.3",
+    "actual": "0.28",
+    "meaning": "总磷（以P计）",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-37",
+    "category": "出水水质",
+    "name": "pH",
+    "unit": "无量纲",
+    "design": "6～9",
+    "target": "6.5～8.5",
+    "actual": "7.1",
+    "meaning": "酸碱度",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-38",
+    "category": "出水水质",
+    "name": "色度",
+    "unit": "倍",
+    "design": "30",
+    "target": "20",
+    "actual": "12",
+    "meaning": "稀释倍数",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-39",
+    "category": "出水水质",
+    "name": "粪大肠菌群数",
+    "unit": "MPN/L",
+    "design": "1000",
+    "target": "1000",
+    "actual": "430",
+    "meaning": "粪大肠菌群数",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-40",
+    "category": "处理效能",
+    "name": "COD去除率",
+    "unit": "%",
+    "design": "85.7",
+    "target": "92.0",
+    "actual": "94.0",
+    "meaning": "化学需氧量去除率",
+    "formula": "([INQ-001] − [EFQ-001]) ÷ [INQ-001] × 100",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-41",
+    "category": "处理效能",
+    "name": "BOD₅去除率",
+    "unit": "%",
+    "design": "94.4",
+    "target": "94.0",
+    "actual": "96.0",
+    "meaning": "五日生化需氧量去除率",
+    "formula": "([INQ-002] − [EFQ-002]) ÷ [INQ-002] × 100",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-42",
+    "category": "处理效能",
+    "name": "SS去除率",
+    "unit": "%",
+    "design": "95.5",
+    "target": "96.0",
+    "actual": "97.0",
+    "meaning": "悬浮物去除率",
+    "formula": "([INQ-003] − [EFQ-003]) ÷ [INQ-003] × 100",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-43",
+    "category": "处理效能",
+    "name": "NH₃-N去除率",
+    "unit": "%",
+    "design": "84.4",
+    "target": "94.0",
+    "actual": "88.5",
+    "meaning": "氨氮去除率",
+    "formula": "([INQ-004] − [EFQ-004]) ÷ [INQ-004] × 100",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-44",
+    "category": "处理效能",
+    "name": "TN去除率",
+    "unit": "%",
+    "design": "66.7",
+    "target": "70.0",
+    "actual": "61.5",
+    "meaning": "总氮去除效果偏低",
+    "formula": "([INQ-005] − [EFQ-005]) ÷ [INQ-005] × 100",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-45",
+    "category": "处理效能",
+    "name": "TP去除率",
+    "unit": "%",
+    "design": "90.0",
+    "target": "92.0",
+    "actual": "94.6",
+    "meaning": "总磷去除率",
+    "formula": "([INQ-006] − [EFQ-006]) ÷ [INQ-006] × 100",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-46",
+    "category": "处理效能",
+    "name": "理论脱氮率",
+    "unit": "%",
+    "design": "—",
+    "target": "75.0",
+    "actual": "72.6",
+    "meaning": "按工艺模型或设计参数计算",
+    "formula": "MODEL_DENITRIFICATION()",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-47",
+    "category": "处理效能",
+    "name": "实际脱氮率",
+    "unit": "%",
+    "design": "—",
+    "target": "70.0",
+    "actual": "61.5",
+    "meaning": "按实测进出水负荷计算",
+    "formula": "[EFF-005]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-48",
+    "category": "处理效能",
+    "name": "总氮放弃率",
+    "unit": "%",
+    "design": "—",
+    "target": "≤8.0",
+    "actual": "10.6",
+    "meaning": "未进入有效脱氮路径的总氮比例",
+    "formula": "CALC_TN_BYPASS()",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-49",
+    "category": "处理效能",
+    "name": "碳源消耗比",
+    "unit": "kg/kgTN",
+    "design": "—",
+    "target": "3.5",
+    "actual": "3.8",
+    "meaning": "单位总氮去除的外加碳源消耗",
+    "formula": "CALC_CARBON_CONSUMPTION()",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-50",
+    "category": "污泥性状",
+    "name": "MLSS",
+    "unit": "mg/L",
+    "design": "3500",
+    "target": "3500",
+    "actual": "3220",
+    "meaning": "混合液悬浮固体浓度",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-51",
+    "category": "污泥性状",
+    "name": "MLVSS",
+    "unit": "mg/L",
+    "design": "3000",
+    "target": "3000",
+    "actual": "2730",
+    "meaning": "混合液挥发性悬浮固体浓度",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-52",
+    "category": "污泥性状",
+    "name": "MLVSS/MLSS",
+    "unit": "无量纲",
+    "design": "0.86",
+    "target": "0.86",
+    "actual": "0.85",
+    "meaning": "活性有机固体比例",
+    "formula": "[SLD-002] ÷ [SLD-001]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-53",
+    "category": "污泥性状",
+    "name": "SV30",
+    "unit": "%",
+    "design": "30",
+    "target": "30",
+    "actual": "38",
+    "meaning": "30 min污泥沉降比",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-54",
+    "category": "污泥性状",
+    "name": "SVI",
+    "unit": "mL/g",
+    "design": "85.7",
+    "target": "90",
+    "actual": "118",
+    "meaning": "污泥沉降性能下降",
+    "formula": "[SLD-004] × 10000 ÷ [SLD-001]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-55",
+    "category": "污泥性状",
+    "name": "SRT",
+    "unit": "d",
+    "design": "15",
+    "target": "18",
+    "actual": "12.5",
+    "meaning": "系统固体停留时间估算值",
+    "formula": "CALC_SRT()",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-56",
+    "category": "污泥性状",
+    "name": "SRT-理论计算",
+    "unit": "d",
+    "design": "15",
+    "target": "18",
+    "actual": "14.2",
+    "meaning": "按生物动力学或硝化需求计算",
+    "formula": "MODEL_SRT()",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-57",
+    "category": "污泥性状",
+    "name": "SRT-固体量法",
+    "unit": "d",
+    "design": "15",
+    "target": "18",
+    "actual": "13.1",
+    "meaning": "按系统污泥总量与排出固体量计算",
+    "formula": "CALC_SRT_SOLIDS()",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-58",
+    "category": "污泥性状",
+    "name": "SRT-排泥流量法",
+    "unit": "d",
+    "design": "15",
+    "target": "18",
+    "actual": "12.5",
+    "meaning": "按排泥流量及浓度计算",
+    "formula": "CALC_SRT_WASTE_FLOW()",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-59",
+    "category": "污泥性状",
+    "name": "BOD₅/MLSS",
+    "unit": "kg/kg",
+    "design": "0.10",
+    "target": "0.10",
+    "actual": "0.11",
+    "meaning": "BOD污泥负荷",
+    "formula": "[INQ-002] ÷ [SLD-001]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-60",
+    "category": "污泥性状",
+    "name": "COD/MLSS",
+    "unit": "kg/kg",
+    "design": "0.20",
+    "target": "0.20",
+    "actual": "0.21",
+    "meaning": "COD污泥负荷",
+    "formula": "[INQ-001] ÷ [SLD-001]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-61",
+    "category": "污泥性状",
+    "name": "BOD/MLVSS",
+    "unit": "kg/kg",
+    "design": "0.15",
+    "target": "0.15",
+    "actual": "0.16",
+    "meaning": "有机负荷F/M",
+    "formula": "[INQ-002] ÷ [SLD-002]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-62",
+    "category": "污泥性状",
+    "name": "NH₃/MLVSS",
+    "unit": "kg/kg",
+    "design": "0.03",
+    "target": "0.03",
+    "actual": "0.034",
+    "meaning": "硝化负荷",
+    "formula": "[INQ-004] ÷ [SLD-002]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-63",
+    "category": "污泥性状",
+    "name": "TN/MLVSS",
+    "unit": "kg/kg",
+    "design": "0.04",
+    "target": "0.04",
+    "actual": "0.047",
+    "meaning": "氮负荷",
+    "formula": "[INQ-005] ÷ [SLD-002]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-64",
+    "category": "污泥性状",
+    "name": "NO₃-N/MLSS",
+    "unit": "kg/kg",
+    "design": "0.04",
+    "target": "0.04",
+    "actual": "0.043",
+    "meaning": "反硝化速率关联指标",
+    "formula": "[INQ-007] ÷ [SLD-001]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-65",
+    "category": "污泥性状",
+    "name": "SOUR",
+    "unit": "mgO₂/(g·h)",
+    "design": "—",
+    "target": "8～20",
+    "actual": "12.8",
+    "meaning": "单位MLVSS耗氧速率",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-66",
+    "category": "污泥性状",
+    "name": "T",
+    "unit": "℃",
+    "design": "—",
+    "target": "≥12",
+    "actual": "13.6",
+    "meaning": "生化池水温",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-67",
+    "category": "污泥性状",
+    "name": "生物相",
+    "unit": "定性",
+    "design": "—",
+    "target": "良好",
+    "actual": "良好",
+    "meaning": "活性污泥微型生物种类与状态",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-68",
+    "category": "污泥性状",
+    "name": "填料区游离污泥MLSS",
+    "unit": "mg/L",
+    "design": "—",
+    "target": "5500～7500",
+    "actual": "6670",
+    "meaning": "MBBR填料区游离污泥悬浮固体浓度",
+    "formula": "",
+    "scopes": [
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-69",
+    "category": "污泥性状",
+    "name": "填料区游离污泥MLVSS",
+    "unit": "mg/L",
+    "design": "—",
+    "target": "3000～4500",
+    "actual": "3670",
+    "meaning": "MBBR填料区游离污泥挥发性悬浮固体浓度",
+    "formula": "",
+    "scopes": [
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-70",
+    "category": "污泥性状",
+    "name": "填料折合总污泥浓度",
+    "unit": "mg/L",
+    "design": "—",
+    "target": "≥7000",
+    "actual": "8460",
+    "meaning": "生物膜折合污泥浓度与游离污泥浓度之和",
+    "formula": "BIOFILM_EQUIVALENT_MLSS() + FREE_MLSS()",
+    "scopes": [
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-71",
+    "category": "沿程分析",
+    "name": "缺氧段 COD 去除量",
+    "unit": "mg/L",
+    "design": "—",
+    "target": "≥10",
+    "actual": "14",
+    "meaning": "缺氧段进出水 COD 差值，反映反硝化碳源利用情况",
+    "formula": "PROFILE_DELTA(COD,ANOXIC)",
+    "scopes": [
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-72",
+    "category": "沿程分析",
+    "name": "缺氧段 TN 去除量",
+    "unit": "mg/L",
+    "design": "—",
+    "target": "≥2.0",
+    "actual": "2.1",
+    "meaning": "缺氧段进出水 TN 差值",
+    "formula": "PROFILE_DELTA(TN,ANOXIC)",
+    "scopes": [
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-73",
+    "category": "沿程分析",
+    "name": "好氧段 NH₃-N 去除量",
+    "unit": "mg/L",
+    "design": "—",
+    "target": "≥6.0",
+    "actual": "6.92",
+    "meaning": "好氧段氨氮削减量，反映硝化过程效果",
+    "formula": "PROFILE_DELTA(NH3,AEROBIC)",
+    "scopes": [
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-74",
+    "category": "沿程分析",
+    "name": "反硝化速率",
+    "unit": "mgNO₃-N/(gMLVSS·h)",
+    "design": "—",
+    "target": "1.5～3.5",
+    "actual": "2.4",
+    "meaning": "按缺氧段沿程氮平衡与活性污泥量计算",
+    "formula": "PROFILE_DENITRIFICATION_RATE()",
+    "scopes": [
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-75",
+    "category": "沿程分析",
+    "name": "硝化速率",
+    "unit": "mgNH₃-N/(gMLVSS·h)",
+    "design": "—",
+    "target": "1.5～3.5",
+    "actual": "2.8",
+    "meaning": "按好氧段沿程氨氮削减与活性污泥量计算",
+    "formula": "PROFILE_NITRIFICATION_RATE()",
+    "scopes": [
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-76",
+    "category": "沿程分析",
+    "name": "生化除磷率",
+    "unit": "%",
+    "design": "—",
+    "target": "≥45",
+    "actual": "54.4",
+    "meaning": "由生化池进出水 TP 沿程数据计算",
+    "formula": "PROFILE_TP_REMOVAL_RATE()",
+    "scopes": [
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-77",
+    "category": "沿程分析",
+    "name": "厌氧释磷比例",
+    "unit": "%",
+    "design": "—",
+    "target": "≥105",
+    "actual": "104.0",
+    "meaning": "厌氧段末端与进水正磷酸盐比值",
+    "formula": "PROFILE_ANAEROBIC_RELEASE_RATE()",
+    "scopes": [
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-78",
+    "category": "水量控制",
+    "name": "设计处理水量",
+    "unit": "万m³/d",
+    "design": "7.00",
+    "target": "7.00",
+    "actual": "7.00",
+    "meaning": "设计文件确定的工艺线处理规模",
+    "formula": "",
+    "scopes": [
+      "design"
+    ]
+  },
+  {
+    "code": "TREND-79",
+    "category": "水量控制",
+    "name": "生化池设计组数",
+    "unit": "组",
+    "design": "2",
+    "target": "2",
+    "actual": "2",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design"
+    ]
+  },
+  {
+    "code": "TREND-80",
+    "category": "水量控制",
+    "name": "二沉池设计组数",
+    "unit": "组",
+    "design": "4",
+    "target": "4",
+    "actual": "4",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design"
+    ]
+  },
+  {
+    "code": "TREND-81",
+    "category": "水量控制",
+    "name": "厌氧段有效池容",
+    "unit": "万m³",
+    "design": "0.71",
+    "target": "0.71",
+    "actual": "0.71",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design"
+    ]
+  },
+  {
+    "code": "TREND-82",
+    "category": "水量控制",
+    "name": "缺氧段有效池容",
+    "unit": "万m³",
+    "design": "0.85",
+    "target": "0.85",
+    "actual": "0.85",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design"
+    ]
+  },
+  {
+    "code": "TREND-83",
+    "category": "水量控制",
+    "name": "好氧段有效池容",
+    "unit": "万m³",
+    "design": "1.75",
+    "target": "1.75",
+    "actual": "1.75",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design"
+    ]
+  },
+  {
+    "code": "TREND-84",
+    "category": "水量控制",
+    "name": "二沉池有效池容",
+    "unit": "万m³",
+    "design": "1.37",
+    "target": "1.37",
+    "actual": "1.37",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design"
+    ]
+  },
+  {
+    "code": "TREND-85",
+    "category": "水量控制",
+    "name": "设计最低水温",
+    "unit": "℃",
+    "design": "12",
+    "target": "≥12",
+    "actual": "13.6",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design"
+    ]
+  },
+  {
+    "code": "TREND-86",
+    "category": "水量控制",
+    "name": "日进水量",
+    "unit": "万m³/d",
+    "design": "",
+    "target": "7.00",
+    "actual": "6.82",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-87",
+    "category": "水量控制",
+    "name": "水量负荷率",
+    "unit": "%",
+    "design": "",
+    "target": "93.3",
+    "actual": "90.9",
+    "meaning": "",
+    "formula": "[FLW-001] ÷ DESIGN_FLOW() × 100",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-88",
+    "category": "水量控制",
+    "name": "厌氧段HRT",
+    "unit": "h",
+    "design": "",
+    "target": "1.6",
+    "actual": "1.7",
+    "meaning": "",
+    "formula": "ANAEROBIC_VOLUME() ÷ [FLW-001]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-89",
+    "category": "水量控制",
+    "name": "缺氧段HRT",
+    "unit": "h",
+    "design": "",
+    "target": "3.2",
+    "actual": "3.4",
+    "meaning": "",
+    "formula": "ANOXIC_VOLUME() ÷ [FLW-001]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-90",
+    "category": "水量控制",
+    "name": "好氧段HRT",
+    "unit": "h",
+    "design": "",
+    "target": "7.5",
+    "actual": "7.8",
+    "meaning": "",
+    "formula": "AEROBIC_VOLUME() ÷ [FLW-001]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-91",
+    "category": "水量控制",
+    "name": "总HRT",
+    "unit": "h",
+    "design": "",
+    "target": "15.0",
+    "actual": "15.6",
+    "meaning": "",
+    "formula": "TOTAL_VOLUME() ÷ [FLW-001]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-92",
+    "category": "曝气控制",
+    "name": "曝气器类型",
+    "unit": "文本",
+    "design": "盘式微孔",
+    "target": "盘式微孔",
+    "actual": "盘式微孔",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design"
+    ]
+  },
+  {
+    "code": "TREND-93",
+    "category": "曝气控制",
+    "name": "曝气膜片尺寸",
+    "unit": "mm",
+    "design": "φ300",
+    "target": "φ300",
+    "actual": "φ300",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design"
+    ]
+  },
+  {
+    "code": "TREND-94",
+    "category": "曝气控制",
+    "name": "曝气膜片材质",
+    "unit": "文本",
+    "design": "三元乙丙橡胶",
+    "target": "三元乙丙橡胶",
+    "actual": "三元乙丙橡胶",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design"
+    ]
+  },
+  {
+    "code": "TREND-95",
+    "category": "曝气控制",
+    "name": "曝气器总安装数量",
+    "unit": "个",
+    "design": "16955",
+    "target": "16955",
+    "actual": "16955",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design"
+    ]
+  },
+  {
+    "code": "TREND-96",
+    "category": "曝气控制",
+    "name": "曝气器浸没水深",
+    "unit": "m",
+    "design": "5.8",
+    "target": "5.8",
+    "actual": "5.8",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design"
+    ]
+  },
+  {
+    "code": "TREND-97",
+    "category": "曝气控制",
+    "name": "风机额定风量",
+    "unit": "Nm³/min",
+    "design": "250",
+    "target": "≤250",
+    "actual": "90",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design"
+    ]
+  },
+  {
+    "code": "TREND-98",
+    "category": "曝气控制",
+    "name": "风机额定出口升压",
+    "unit": "kPa",
+    "design": "70",
+    "target": "≤70",
+    "actual": "68",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design"
+    ]
+  },
+  {
+    "code": "TREND-99",
+    "category": "曝气控制",
+    "name": "好氧段DO",
+    "unit": "mg/L",
+    "design": "",
+    "target": "1.5～2.5",
+    "actual": "1.35",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-100",
+    "category": "曝气控制",
+    "name": "运行风机",
+    "unit": "台",
+    "design": "",
+    "target": "2",
+    "actual": "2",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-101",
+    "category": "曝气控制",
+    "name": "日曝气量",
+    "unit": "万Nm³",
+    "design": "",
+    "target": "16.5",
+    "actual": "15.8",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-102",
+    "category": "曝气控制",
+    "name": "主管压力",
+    "unit": "kPa",
+    "design": "",
+    "target": "65",
+    "actual": "61",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-103",
+    "category": "曝气控制",
+    "name": "风机运行时长",
+    "unit": "h",
+    "design": "",
+    "target": "48",
+    "actual": "46",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-104",
+    "category": "曝气控制",
+    "name": "单位水量曝气量",
+    "unit": "Nm³/m³",
+    "design": "",
+    "target": "2.36",
+    "actual": "2.32",
+    "meaning": "",
+    "formula": "[AIR-003] ÷ [FLW-001]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-105",
+    "category": "曝气控制",
+    "name": "实际运行风量",
+    "unit": "Nm³/min",
+    "design": "",
+    "target": "85～100",
+    "actual": "90",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-106",
+    "category": "曝气控制",
+    "name": "当前气水比",
+    "unit": "—",
+    "design": "",
+    "target": "5～7",
+    "actual": "6.4",
+    "meaning": "",
+    "formula": "[AIR-011] × 1440 ÷ [FLW-001]",
+    "scopes": [
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-107",
+    "category": "曝气控制",
+    "name": "当前曝气电单耗",
+    "unit": "kWh/m³",
+    "design": "",
+    "target": "≤0.080",
+    "actual": "0.076",
+    "meaning": "",
+    "formula": "BLOWER_POWER() ÷ [FLW-001]",
+    "scopes": [
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-108",
+    "category": "曝气控制",
+    "name": "曝气电单耗基线",
+    "unit": "kWh/m³",
+    "design": "",
+    "target": "≤0.075",
+    "actual": "0.072",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-109",
+    "category": "曝气控制",
+    "name": "曝气电单耗基线偏离度",
+    "unit": "%",
+    "design": "",
+    "target": "≤10",
+    "actual": "5.6",
+    "meaning": "",
+    "formula": "[AIR-013] ÷ [AIR-014] × 100",
+    "scopes": [
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-110",
+    "category": "曝气控制",
+    "name": "当前风机出口升压",
+    "unit": "kPa",
+    "design": "",
+    "target": "≤70",
+    "actual": "68",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-111",
+    "category": "曝气控制",
+    "name": "膜片堵塞率",
+    "unit": "%",
+    "design": "",
+    "target": "≤20",
+    "actual": "14.3",
+    "meaning": "",
+    "formula": "(CURRENT_PRESSURE() − NEW_PRESSURE()) ÷ 7 × 100",
+    "scopes": [
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-112",
+    "category": "曝气控制",
+    "name": "MBBR填料区池容",
+    "unit": "m³",
+    "design": "17604",
+    "target": "17604",
+    "actual": "17604",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-113",
+    "category": "曝气控制",
+    "name": "填料比表面积",
+    "unit": "m²/m³",
+    "design": "500",
+    "target": "500",
+    "actual": "500",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-114",
+    "category": "曝气控制",
+    "name": "投加填料总体积",
+    "unit": "m³",
+    "design": "5423",
+    "target": "5423",
+    "actual": "5423",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-115",
+    "category": "曝气控制",
+    "name": "填料投加位置",
+    "unit": "文本",
+    "design": "好氧段前/中/后部",
+    "target": "按设计",
+    "actual": "好氧段中部",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-116",
+    "category": "曝气控制",
+    "name": "单个填料干重",
+    "unit": "g",
+    "design": "0.831",
+    "target": "0.831",
+    "actual": "0.831",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-117",
+    "category": "曝气控制",
+    "name": "单个填料体积",
+    "unit": "cm³",
+    "design": "4.906",
+    "target": "4.906",
+    "actual": "4.906",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-118",
+    "category": "曝气控制",
+    "name": "曝气流化风量",
+    "unit": "m³/min",
+    "design": "",
+    "target": "550～650",
+    "actual": "600",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-119",
+    "category": "曝气控制",
+    "name": "填料区溶解氧",
+    "unit": "mg/L",
+    "design": "",
+    "target": "1.0～2.0",
+    "actual": "1.3",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-120",
+    "category": "曝气控制",
+    "name": "填料投加容积比",
+    "unit": "%",
+    "design": "",
+    "target": "25～35",
+    "actual": "30.8",
+    "meaning": "",
+    "formula": "CARRIER_VOLUME() ÷ MBBR_VOLUME() × 100",
+    "scopes": [
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-121",
+    "category": "曝气控制",
+    "name": "曝气流化气水比",
+    "unit": "—",
+    "design": "",
+    "target": "4～6",
+    "actual": "4.3",
+    "meaning": "",
+    "formula": "FLUIDIZATION_AIR() × 1440 ÷ [FLW-001]",
+    "scopes": [
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-122",
+    "category": "曝气控制",
+    "name": "MBBR系统电单耗",
+    "unit": "kWh/m³",
+    "design": "",
+    "target": "≤0.15",
+    "actual": "0.121",
+    "meaning": "",
+    "formula": "MBBR_DAILY_POWER() ÷ [FLW-001]",
+    "scopes": [
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-123",
+    "category": "曝气控制",
+    "name": "填料表面硝化负荷",
+    "unit": "gNH₃-N/(m²·d)",
+    "design": "",
+    "target": "按设计校核",
+    "actual": "0.43",
+    "meaning": "",
+    "formula": "MBBR_NH3_LOAD() ÷ CARRIER_SURFACE()",
+    "scopes": [
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-124",
+    "category": "回流控制",
+    "name": "内回流量",
+    "unit": "万m³/d",
+    "design": "",
+    "target": "12.60",
+    "actual": "9.75",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-125",
+    "category": "回流控制",
+    "name": "内回流比",
+    "unit": "%",
+    "design": "",
+    "target": "180",
+    "actual": "143",
+    "meaning": "",
+    "formula": "INTERNAL_RECYCLE_FLOW() ÷ [FLW-001] × 100",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-126",
+    "category": "回流控制",
+    "name": "内回流运行泵",
+    "unit": "台",
+    "design": "",
+    "target": "2",
+    "actual": "2",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-127",
+    "category": "回流控制",
+    "name": "内回流平均频率",
+    "unit": "Hz",
+    "design": "",
+    "target": "42",
+    "actual": "36",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-128",
+    "category": "回流控制",
+    "name": "外回流量",
+    "unit": "万m³/d",
+    "design": "",
+    "target": "5.60",
+    "actual": "5.59",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-129",
+    "category": "回流控制",
+    "name": "外回流比",
+    "unit": "%",
+    "design": "",
+    "target": "70～100",
+    "actual": "82",
+    "meaning": "",
+    "formula": "EXTERNAL_RECYCLE_FLOW() ÷ [FLW-001] × 100",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-130",
+    "category": "回流控制",
+    "name": "回流污泥浓度",
+    "unit": "g/L",
+    "design": "",
+    "target": "7.5～9.0",
+    "actual": "7.8",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-131",
+    "category": "回流控制",
+    "name": "外回流运行泵",
+    "unit": "台",
+    "design": "",
+    "target": "2",
+    "actual": "2",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-132",
+    "category": "排泥控制",
+    "name": "日排泥量",
+    "unit": "m³/d",
+    "design": "",
+    "target": "500",
+    "actual": "420",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-133",
+    "category": "排泥控制",
+    "name": "排泥次数",
+    "unit": "次/d",
+    "design": "",
+    "target": "4",
+    "actual": "4",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-134",
+    "category": "排泥控制",
+    "name": "排泥污泥浓度",
+    "unit": "g/L",
+    "design": "",
+    "target": "8.0～10.0",
+    "actual": "8.6",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-135",
+    "category": "排泥控制",
+    "name": "估算SRT",
+    "unit": "d",
+    "design": "",
+    "target": "18",
+    "actual": "12.5",
+    "meaning": "",
+    "formula": "CALC_SRT_WASTE_FLOW()",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-136",
+    "category": "加药控制",
+    "name": "碳源投加量",
+    "unit": "t/d",
+    "design": "",
+    "target": "3.0～3.5",
+    "actual": "3.2",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-137",
+    "category": "加药控制",
+    "name": "除磷药剂量",
+    "unit": "t/d",
+    "design": "",
+    "target": "1.0～1.2",
+    "actual": "1.1",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-138",
+    "category": "加药控制",
+    "name": "吨水药耗",
+    "unit": "kg/m³",
+    "design": "",
+    "target": "0.060",
+    "actual": "0.063",
+    "meaning": "",
+    "formula": "([CHE-001] + [CHE-002]) ÷ [FLW-001]",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-139",
+    "category": "加药控制",
+    "name": "投加泵运行",
+    "unit": "台",
+    "design": "",
+    "target": "2",
+    "actual": "2",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-140",
+    "category": "加药控制",
+    "name": "碳源名称",
+    "unit": "文本",
+    "design": "",
+    "target": "乙酸钠",
+    "actual": "乙酸钠",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-141",
+    "category": "加药控制",
+    "name": "碳源溶液纯度",
+    "unit": "%",
+    "design": "",
+    "target": "≥20",
+    "actual": "20",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-142",
+    "category": "加药控制",
+    "name": "碳源投加单耗",
+    "unit": "mg/L",
+    "design": "",
+    "target": "按碳氮平衡",
+    "actual": "18.5",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-143",
+    "category": "加药控制",
+    "name": "混凝剂名称",
+    "unit": "文本",
+    "design": "",
+    "target": "PAC",
+    "actual": "PAC",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-144",
+    "category": "加药控制",
+    "name": "混凝剂浓度",
+    "unit": "%",
+    "design": "",
+    "target": "10",
+    "actual": "10",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-145",
+    "category": "加药控制",
+    "name": "混凝剂投加单耗",
+    "unit": "mg/L",
+    "design": "",
+    "target": "≤20",
+    "actual": "18",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-146",
+    "category": "加药控制",
+    "name": "碳源折合COD投加量",
+    "unit": "mg/L",
+    "design": "",
+    "target": "按工况核算",
+    "actual": "32.0",
+    "meaning": "",
+    "formula": "CARBON_DOSE() × PURITY() × COD_EQUIVALENT()",
+    "scopes": [
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-147",
+    "category": "加药控制",
+    "name": "理论碳源投加量",
+    "unit": "t/d",
+    "design": "",
+    "target": "按工况核算",
+    "actual": "2.9",
+    "meaning": "",
+    "formula": "CARBON_BALANCE_TARGET()",
+    "scopes": [
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-148",
+    "category": "加药控制",
+    "name": "理论出水碱度",
+    "unit": "mg/L",
+    "design": "",
+    "target": "≥80",
+    "actual": "92",
+    "meaning": "",
+    "formula": "INFLUENT_ALKALINITY() − NITRIFICATION_ALK() + DENITRIFICATION_ALK()",
+    "scopes": [
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-149",
+    "category": "加药控制",
+    "name": "需补充碱度",
+    "unit": "mg/L",
+    "design": "",
+    "target": "0",
+    "actual": "0",
+    "meaning": "",
+    "formula": "80 − THEORETICAL_EFFLUENT_ALKALINITY()",
+    "scopes": [
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-150",
+    "category": "搅拌控制",
+    "name": "运行搅拌器",
+    "unit": "台",
+    "design": "",
+    "target": "6",
+    "actual": "6",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-151",
+    "category": "搅拌控制",
+    "name": "平均运行率",
+    "unit": "%",
+    "design": "",
+    "target": "80～90",
+    "actual": "83",
+    "meaning": "",
+    "formula": "[MIX-003] ÷ 24 × 100",
+    "scopes": [
+      "design",
+      "condition",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-152",
+    "category": "搅拌控制",
+    "name": "日运行时长",
+    "unit": "h",
+    "design": "",
+    "target": "20",
+    "actual": "19.9",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  },
+  {
+    "code": "TREND-153",
+    "category": "搅拌控制",
+    "name": "异常设备",
+    "unit": "台",
+    "design": "",
+    "target": "0",
+    "actual": "0",
+    "meaning": "",
+    "formula": "",
+    "scopes": [
+      "design",
+      "condition",
+      "entry",
+      "diagnosis"
+    ]
+  }
+]

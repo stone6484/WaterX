@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { WxField, WxSelect, WxTableSurface } from '../components/waterx'
+import { WxField, WxSelect } from '../components/waterx'
 import MetricEditor from '../modules/process-management/MetricEditor.vue'
 import type { Cell, Metric, Target } from '../modules/process-management/types'
 import '../modules/process-management/process-management.css'
@@ -24,7 +24,7 @@ const cells=ref<Record<string,Cell>>(Object.fromEntries(fixtures.map((m,i)=>[m.i
       <WxField label="维护表工作区"><WxSelect v-model="width"><option value="full">铺满工作区</option><option value="1040">1040px</option><option value="760">760px</option></WxSelect></WxField>
       <label><input v-model="editable" type="checkbox"> 编辑演示值（仅内存）</label>
     </div>
-    <div class="pm-workspace" :style="{maxWidth:width==='full'?'100%':`${width}px`}"><WxTableSurface><MetricEditor :metrics="metrics" :mode="mode" :values="values" :targets="targets" :cells="cells" :editable="editable" @design="(id,value)=>values[id]=value" @target="(id,value)=>targets[id]=value" @cell="(id,value)=>cells[id]=value" /></WxTableSurface></div>
+    <div class="pm-workspace" :style="{maxWidth:width==='full'?'100%':`${width}px`}"><MetricEditor :metrics="metrics" :mode="mode" :values="values" :targets="targets" :cells="cells" :editable="editable" @design="(id,value)=>values[id]=value" @target="(id,value)=>targets[id]=value" @cell="(id,value)=>cells[id]=value" /></div>
   </section>
 </template>
 

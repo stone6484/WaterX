@@ -17,6 +17,7 @@ import type { ProcessEvaluationPageId } from './modules/process-evaluation/types
 import LabRawRecordsPage from './modules/lab-raw-records/LabRawRecordsPage.vue'
 import './modules/lab-raw-records/lab-reports-ui.css'
 import ProcessManagementPage from './modules/process-management/ProcessManagementPage.vue'
+import ProcessTrendPage from './modules/process-management/ProcessTrendPage.vue'
 import DailyCollaborationPage from './modules/process-management/DailyCollaborationPage.vue'
 import ProcessArchivePage from './modules/process-management/ProcessArchivePage.vue'
 import type { ProcessPage, LegacyMetric } from './modules/process-management/types'
@@ -137,7 +138,7 @@ const plannedPages = {
   improvementAnalysis: { module:'改进提升', title:'改进分析', stage:'A', description:'分析问题结构、关闭效率和复发趋势，支持持续改进。', capabilities:['问题趋势','关闭周期','复发分析','改进成效'] }
 } as const
 type PlannedPageId = keyof typeof plannedPages
-type AppPage = 'cockpit' | 'gisMap' | 'processParameters' | 'digitalTwin' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'highEfficiencySedimentation' | 'vFilterAnalysis' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education' | PlannedPageId | QualityPageId | ProcessEvaluationPageId | RemainingUnitPageId | EfficiencyPlanningPageId
+type AppPage = 'processTrend' | 'cockpit' | 'gisMap' | 'processParameters' | 'digitalTwin' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'highEfficiencySedimentation' | 'vFilterAnalysis' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education' | PlannedPageId | QualityPageId | ProcessEvaluationPageId | RemainingUnitPageId | EfficiencyPlanningPageId
 const activePage = ref<AppPage>('cockpit')
 const active = computed<AppPage>({get:()=>activePage.value,set:page=>{if(page===activePage.value||(dailyCollaboration.value?.canLeave()!==false&&processArchive.value?.canLeave()!==false))activePage.value=page}})
 const currentEfficiencyPlanningPage = computed(() => isEfficiencyPlanningPage(active.value) ? active.value : null)
@@ -1329,7 +1330,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
         </section>
         <section class="nav-group">
           <button class="nav-group-title" :class="{expanded:expandedModules.process}" @click="toggleModule('process')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#process'" /></svg></span><span>工艺管理</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.process?'down':'right'}`" /></svg></i></button>
-          <div v-show="expandedModules.process" class="nav-children"><button :class="{selected:active==='processParameters'}" @click="active='processParameters'">工艺参数概览</button><button :class="{selected:active==='processDesign'}" @click="active='processDesign'">工艺设计标准</button><button :class="{selected:active==='conditionMatrix'}" @click="active='conditionMatrix'">工况矩阵管理</button><button :class="{selected:active==='operationEntry'}" @click="active='operationEntry';loadOperationEntry()">运行数据填报</button><button :class="{selected:active==='processAnalysis'}" @click="active='processAnalysis'">工艺诊断分析</button><button :class="{selected:active==='processReport'}" @click="active='processReport'">工艺分析日报</button><button disabled>工艺调整记录 <small>规划中</small></button></div>
+          <div v-show="expandedModules.process" class="nav-children"><button :class="{selected:active==='processParameters'}" @click="active='processParameters'">工艺参数概览</button><button :class="{selected:active==='processDesign'}" @click="active='processDesign'">工艺设计标准</button><button :class="{selected:active==='conditionMatrix'}" @click="active='conditionMatrix'">工况矩阵管理</button><button :class="{selected:active==='operationEntry'}" @click="active='operationEntry';loadOperationEntry()">运行数据填报</button><button :class="{selected:active==='processAnalysis'}" @click="active='processAnalysis'">工艺诊断分析</button><button :class="{selected:active==='processTrend'}" @click="active='processTrend'">工艺趋势分析</button><button :class="{selected:active==='processReport'}" @click="active='processReport'">工艺分析日报</button><button disabled>工艺调整记录 <small>规划中</small></button></div>
         </section>
         <section class="nav-group">
           <button class="nav-group-title" :class="{expanded:expandedModules.equipment}" @click="toggleModule('equipment')"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#equipment'" /></svg></span><span>设备管理</span><i><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${expandedModules.equipment?'down':'right'}`" /></svg></i></button>
@@ -1421,6 +1422,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
           <section class="module-roadmap-strip"><span><b>01</b>入口与边界确认</span><i></i><span><b>02</b>字段与规则评审</span><i></i><span><b>03</b>交互原型</span><i></i><span><b>04</b>后端工程化</span></section>
         </template>
         <ManagementQualityPage v-else-if="currentQualityPage" :active-page="currentQualityPage" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" @update:active-page="openQualityPage" @start-improvement="handleQualityImprovement" />
+        <ProcessTrendPage v-else-if="active==='processTrend'" :key="selectedSite" :site-id="selectedSite" :site-name="currentSite?.name||'当前项目'" :legacy-metrics="processMvpCatalog" :api="api" :remote="processDailyPreview" />
         <ProcessArchivePage v-else-if="processMvpPage && processDailyPreview && processArchivePreview && processMvpPage!=='operationEntry'" ref="processArchive" :key="selectedSite + processMvpPage" :api="api" :page="processMvpPage" :site-id="selectedSite" :site-name="currentSite?.name||'当前项目'" />
         <DailyCollaborationPage v-else-if="processMvpPage && processDailyPreview" ref="dailyCollaboration" :key="selectedSite" :api="api" :page="processMvpPage" :site-id="selectedSite" :site-name="currentSite?.name||'当前项目'" @navigate="active=$event" />
         <ProcessManagementPage v-else-if="processMvpPage" :page="processMvpPage" :site-id="selectedSite" :site-name="currentSite?.name||'当前项目'" :actor="processActor" :legacy-metrics="processMvpCatalog" @navigate="active=$event" @configure="openModuleMetricManager($event)" />
