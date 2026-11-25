@@ -8,9 +8,10 @@ import { loadProject } from './adapter'
 import { businessToday, type LegacyMetric, type Metric } from './types'
 import { validDate, periodStart, localTrend, remoteTrendDay, type TrendDay } from './trend-data'
 import './process-management.css'
-const props=defineProps<{siteId:string;siteName:string;legacyMetrics:LegacyMetric[];api?:ApiClient;remote?:boolean;previewDays?:TrendDay[]}>()
-const line=ref('一期生化线'),lines=ref<{id:string;name:string}[]>([]),remoteMetrics=ref<Metric[]>([])
-const period=ref('7'),end=ref(businessToday()),start=ref(periodStart(end.value,'7'))
+const props=defineProps<{siteId:string;siteName:string;legacyMetrics:LegacyMetric[];api?:ApiClient;remote?:boolean;previewDays?:TrendDay[];formalLine?:string;formalDate?:string}>()
+const emit = defineEmits<{ lineUnavailable: [] }>()
+const line=ref(props.formalLine||'一期生化线'),lines=ref<{id:string;name:string}[]>([]),remoteMetrics=ref<Metric[]>([])
+const period=ref(props.formalDate?'custom':'7'),end=ref(props.formalDate||businessToday()),start=ref(props.formalDate||periodStart(end.value,'7'))
 const days=ref<TrendDay[]>([]),busy=ref(false),error=ref(''),refreshAt=ref('')
 const metrics=computed(()=>(props.remote?remoteMetrics.value:makeCatalog(props.legacyMetrics)).filter(m=>m.scopes.includes('diagnosis')&&m.source!=='DESIGN'))
 const rangeError=computed(()=>!validDate(start.value)||!validDate(end.value)?'请选择有效的开始和结束日期。':start.value>end.value?'开始日期不能晚于结束日期。':'')
@@ -25,7 +26,13 @@ async function load(){
     if(props.previewDays){lines.value=[{id:'一期生化线',name:'一期生化线'},{id:'二期生化线',name:'二期生化线'}];result=line.value==='一期生化线'?props.previewDays.filter(d=>d.date>=start.value&&d.date<=end.value):[]}
     else if(props.remote&&props.api){
       const api=props.api.forSite(props.siteId),context=await api.processDailyContext();if(ticket!==epoch)return
-      lines.value=context.map(l=>({id:l.id,name:l.name}));line.value=context.some(l=>l.id===line.value)?line.value:context[0]?.id||''
+      lines.value=context.map(l=>({id:l.id,name:l.name}))
+      if (props.formalDate && !context.some(item => item.id === props.formalLine)) {
+        remoteMetrics.value = []
+        emit('lineUnavailable')
+        return
+      }
+      line.value = props.formalDate ? props.formalLine! : (context.some(item => item.id === line.value) ? line.value : context[0]?.id || '')
       const current=context.find(l=>l.id===line.value);remoteMetrics.value=current?.template||[]
       if(current){
         const list=await api.processDailyList(current.id);if(ticket!==epoch)return
@@ -43,22 +50,30 @@ async function load(){
     }
     if(ticket!==epoch)return
     days.value=result.sort((a,b)=>a.date.localeCompare(b.date));refreshAt.value=new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit'}).format(new Date())
-  }catch(e){if(ticket===epoch){days.value=[];error.value=(e as Error).message}}finally{if(ticket===epoch)busy.value=false}
+  }catch(e){
+    if(ticket===epoch){
+      days.value=[]
+      if (props.formalDate && (e as {status?:number}).status === 403) {
+        remoteMetrics.value = []
+        emit('lineUnavailable')
+      } else error.value=(e as Error).message
+    }
+  }finally{if(ticket===epoch)busy.value=false}
 }
 watch(()=>[props.siteId,line.value,start.value,end.value,props.remote],()=>{void load()},{immediate:true})
 </script>
 <template>
   <section class="pm-workspace trend-page">
     <div class="pm-toolbar trend-toolbar">
-      <WxField label="工艺线"><WxSelect v-model="line"><option v-for="l in lines" :key="l.id" :value="l.id">{{l.name}}</option></WxSelect></WxField>
-      <WxField label="时间范围"><WxSelect v-model="period"><option value="7">近7天</option><option value="15">近15天</option><option value="month">近1个月</option><option value="custom">自定义时段</option></WxSelect></WxField>
-      <WxField label="开始日期"><WxInput v-model="start" type="date" :disabled="period!=='custom'" /></WxField>
-      <WxField label="结束日期"><WxInput v-model="end" type="date" /></WxField>
+      <WxField v-if="!formalDate" label="工艺线"><WxSelect v-model="line"><option v-for="l in lines" :key="l.id" :value="l.id">{{l.name}}</option></WxSelect></WxField>
+      <WxField v-if="!formalDate" label="时间范围"><WxSelect v-model="period"><option value="7">近7天</option><option value="15">近15天</option><option value="month">近1个月</option><option value="custom">自定义时段</option></WxSelect></WxField>
+      <WxField v-if="!formalDate" label="开始日期"><WxInput v-model="start" type="date" :disabled="period!=='custom'" /></WxField>
+      <WxField v-if="!formalDate" label="结束日期"><WxInput v-model="end" type="date" /></WxField>
       <WxButton :disabled="busy||!!rangeError" @click="load">{{busy?'正在读取…':'刷新数据'}}</WxButton>
       <div class="trend-status"><span v-if="refreshAt">更新于 {{refreshAt}}</span><span v-if="previewDays||days.some(d=>d.demo)" class="trend-demo">演示数据</span></div>
     </div>
     <p v-if="rangeError||error" role="alert" class="pm-error">{{rangeError||error}}</p>
-    <p v-if="!busy&&!error&&!rangeError&&!days.length" class="trend-no-data" role="status">暂无日记录</p>
+    <p v-if="!busy&&!error&&!rangeError&&!days.length" class="trend-no-data" role="status">{{formalDate?'所选区间无可绘制的确认记录':'暂无日记录'}}</p>
     <TrendBoards v-if="!rangeError&&!error" :metrics="metrics" :days="days" :from="start" :to="end" :scope="`${encodeURIComponent(siteId)}:${encodeURIComponent(line)}`" />
   </section>
 </template>

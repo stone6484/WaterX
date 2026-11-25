@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onMounted, reactive, ref, watch } from 'vue'
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
+import FormalRecordScope from './modules/process-management/FormalRecordScope.vue'
+import {businessToday as formalToday} from './modules/process-management/types'
 import QRCode from 'qrcode'
 import { ApiClient, type Area, type AssessmentHistory, type ControlMeasureInput, type Employee, type EmployeeQualification, type EmployeeSafetyArchive, type Hazard, type InspectionPlan, type InspectionStatistics, type InspectionSummary, type InspectionTask, type InspectionTemplate, type InvestmentSummary, type OccupationalExam, type OccupationalFactor, type OccupationalHealthSummary, type OrgUnit, type RiskObject, type RiskSummary, type SafetyAsset, type SafetyAssetSummary, type SafetyAttachment, type SafetyBudget, type SafetyCommitment, type SafetyCommitmentTemplate, type SafetyExpense, type SafetyHazard, type Site, type TrainingAssignment, type TrainingCourse, type TrainingMaterial, type TrainingStatistics, type TrainingSummary, type VisitorBriefing, type VisitorRecord, type WorkPermit, type WorkPermitTemplate } from '@safety/api-client'
 import SafetyWorkspace from './modules/safety/SafetyWorkspace.vue'
@@ -141,6 +143,104 @@ type PlannedPageId = keyof typeof plannedPages
 type AppPage = 'processTrend' | 'cockpit' | 'gisMap' | 'processParameters' | 'digitalTwin' | 'processAnalysis' | 'processReport' | 'processDesign' | 'conditionMatrix' | 'operationEntry' | 'labRecords' | 'labReports' | 'highEfficiencySedimentation' | 'vFilterAnalysis' | 'overview' | 'org' | 'employee' | 'area' | 'risk' | 'inspection' | 'hazard'|'permit'|'training'|'asset'|'health'|'investment'|'education' | PlannedPageId | QualityPageId | ProcessEvaluationPageId | RemainingUnitPageId | EfficiencyPlanningPageId
 const activePage = ref<AppPage>('cockpit')
 const active = computed<AppPage>({get:()=>activePage.value,set:page=>{if(page===activePage.value||(dailyCollaboration.value?.canLeave()!==false&&processArchive.value?.canLeave()!==false))activePage.value=page}})
+// A single, loopback-only synthetic grant. This grants navigation to a home page;
+// each existing module still uses its own identity and permissions.
+const directoryTrial = (import.meta.env.MODE === 'qsh-directory-local' || import.meta.env.MODE === 'qsh-joint-local') && location.hostname === '127.0.0.1'
+const directoryKey = 'waterx.directory.cockpit-trial.v1'
+function readDirectoryPolicy(): string {
+  if (!directoryTrial) return ''
+  try { return localStorage.getItem(directoryKey) || '' } catch { return '' }
+}
+const directoryPolicy = ref(readDirectoryPolicy())
+const directoryAllowed = ref(false)
+const directoryOpen = ref(false)
+const directoryReturn = ref('')
+const cockpitVisit = ref(0)
+let directoryTicket = 0
+let directoryExpiry: number | undefined
+let directorySigningOut = false
+
+function clearDirectoryVisit() {
+  ++directoryTicket
+  directoryOpen.value = false
+  directoryReturn.value = ''
+}
+
+function directoryBinding(raw: string) {
+  if (!directoryTrial || directorySigningOut || !token.value || !raw) return null
+  try {
+    const grant = JSON.parse(raw)
+    if (grant?.schema !== 1 || grant.target !== 'cockpit' || grant.status !== 'approved' ||
+        grant.scope !== 'site' || !Number.isSafeInteger(grant.revision) || grant.revision < 1 ||
+        !Number.isSafeInteger(grant.expiresAt) || grant.expiresAt <= Date.now() ||
+        !signedInUserId.value.startsWith('SIM-DIR-') || !selectedSite.value.startsWith('SIM-DIR-') ||
+        grant.user !== signedInUserId.value || grant.site !== selectedSite.value ||
+        !sites.value.some(site => site.id === grant.site)) return null
+    return { user: signedInUserId.value, site: selectedSite.value, revision: grant.revision, expiresAt: Number(grant.expiresAt) }
+  } catch { return null }
+}
+
+function resetDirectoryAccess() {
+  clearTimeout(directoryExpiry)
+  clearDirectoryVisit()
+  directoryAllowed.value = false
+}
+
+async function checkDirectory(action: 'probe' | 'list' | 'open' | 'return') {
+  const raw = readDirectoryPolicy()
+  if (raw !== directoryPolicy.value) { directoryPolicy.value = raw; return }
+  const bound = directoryBinding(raw)
+  if (!bound) { resetDirectoryAccess(); return }
+  const origin = JSON.stringify([bound.user, bound.site, bound.revision])
+  if (action === 'return' && directoryReturn.value !== origin) return
+  const ticket = ++directoryTicket
+  const client = api.forSite(bound.site)
+  try {
+    const [person, visibleSites] = await Promise.all([client.currentUser(), client.sites()])
+    if (ticket !== directoryTicket) return
+    if (readDirectoryPolicy() !== raw || !directoryBinding(raw) || person.userId !== bound.user ||
+        !visibleSites.some(site => site.id === bound.site)) { resetDirectoryAccess(); return }
+    directoryAllowed.value = true
+    clearTimeout(directoryExpiry)
+    directoryExpiry = window.setTimeout(() => { void checkDirectory('probe') },
+      Math.min(bound.expiresAt - Date.now(), 2147483647))
+    if (action === 'probe') return
+    if (action === 'open') {
+      active.value = 'cockpit'
+      if (active.value !== 'cockpit') return
+      cockpitVisit.value++
+      directoryReturn.value = origin
+      directoryOpen.value = false
+    } else {
+      directoryReturn.value = ''
+      directoryOpen.value = true
+    }
+  } catch { if (ticket === directoryTicket) resetDirectoryAccess() }
+}
+
+function syncDirectoryPolicy() { directoryPolicy.value = readDirectoryPolicy() }
+function originalCockpit() {
+  if (directoryTrial) clearDirectoryVisit()
+  active.value = 'cockpit'
+  if (directoryTrial && !directoryAllowed.value) void checkDirectory('probe')
+}
+if (directoryTrial) {
+  watch([signedInUserId, selectedSite, token, directoryPolicy, sites], () => {
+    resetDirectoryAccess()
+    void checkDirectory('probe')
+  }, { flush: 'sync' })
+  watch(active, () => {
+    clearDirectoryVisit()
+    if (!directoryAllowed.value) void checkDirectory('probe')
+  }, { flush: 'sync' })
+  window.addEventListener('storage', syncDirectoryPolicy)
+  window.addEventListener('focus', syncDirectoryPolicy)
+  onBeforeUnmount(() => {
+    resetDirectoryAccess()
+    window.removeEventListener('storage', syncDirectoryPolicy)
+    window.removeEventListener('focus', syncDirectoryPolicy)
+  })
+}
 const currentEfficiencyPlanningPage = computed(() => isEfficiencyPlanningPage(active.value) ? active.value : null)
 const currentPlannedPage = computed(()=>plannedPages[active.value as PlannedPageId])
 const currentQualityPage = computed(()=>isQualityPageId(active.value) ? active.value : null)
@@ -149,11 +249,52 @@ const currentRemainingUnit = computed(()=>isRemainingUnitPageId(active.value) ? 
 const pendingImprovementDraft = ref<ImprovementDraft | null>(null)
 const safetyPages:AppPage[]=['overview','org','employee','area','risk','inspection','hazard','permit','training','asset','health','investment','education']
 const isSafetyPage = computed(()=>safetyPages.includes(active.value))
+// Only the loopback simulation build consumes the separate mock approver's decision.
+const localTrial = (import.meta.env.MODE === 'qsh-f01-local' || import.meta.env.MODE === 'qsh-joint-local') && location.hostname === '127.0.0.1'
+const trialSite = import.meta.env.VITE_F01_TEST_SITE
+const trialLine = import.meta.env.VITE_F01_TEST_LINE
+const decisionKey = 'waterx.f01.local-decision.v1'
+function readDecision() {
+  if (!localTrial) return null
+  try { return JSON.parse(localStorage.getItem(decisionKey) || 'null') }
+  catch { return null }
+}
+const decision = ref(readDecision())
+function reloadDecision() { decision.value = readDecision() }
+if (localTrial) {
+  window.addEventListener('storage', reloadDecision)
+  window.addEventListener('focus', reloadDecision)
+  onBeforeUnmount(() => {
+    window.removeEventListener('storage', reloadDecision)
+    window.removeEventListener('focus', reloadDecision)
+  })
+}
+const policy = computed(() => {
+  if (!localTrial) return 'off'
+  const d = decision.value
+  if (!trialSite || !trialLine || selectedSite.value !== trialSite ||
+      d?.project !== trialSite || d?.line !== trialLine || d?.schema !== 1 ||
+      !Number.isInteger(d?.revision) || d.revision < 1 ||
+      !(d.role === 'project-owner' || (d.role === 'delegate' && d.designatedBy === 'project-owner'))) return 'invalid'
+  if (d.status === 'off' || d.status === 'approved' || d.status === 'revoked') return d.status as string
+  return 'invalid'
+})
+watch(policy, () => { workbenchTarget.value = null }, {flush:"sync"})
+const formalPilot = computed(() => policy.value !== 'off')
+const policyMessage = computed(() => policy.value === 'revoked' ? '模拟批准已撤回，暂停读取。' : '模拟批准缺失或配置与项目、厂线不符，暂停读取。')
+const formalLine = ref(trialLine || ''), formalDay = ref(formalToday())
+watch(() => [selectedSite.value, signedInUserId.value], () => {
+  formalLine.value = trialLine || ''
+  formalDay.value = formalToday()
+}, {flush:'sync'})
+function canChangeFormal(){return dailyCollaboration.value?.canLeave()!==false&&processArchive.value?.canLeave()!==false}
+function pickFormal(line:string,date:string){if(line === trialLine){formalLine.value=line;formalDay.value=date}}
 function openWorkbenchTarget(target:WorkbenchTarget) {
   const allowed=target.page==='operationEntry'?signedInPermissions.value.some(p=>p.startsWith('process:daily:')):signedInPermissions.value.includes(target.page==='inspection'?'inspection:read':'hazard:read')
   if(!allowed)return
   active.value=target.page
   if(active.value!==target.page)return
+  if(formalPilot.value&&target.page==='operationEntry'&&target.date&&target.lineId)pickFormal(target.lineId,target.date)
   workbenchTarget.value=target
   expandedModules.value[target.page==='operationEntry'?'process':'safety']=true
 }
@@ -1161,9 +1302,11 @@ async function changeSite() {
 
 async function logout() {
   if(dailyCollaboration.value?.canLeave()===false||processArchive.value?.canLeave()===false)return
+  if (directoryTrial) { directorySigningOut = true; resetDirectoryAccess() }
   try { if(token.value) await api.logoutSession() } catch { /* 本地会话仍需清理 */ }
   sessionStorage.clear(); token.value = ''; refreshToken.value=''; sites.value = []; selectedSite.value=''; units.value = []; employees.value = []; hazards.value = []
   signedInUserId.value='';signedInPermissions.value=[];signedInDisplayName.value='';workbenchTarget.value=null;error.value='';activePage.value='cockpit'
+  directorySigningOut = false
 }
 
 const riskColorName: Record<string, string> = { RED: '红色', ORANGE: '橙色', YELLOW: '黄色', BLUE: '蓝色' }
@@ -1316,7 +1459,8 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
     <aside>
       <button class="sidebar-toggle" :title="sidebarCollapsed?'展开导航':'收起导航'" :aria-label="sidebarCollapsed?'展开导航':'收起导航'" @click="sidebarCollapsed=!sidebarCollapsed"><span><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${sidebarCollapsed?'right':'left'}`" /></svg></span><b>收起导航</b></button>
 <nav class="module-nav">
-        <button class="module-nav-home" aria-label="管理驾驶舱" title="管理驾驶舱" :class="{selected:active==='cockpit'}" @click="active='cockpit'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#home'" /></svg></span><span>管理驾驶舱</span></button>
+        <button v-if="directoryAllowed" class="module-nav-home" aria-label="只读目录" :aria-expanded="directoryOpen" @click="directoryOpen ? clearDirectoryVisit() : checkDirectory('list')"><span class="nav-icon" aria-hidden="true">≡</span><span>只读目录</span></button>
+        <button class="module-nav-home" aria-label="管理驾驶舱" title="管理驾驶舱" :class="{selected:active==='cockpit'}" @click="originalCockpit"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg#home'" /></svg></span><span>管理驾驶舱</span></button>
         <button class="module-nav-home" aria-label="GIS 一张图" title="GIS 一张图" :class="{selected:active==='gisMap'}" @click="active='gisMap'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg?v=20261008-v3#gis-map'" /></svg></span><span>GIS 一张图</span></button>
         <button class="module-nav-home" aria-label="数字孪生" title="数字孪生" :class="{selected:active==='digitalTwin'}" @click="active='digitalTwin'"><span class="nav-icon"><svg aria-hidden="true"><use :href="'/waterx-nav-icons.svg?v=20261008-v11#digital-twin'" /></svg></span><span>数字孪生</span></button>
 
@@ -1390,9 +1534,26 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
       <article :class="{'safety-workspace':isSafetyPage}">
         <div v-if="isSafetyPage" class="page-title"><div><p class="eyebrow">{{currentSite?.code}}</p><h1>{{active==='overview' ? '安全态势总览' : active==='org' ? '组织架构' : active==='employee' ? '人员档案' : active==='area' ? '厂区区域管理' : active==='risk' ? '风险分级管控' : active==='inspection' ? '安全检查任务' : active==='hazard'?'隐患排查治理':active==='permit'?'危险作业审批':active==='training'?'安全培训与人员资质':active==='asset'?'设备设施与应急物资':active==='health'?'职业健康管理':active==='investment'?'安全投入管理':'安全承诺与访客告知' }}</h1></div><span class="date-chip">{{ new Date().toLocaleDateString('zh-CN') }}</span></div>
         <WxState v-if="error" kind="error" compact class="error banner">{{error}}</WxState>
-        <ManagementCockpit v-if="active==='cockpit'" :key="signedInUserId+selectedSite">
-          <template #workbench><PersonalWorkbench :api="api" :site-id="selectedSite" :user-id="signedInUserId" :permissions="signedInPermissions" @navigate="openWorkbenchTarget" /></template>
+        <section v-if="directoryAllowed && directoryOpen" class="pm-toolbar" aria-label="当前站只读目录">
+          <strong>{{ currentSite?.name }} · 只读目录</strong>
+          <button type="button" @click="checkDirectory('open')">打开管理驾驶舱首页</button>
+        </section>
+        <button v-if="directoryAllowed && directoryReturn && active==='cockpit'" type="button" @click="checkDirectory('return')">返回只读目录</button>
+        <ManagementCockpit v-if="active==='cockpit'" :key="directoryTrial ? JSON.stringify([signedInUserId, selectedSite, cockpitVisit]) : signedInUserId+selectedSite">
+          <template #workbench>
+            <p v-if="formalPilot && policy !== 'approved'" role="status" data-policy-block>{{ policyMessage }}</p>
+            <FormalRecordScope v-else-if="formalPilot" :key="decision.revision" :api="api" :site="selectedSite" site-name="青山湖一期（模拟）" :rights="signedInPermissions" :line="formalLine" :date="formalDay" :can-change="canChangeFormal" @choose="pickFormal" v-slot="{scopedApi,record}">
+              <PersonalWorkbench :key="record.id + record.revision" :api="scopedApi" :site-id="selectedSite" :user-id="signedInUserId" :permissions="signedInPermissions" @navigate="openWorkbenchTarget" />
+            </FormalRecordScope>
+            <PersonalWorkbench v-else :api="api" :site-id="selectedSite" :user-id="signedInUserId" :permissions="signedInPermissions" @navigate="openWorkbenchTarget" />
+          </template>
         </ManagementCockpit>
+        <p v-else-if="formalPilot && policy !== 'approved' && ['operationEntry','processReport','processTrend'].includes(active)" role="status" data-policy-block>{{ policyMessage }}</p>
+        <FormalRecordScope v-else-if="formalPilot&&['operationEntry','processReport','processTrend'].includes(active)" :key="[signedInUserId,selectedSite,active,decision.revision].join(':')" :explicit-line-selection="active==='processTrend'" :api="api" :site="selectedSite" site-name="青山湖一期（模拟）" :rights="signedInPermissions" :line="formalLine" :date="formalDay" :can-change="canChangeFormal" @choose="pickFormal" v-slot="{record,scopedApi,refresh,clearLineSelection}">
+          <DailyCollaborationPage :key="[formalLine,formalDay,record?.id,record?.revision].join(':')" v-if="active==='operationEntry'" ref="dailyCollaboration" :api="scopedApi" :site-id="selectedSite" site-name="青山湖一期（模拟）" page="operationEntry" :initial-line-id="formalLine" :initial-record-id="record?.id" :formal-date="formalDay" @source-changed="refresh" @navigate="active=$event"/>
+          <ProcessArchivePage :key="[formalLine,formalDay,record?.id,record?.revision].join(':')" v-else-if="active==='processReport'&&record" ref="processArchive" :api="scopedApi" :site-id="selectedSite" site-name="青山湖一期（模拟）" page="processReport" :formal-line="formalLine" :formal-record="record.id"/>
+          <ProcessTrendPage :key="[formalLine,formalDay,record?.id,record?.revision].join(':')" v-else-if="active==='processTrend'" :site-id="selectedSite" site-name="青山湖一期（模拟）" :legacy-metrics="processMvpCatalog" :api="scopedApi" remote :formal-line="formalLine" :formal-date="formalDay" @line-unavailable="clearLineSelection"/>
+        </FormalRecordScope>
         <ProcessOverviewPage v-else-if="active==='processParameters'" :key="signedInUserId+selectedSite" />
         <DigitalTwinPage v-else-if="active==='digitalTwin'" :key="signedInUserId+selectedSite" :site-id="selectedSite" :user-id="signedInUserId" />
         <GisMapPage v-else-if="active==='gisMap'" :key="JSON.stringify([signedInUserId,selectedSite])" :site-id="selectedSite" :user-id="signedInUserId" @open-twin="active='digitalTwin'" />

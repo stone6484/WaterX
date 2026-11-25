@@ -1,6 +1,6 @@
 import type { DailyLine, DailySummary, SafetyContext, WorkflowHazard, WorkflowTask } from '@safety/api-client'
 
-export type WorkbenchTarget = { page: 'operationEntry' | 'inspection' | 'hazard'; id?: string; lineId?: string }
+export type WorkbenchTarget = { page: 'operationEntry' | 'inspection' | 'hazard'; id?: string; lineId?: string; date?:string }
 export type WorkItem = {
   key: string; title: string; module: string; status: string; action: string;
   date?: string; due?: string; pending: boolean; completed: boolean; started: boolean;
@@ -29,7 +29,7 @@ export function dailyItems(line: DailyLine, rows: DailySummary[]): WorkItem[] {
       status:({DRAFT:'待填报',RETURNED:'退回修改',SUBMITTED:'待复核',CONFIRMED:'已确认',CANCELLED:'已终止'} as Record<string,string>)[r.state]||r.state,
       action:review?'复核日数据':pending?'填写日数据':'查看记录',date:r.business_date,
       // 业务日期不是截止时间；接口没有期限时不推断逾期。
-      pending,completed:r.state==='CONFIRMED',started:false,review,responsibility:'本人分派',target:{page:'operationEntry',id:r.id,lineId:line.id} }
+      pending,completed:r.state==='CONFIRMED',started:false,review,responsibility:'本人分派',target:{page:'operationEntry',id:r.id,lineId:line.id,date:r.business_date} }
   })
 }
 export function safetyItems(context: SafetyContext, tasks: WorkflowTask[], hazards: WorkflowHazard[]): WorkItem[] {
