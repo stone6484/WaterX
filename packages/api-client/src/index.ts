@@ -117,15 +117,58 @@ export type ProcessReportSummary=Omit<ProcessReport,'rows'>
 export class ApiClient {
   processParameters(line:string):Promise<ProcessParameter[]>{return this.request(`/v1/process/archive/parameters?line=${encodeURIComponent(line)}`)}
   processParameterSave(line:string,kind:'DESIGN'|'TARGET',publish:boolean,revision:number,content:ProcessParameterContent):Promise<ProcessParameter[]>{return this.request(`/v1/process/archive/parameters/${encodeURIComponent(line)}/${kind}/${publish?'publish':'draft'}`,{method:'POST',body:JSON.stringify({revision,content})})}
-  processReports(record:string):Promise<ProcessReportSummary[]>{return this.request(`/v1/process/archive/reports?record=${encodeURIComponent(record)}`)}
-  processReport(id:string):Promise<ProcessReport>{return this.request(`/v1/process/archive/reports/${encodeURIComponent(id)}`)}
+  private matchesReport(report:ProcessReportSummary):boolean {
+    const scope=this.confirmedDay
+    return !scope || (report.record_id===scope.record && report.source.recordId===scope.record &&
+      report.source.date===scope.day && report.source.lineId===scope.line && report.status==='SAVED')
+  }
+  async processReports(record:string):Promise<ProcessReportSummary[]> {
+    if(this.confirmedDay && record!==this.confirmedDay.record) throw Error('日报与确认来源不符')
+    const reports=await this.request<ProcessReportSummary[]>(`/v1/process/archive/reports?record=${encodeURIComponent(record)}`)
+    return this.confirmedDay ? reports.filter(report=>this.matchesReport(report)) : reports
+  }
+  async processReport(id:string):Promise<ProcessReport> {
+    const report=await this.request<ProcessReport>(`/v1/process/archive/reports/${encodeURIComponent(id)}`)
+    if(!this.matchesReport(report)) throw Error('日报与确认来源不符')
+    return report
+  }
   processReportGenerate(recordId:string,note:string):Promise<ProcessReport>{return this.request('/v1/process/archive/reports',{method:'POST',body:JSON.stringify({recordId,note})})}
   processReportSave(id:string,sourceStamp:string,note:string):Promise<ProcessReport>{return this.request(`/v1/process/archive/reports/${encodeURIComponent(id)}/save`,{method:'POST',body:JSON.stringify({sourceStamp,note})})}
   processReportExport(id:string):Promise<ProcessReport>{return this.request(`/v1/process/archive/reports/${encodeURIComponent(id)}/export`)}
 
-  processDailyContext():Promise<DailyLine[]>{return this.request('/v1/process/daily/context')}
-  processDailyList(line:string):Promise<DailySummary[]>{return this.request(`/v1/process/daily?line=${encodeURIComponent(line)}`)}
-  processDailyDetail(id:string):Promise<DailyRecord>{return this.request(`/v1/process/daily/${encodeURIComponent(id)}`)}
+  private confirmedDay?: {site:string; line:string; day:string; record:string; version:number; revision:number; signal:AbortSignal; onChange:()=>void}
+  forConfirmedDay(site:string, record:DailySummary, signal:AbortSignal, onChange:()=>void):ApiClient {
+    const client=this.forSite(site)
+    client.confirmedDay={site,line:record.line_id,day:record.business_date,record:record.id,version:record.confirmed_version,revision:record.revision,signal,onChange}
+    return client
+  }
+  private matchesDay(row:DailySummary):boolean {
+    const scope=this.confirmedDay
+    return !scope || (row.line_id===scope.line && row.business_date===scope.day && row.id===scope.record &&
+      row.confirmed_version===scope.version && row.state==='CONFIRMED' && row.analysisBlocked===false)
+  }
+  async processDailyContext():Promise<DailyLine[]> {
+    const lines=await this.request<DailyLine[]>('/v1/process/daily/context')
+    return this.confirmedDay ? lines.filter(line=>line.id===this.confirmedDay!.line) : lines
+  }
+  async processDailyList(line:string):Promise<DailySummary[]> {
+    if(this.confirmedDay && line!==this.confirmedDay.line) throw Error('厂线与确认来源不符')
+    const rows=await this.request<DailySummary[]>(`/v1/process/daily?line=${encodeURIComponent(line)}`)
+    const scope=this.confirmedDay
+    if(!scope) return rows
+    scope.signal.throwIfAborted()
+    const selected=Array.isArray(rows) ? rows.filter(row=>row?.line_id===scope.line && row.business_date===scope.day) : []
+    if(selected.length===1 && this.matchesDay(selected[0]) && selected[0].revision===scope.revision) return selected
+    // A panel refresh found a different source. Only the owning scope can bind a new version.
+    scope.onChange()
+    throw Error('确认来源已变化，正在重新核对')
+  }
+  async processDailyDetail(id:string):Promise<DailyRecord> {
+    if(this.confirmedDay && id!==this.confirmedDay.record) throw Error('日记录与确认来源不符')
+    const row=await this.request<DailyRecord>(`/v1/process/daily/${encodeURIComponent(id)}`)
+    if(!this.matchesDay(row)) throw Error('确认来源已变化，请刷新')
+    return row
+  }
   processDailyCreate(input:DailyAssignment):Promise<{id:string}>{return this.request('/v1/process/daily',{method:'POST',body:JSON.stringify(input)})}
   processDailyAction(id:string,action:string,input:DailyAction):Promise<DailyRecord>{return this.request(`/v1/process/daily/${encodeURIComponent(id)}/${encodeURIComponent(action)}`,{method:'POST',body:JSON.stringify(input)})}
   processDailySource(id:string):Promise<DailyVersion>{return this.request(`/v1/process/daily/${encodeURIComponent(id)}/analysis-source`)}
@@ -145,7 +188,8 @@ export class ApiClient {
   }
 
   forSite(siteId:string):ApiClient {
-    const scoped=new ApiClient(this.baseUrl);scoped.setSession(this.accessToken,siteId,this.refreshToken)
+    if(this.confirmedDay && this.confirmedDay.site!==siteId) throw Error('项目与确认来源不符')
+    const scoped=new ApiClient(this.baseUrl);scoped.confirmedDay=this.confirmedDay;scoped.setSession(this.accessToken,siteId,this.refreshToken)
     scoped.onTokenRefresh(pair=>{this.accessToken=pair.accessToken;this.refreshToken=pair.refreshToken;this.tokenRefreshHandler?.(pair)})
     return scoped
   }
@@ -300,11 +344,16 @@ export class ApiClient {
   }
 
   private async request<T>(path: string, init: RequestInit = {}, authenticated = true, allowRefresh = true): Promise<T> {
+    const signal=this.confirmedDay?.signal
+    signal?.throwIfAborted()
+    if(this.confirmedDay && path.startsWith('/v1/process/') && (init.method || 'GET')!=='GET')
+      throw Error('确认版试点只允许读取')
     const headers = new Headers(init.headers)
     if (!(init.body instanceof FormData)) headers.set('Content-Type', 'application/json')
     if (authenticated && this.accessToken) headers.set('Authorization', `Bearer ${this.accessToken}`)
     if (authenticated && this.siteId) headers.set('X-Site-Id', this.siteId)
-    const response = await fetch(`${this.baseUrl}${path}`, { ...init, headers })
+    const response = await fetch(`${this.baseUrl}${path}`, { ...init, headers, signal:signal ?? init.signal })
+    signal?.throwIfAborted()
     if (response.status === 401 && authenticated && allowRefresh && this.refreshToken) {
       const refreshed = await fetch(`${this.baseUrl}/v1/auth/refresh`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({refreshToken:this.refreshToken})})
       if (refreshed.ok) {
@@ -315,7 +364,7 @@ export class ApiClient {
     }
     if (!response.ok) {
       const error = await response.json().catch(() => ({ message: '请求失败' }))
-      throw new Error(error.message || '请求失败')
+      throw Object.assign(new Error(error.message || '请求失败'), {status:response.status})
     }
     if (response.status === 204 || response.headers.get('content-length') === '0') return undefined as T
     return response.json() as Promise<T>

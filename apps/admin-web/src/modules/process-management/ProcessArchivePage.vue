@@ -9,11 +9,11 @@ import MetricEditor from './MetricEditor.vue'
 import DiagnosisBoards from './DiagnosisBoards.vue'
 import { businessToday, dataLabels, stateLabels, type ProcessPage, type ResultRow, type Target } from './types'
 import './process-management.css'
-const props=defineProps<{api:ApiClient;siteId:string;siteName:string;page:ProcessPage}>()
+const props=defineProps<{api:ApiClient;siteId:string;siteName:string;page:ProcessPage;formalLine?:string;formalRecord?:string}>()
 const { hidden, selectionError, saveSelection }=useIndicatorSelection(()=>props.siteId)
 const pickerOpen=ref(false)
 function selectIndicators(ids:string[]){if(saveSelection(ids))pickerOpen.value=false}
-const lines=ref<DailyLine[]>([]),lineId=ref(''),parameters=ref<ProcessParameter[]>([]),records=ref<DailySummary[]>([]),recordId=ref('')
+const lines=ref<DailyLine[]>([]),lineId=ref(props.formalLine||''),parameters=ref<ProcessParameter[]>([]),records=ref<DailySummary[]>([]),recordId=ref('')
 const reports=ref<ProcessReportSummary[]>([]),report=ref<ProcessReport|null>(null),selectedRow=ref<ResultRow|null>(null)
 const busy=ref(false),blocked=ref(false),dirty=ref(false),error=ref(''),notice=ref(''),note=ref(''),category=ref('全部'),search=ref(''),history=ref('draft')
 const blank=():ProcessParameterContent=>({name:'',basis:'',reason:'',from:businessToday(),to:businessToday(),status:'ACTIVE',impact:'ROUTINE',values:{},targets:{}})
@@ -27,7 +27,7 @@ const detailsOpen=ref(false)
 const draftSelected=computed(()=>maintain.value&&history.value==='draft')
 const parameter=computed(()=>parameters.value.find(p=>p.kind===kind.value))
 const maintain=computed(()=>line.value?.permissions.includes('process:parameter:maintain')??false)
-const generateAllowed=computed(()=>line.value?.permissions.includes('process:report:generate')??false)
+const generateAllowed=computed(()=>!props.formalRecord && !!line.value?.permissions.includes('process:report:generate'))
 const editable=computed(()=>maintain.value&&history.value==='draft'&&!busy.value&&!blocked.value)
 const record=computed(()=>records.value.find(r=>r.id===recordId.value))
 const metrics=computed(()=>line.value?.template.filter(m=>m.scopes.includes(kind.value==='DESIGN'?'design':'condition'))||[])
@@ -46,7 +46,7 @@ window.addEventListener('beforeunload',beforeUnload)
 onBeforeUnmount(()=>{epoch++;window.removeEventListener('beforeunload',beforeUnload)})
 async function run(fn:()=>Promise<void>){if(busy.value)return;busy.value=true;error.value='';notice.value='';try{await fn()}catch(e){error.value=(e as Error).message;blocked.value=true}finally{busy.value=false}}
 function applyParameter(){const p=parameter.value;if(maintain.value){history.value='draft';form.value=clone(p?.draft||blank())}else{const latest=p?.versions.at(-1);history.value=latest?String(latest.version):'';form.value=clone(latest?.content||blank())}dirty.value=false}
-async function load(){const ticket=++epoch,api=client();busy.value=true;blocked.value=true;error.value='';report.value=null;reports.value=[];records.value=[];parameters.value=[];lines.value=[];try{const context=await api.processDailyContext();if(ticket!==epoch)return;lines.value=context;lineId.value=context.some(l=>l.id===lineId.value)?lineId.value:context[0]?.id||'';if(lineId.value){const p=await api.processParameters(lineId.value);if(ticket!==epoch)return;parameters.value=p;applyParameter();const list=await api.processDailyList(lineId.value);if(ticket!==epoch)return;records.value=list;recordId.value=list.some(r=>r.id===recordId.value)?recordId.value:list[0]?.id||'';if(recordId.value&&!parameterPage.value){const list=await api.processReports(recordId.value);if(ticket!==epoch)return;reports.value=list;const selected=list[0];if(selected){const r=await api.processReport(selected.id);if(ticket!==epoch)return;report.value=r;selectedRow.value=null}}}blocked.value=false}catch(e){if(ticket===epoch)error.value=(e as Error).message}finally{if(ticket===epoch)busy.value=false}}
+async function load(){const ticket=++epoch,api=client();busy.value=true;blocked.value=true;error.value='';report.value=null;reports.value=[];records.value=[];parameters.value=[];lines.value=[];try{const context=await api.processDailyContext();if(ticket!==epoch)return;lines.value=context;lineId.value=context.some(l=>l.id===lineId.value)?lineId.value:context[0]?.id||'';if(lineId.value){const p=await api.processParameters(lineId.value);if(ticket!==epoch)return;parameters.value=p;applyParameter();const list=await api.processDailyList(lineId.value);if(ticket!==epoch)return;records.value=props.formalRecord?list.filter(r=>r.id===props.formalRecord):list;recordId.value=records.value.some(r=>r.id===recordId.value)?recordId.value:records.value[0]?.id||'';if(recordId.value&&!parameterPage.value){const list=await api.processReports(recordId.value);if(ticket!==epoch)return;reports.value=list;const selected=props.formalRecord?list.find(item=>item.status==='SAVED' && item.source.entry.version===record.value?.confirmed_version && !item.sourceChanged):list[0];if(selected){const r=await api.processReport(selected.id);if(ticket!==epoch)return;report.value=r;selectedRow.value=null}}}blocked.value=false}catch(e){if(ticket===epoch)error.value=(e as Error).message}finally{if(ticket===epoch)busy.value=false}}
 watch(()=>props.siteId,()=>{void load()},{immediate:true})
 watch(busy,value=>{if(!value&&notice.value==='正在读取或保存，请完成后再离开。')notice.value=''})
 async function refresh(){if(dirty.value&&!window.confirm('当前参数尚未保存，刷新将放弃本次输入，是否继续？'))return;await run(load)}
@@ -71,11 +71,11 @@ async function download(){if(!report.value)return;await run(async()=>{const data
   <template v-else>
     <!-- 数据诊断模式：范围、版本和操作集中，表格优先；追溯信息按需展开。 -->
     <div class="pm-toolbar archive-controls">
-      <WxField label="工艺线"><WxSelect v-model="lineId" :disabled="busy||dirty" @change="changeLine"><option v-for="l in lines" :key="l.id" :value="l.id">{{l.name}}</option></WxSelect></WxField>
+      <WxField v-if="!formalLine" label="工艺线"><WxSelect v-model="lineId" :disabled="busy||dirty" @change="changeLine"><option v-for="l in lines" :key="l.id" :value="l.id">{{l.name}}</option></WxSelect></WxField>
       <WxField v-if="!parameterPage" label="匹配工况"><WxInput :model-value="report?.source.target.content.name||'尚未匹配'" :title="report?.source.target.content.name||'尚未匹配'" readonly /></WxField>
       <WxField v-if="parameterPage" label="查看版本"><WxSelect v-model="history" :disabled="busy||dirty" @change="selectVersion"><option v-if="maintain" value="draft">当前草稿（不生效）</option><option v-for="v in parameter?.versions" :key="v.version" :value="String(v.version)">发布 V{{v.version}} · {{v.content.status==='ACTIVE'?'启用':'停用'}}</option></WxSelect></WxField>
       <template v-else>
-        <WxField label="分析日期"><WxSelect v-model="recordId" :disabled="busy" @change="selectRecord"><option v-for="r in records" :key="r.id" :value="r.id">{{r.business_date}} · {{r.confirmed_version?`确认 V${r.confirmed_version}`:'尚未确认'}}{{r.analysisBlocked?' · 暂停新分析':''}}</option></WxSelect></WxField>
+        <WxField v-if="!formalRecord" label="分析日期"><WxSelect v-model="recordId" :disabled="busy" @change="selectRecord"><option v-for="r in records" :key="r.id" :value="r.id">{{r.business_date}} · {{r.confirmed_version?`确认 V${r.confirmed_version}`:'尚未确认'}}{{r.analysisBlocked?' · 暂停新分析':''}}</option></WxSelect></WxField>
         <WxField v-if="generateAllowed" label="分析 / 保存说明"><WxInput v-model="note" placeholder="分析目的、异常说明或核查意见" /></WxField>
       </template>
       <template v-if="parameterPage">
@@ -130,6 +130,7 @@ async function download(){if(!report.value)return;await run(async()=>{const data
       <p v-else-if="record.analysisBlocked" class="pm-message">日数据尚未确认或更正办理中。可以查看已保存的历史日报，暂不能形成新的业务分析。</p>
       <p v-if="!report" class="pm-empty">暂无可查看的日报。生成分析需要已确认日数据，以及业务日期适用的设计参考、运行目标发布版本。</p>
       <template v-else>
+        <p v-if="formalRecord" class="pm-muted" data-report-source>所看日报 V{{report.version}} · 引用日数据 V{{report.source.entry.version}} · {{report.source.date}}</p>
         <div class="archive-result-summary">
           <div class="archive-counts" aria-label="诊断状态汇总">
             <span class="normal">正常 {{counts.normal}}</span><span class="warning">预警 {{counts.warning}}</span><span class="alarm">告警 {{counts.alarm}}</span><span class="pending">未判定 {{counts.pending}}</span><span class="reference">仅参考 {{counts.reference}}</span>
