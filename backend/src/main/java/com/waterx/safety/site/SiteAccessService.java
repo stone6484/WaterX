@@ -35,5 +35,21 @@ public class SiteAccessService {
         return siteId;
     }
 
+    boolean mayReadProjectTwin(CurrentUser user, UUID siteId) {
+        return jdbc.sql("""
+                select exists (
+                    select 1 from user_role_scope scope
+                    join role r on r.tenant_id=scope.tenant_id and r.id=scope.role_id
+                    join role_permission rp on rp.tenant_id=r.tenant_id and rp.role_id=r.id
+                    join permission p on p.id=rp.permission_id
+                    where scope.tenant_id=:tenant and scope.user_id=:user
+                      and scope.scope_type='SITE' and scope.scope_id=:site
+                      and scope.valid_from<=now() and (scope.valid_until is null or scope.valid_until>now())
+                      and r.status='ACTIVE' and p.code='twin:qingshanhu:read'
+                )
+                """).param("tenant", user.tenantId()).param("user", user.userId())
+                .param("site", siteId).query(Boolean.class).single();
+    }
+
     public record SiteView(UUID id, String code, String name, String timeZone) {}
 }

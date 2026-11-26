@@ -1555,7 +1555,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
           <ProcessTrendPage :key="[formalLine,formalDay,record?.id,record?.revision].join(':')" v-else-if="active==='processTrend'" :site-id="selectedSite" site-name="青山湖一期（模拟）" :legacy-metrics="processMvpCatalog" :api="scopedApi" remote :formal-line="formalLine" :formal-date="formalDay" @line-unavailable="clearLineSelection"/>
         </FormalRecordScope>
         <ProcessOverviewPage v-else-if="active==='processParameters'" :key="signedInUserId+selectedSite" />
-        <DigitalTwinPage v-else-if="active==='digitalTwin'" :key="signedInUserId+selectedSite" :site-id="selectedSite" :user-id="signedInUserId" />
+        <DigitalTwinPage v-else-if="active==='digitalTwin'" :api="api" :key="signedInUserId+selectedSite" :site-id="selectedSite" :user-id="signedInUserId" />
         <GisMapPage v-else-if="active==='gisMap'" :key="JSON.stringify([signedInUserId,selectedSite])" :site-id="selectedSite" :user-id="signedInUserId" @open-twin="active='digitalTwin'" />
         <DailyCollaborationPage v-else-if="active==='operationEntry'&&workbenchTarget?.page==='operationEntry'" ref="dailyCollaboration" :key="signedInUserId+selectedSite" :api="api" page="operationEntry" :site-id="selectedSite" :site-name="currentSite?.name||'当前项目'" :initial-record-id="workbenchTarget.id" :initial-line-id="workbenchTarget.lineId" @navigate="active=$event" />
         <ProcessEvaluationPage v-else-if="currentProcessEvaluationPage" :active-page="currentProcessEvaluationPage" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" @update:active-page="openProcessEvaluationPage" @navigate:app="handleProcessEvaluationNavigate" />
