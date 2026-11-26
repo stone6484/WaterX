@@ -187,6 +187,10 @@ export class ApiClient {
     this.siteId = siteId
   }
 
+  projectTwinScene(signal: AbortSignal): Promise<{ html: string } | undefined> {
+    return this.request('/v1/platform/sites/twin-scene', { signal })
+  }
+
   forSite(siteId:string):ApiClient {
     if(this.confirmedDay && this.confirmedDay.site!==siteId) throw Error('项目与确认来源不符')
     const scoped=new ApiClient(this.baseUrl);scoped.confirmedDay=this.confirmedDay;scoped.setSession(this.accessToken,siteId,this.refreshToken)
