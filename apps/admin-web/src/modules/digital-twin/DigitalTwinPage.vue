@@ -8,6 +8,7 @@ import './digital-twin.css'
 import type {ApiClient} from '@safety/api-client'
 
 const props=defineProps<{siteId:string;userId:string;api:ApiClient}>()
+const emit=defineEmits<{ exhibit: [name: string] }>()
 const loading=ref(true)
 const scene=ref('')
 const controller=new AbortController()
@@ -21,7 +22,10 @@ onMounted(async()=>{
     if(controller.signal.aborted)return
     scene.value=saved?.html || ''
     loading.value=false
-    if(saved)return
+    if(saved){
+      if(saved.displayProject)emit('exhibit',saved.displayProject)
+      return
+    }
     await nextTick()
     if(controller.signal.aborted || !host.value)return
     instance=mountTwin(host.value,{
