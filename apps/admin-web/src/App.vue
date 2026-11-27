@@ -298,6 +298,9 @@ function openWorkbenchTarget(target:WorkbenchTarget) {
   workbenchTarget.value=target
   expandedModules.value[target.page==='operationEntry'?'process':'safety']=true
 }
+const twinExhibitName=ref('')
+watch([active, selectedSite, signedInUserId], () => { twinExhibitName.value='' }, {flush:'sync'})
+
 watch(active,()=>{if(active.value!==workbenchTarget.value?.page)workbenchTarget.value=null})
 const expandedModules = ref<Record<string, boolean>>({ operations:false, process:false, equipment:false, laboratory:false, safety:false, inventory:false, efficiency:false, business:false, evaluation:false, quality:false, improvement:false, basic:false })
 const sidebarCollapsed = ref(false)
@@ -1454,7 +1457,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
   <div v-else class="app-shell" :class="{sidebarCollapsed}">
     <header class="global-topbar">
       <div class="topbar-brand"><div class="topbar-logo-art"><img src="/waterx-logo-on-dark.png" alt="WaterX" /></div><span>智慧水务运营平台</span></div>
-      <div class="topbar-actions"><div class="topbar-project"><small>当前项目</small><select v-model="selectedSite" :disabled="dailyCollaboration?.hasPendingChanges||processArchive?.hasPendingChanges" @change="changeSite"><option v-for="site in sites" :key="site.id" :value="site.id">{{site.name}}</option></select></div><span class="topbar-divider"></span><div class="topbar-user"><span class="avatar">{{signedInDisplayName.slice(0,1)}}</span><div><b>{{signedInDisplayName}}</b><small>当前账号</small></div></div><button @click="logout">退出登录</button></div>
+      <div class="topbar-actions"><div class="topbar-project"><small>{{ active==='digitalTwin' && twinExhibitName ? '演示项目' : '当前项目' }}</small><strong v-if="active==='digitalTwin' && twinExhibitName">{{ twinExhibitName }}</strong><select v-else v-model="selectedSite" :disabled="dailyCollaboration?.hasPendingChanges||processArchive?.hasPendingChanges" @change="changeSite"><option v-for="site in sites" :key="site.id" :value="site.id">{{site.name}}</option></select></div><span class="topbar-divider"></span><div class="topbar-user"><span class="avatar">{{signedInDisplayName.slice(0,1)}}</span><div><b>{{signedInDisplayName}}</b><small>当前账号</small></div></div><button @click="logout">退出登录</button></div>
     </header>
     <aside>
       <button class="sidebar-toggle" :title="sidebarCollapsed?'展开导航':'收起导航'" :aria-label="sidebarCollapsed?'展开导航':'收起导航'" @click="sidebarCollapsed=!sidebarCollapsed"><span><svg aria-hidden="true"><use :href="`/waterx-nav-icons.svg#chevron-${sidebarCollapsed?'right':'left'}`" /></svg></span><b>收起导航</b></button>
@@ -1555,7 +1558,7 @@ onMounted(() => { if (token.value) loadSites().catch(() => logout()) })
           <ProcessTrendPage :key="[formalLine,formalDay,record?.id,record?.revision].join(':')" v-else-if="active==='processTrend'" :site-id="selectedSite" site-name="青山湖一期（模拟）" :legacy-metrics="processMvpCatalog" :api="scopedApi" remote :formal-line="formalLine" :formal-date="formalDay" @line-unavailable="clearLineSelection"/>
         </FormalRecordScope>
         <ProcessOverviewPage v-else-if="active==='processParameters'" :key="signedInUserId+selectedSite" />
-        <DigitalTwinPage v-else-if="active==='digitalTwin'" :api="api" :key="signedInUserId+selectedSite" :site-id="selectedSite" :user-id="signedInUserId" />
+        <DigitalTwinPage v-else-if="active==='digitalTwin'" @exhibit="twinExhibitName=$event" :api="api" :key="signedInUserId+selectedSite" :site-id="selectedSite" :user-id="signedInUserId" />
         <GisMapPage v-else-if="active==='gisMap'" :key="JSON.stringify([signedInUserId,selectedSite])" :site-id="selectedSite" :user-id="signedInUserId" @open-twin="active='digitalTwin'" />
         <DailyCollaborationPage v-else-if="active==='operationEntry'&&workbenchTarget?.page==='operationEntry'" ref="dailyCollaboration" :key="signedInUserId+selectedSite" :api="api" page="operationEntry" :site-id="selectedSite" :site-name="currentSite?.name||'当前项目'" :initial-record-id="workbenchTarget.id" :initial-line-id="workbenchTarget.lineId" @navigate="active=$event" />
         <ProcessEvaluationPage v-else-if="currentProcessEvaluationPage" :active-page="currentProcessEvaluationPage" :site-name="currentSite?.name || 'WaterX示范污水处理厂'" :site-code="currentSite?.code || 'WX-DEMO-01'" @update:active-page="openProcessEvaluationPage" @navigate:app="handleProcessEvaluationNavigate" />

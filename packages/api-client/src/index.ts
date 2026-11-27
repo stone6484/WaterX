@@ -187,7 +187,7 @@ export class ApiClient {
     this.siteId = siteId
   }
 
-  projectTwinScene(signal: AbortSignal): Promise<{ html: string } | undefined> {
+  projectTwinScene(signal: AbortSignal): Promise<{ html: string; displayProject?: string | null } | undefined> {
     return this.request('/v1/platform/sites/twin-scene', { signal })
   }
 
